@@ -1,0 +1,230 @@
+import 'package:flutter/material.dart';
+import 'card_designs.dart';
+import 'minimalist_card.dart';
+import '../models/uno_card.dart';
+
+class CardFront extends StatelessWidget {
+  const CardFront({
+    super.key,
+    required this.card,
+    this.underlinedNumbers = const [6, 9],
+  });
+
+  final UnoCard card;
+  final List<int> underlinedNumbers;
+
+  Color get getCardBgColor {
+    switch (card.color) {
+      case .red:
+        return Colors.red.shade600;
+      case .blue:
+        return Colors.blue.shade600;
+      case .green:
+        return Colors.green.shade600;
+      case .yellow:
+        return Colors.amber.shade500;
+      case .wild:
+        return Colors.black;
+    }
+  }
+
+  bool get needsUnderline => underlinedNumbers.contains(card.number);
+
+  @override
+  Widget build(BuildContext context) {
+    late Widget centerWidget;
+    late Widget cornerWidget;
+
+    switch (card.type) {
+      case .number:
+        centerWidget = Text(
+          card.number.toString(),
+          style: TextStyle(
+            fontSize: 80,
+            fontWeight: .w300,
+            color: Colors.white,
+            decoration: needsUnderline ? .underline : .none,
+            decorationColor: Colors.white,
+          ),
+        );
+
+        cornerWidget = Text(
+          card.number.toString(),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: .w300,
+            color: Colors.white,
+            decoration: needsUnderline ? .underline : .none,
+            decorationColor: Colors.white,
+          ),
+        );
+        break;
+
+      case .skip:
+        centerWidget = const Icon(Icons.block, size: 70, color: Colors.white);
+        cornerWidget = const Icon(Icons.block, size: 16, color: Colors.white);
+        break;
+
+      case .reverse:
+        // swap_vert creates that classic two-way arrow look
+        centerWidget = const Icon(
+          Icons.swap_vert,
+          size: 70,
+          color: Colors.white,
+        );
+        cornerWidget = const Icon(
+          Icons.swap_vert,
+          size: 18,
+          color: Colors.white,
+        );
+        break;
+
+      case .draw2:
+        cornerWidget = const Text(
+          '+2',
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        );
+        centerWidget = const SizedBox(
+          width: 60,
+          height: 80,
+          child: Stack(
+            children: [
+              Positioned(top: 30, left: 10, child: OutlineCard()),
+              Positioned(top: 10, left: 25, child: OutlineCard()),
+            ],
+          ),
+        );
+        break;
+
+      case .wild:
+        cornerWidget = ColorRing(size: 16);
+        centerWidget = ColorRing(size: 60);
+        break;
+
+      case .wildDraw4:
+        cornerWidget = const Text(
+          '+4',
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        );
+        centerWidget = const SizedBox(
+          width: 70,
+          height: 80,
+          child: Stack(
+            children: [
+              // 4 staggered outlines in the 4 primary colors
+              Positioned(
+                top: 30,
+                left: 0,
+                child: OutlineCard(color: Colors.amber),
+              ),
+              Positioned(
+                top: 20,
+                left: 15,
+                child: OutlineCard(color: Colors.green),
+              ),
+              Positioned(
+                top: 10,
+                left: 30,
+                child: OutlineCard(color: Colors.red),
+              ),
+              Positioned(
+                top: 0,
+                left: 45,
+                child: OutlineCard(color: Colors.blue),
+              ),
+            ],
+          ),
+        );
+        break;
+
+      case .chest:
+        // A simple gift icon for the roguelike chest concept
+        centerWidget = const Icon(
+          Icons.card_giftcard,
+          size: 60,
+          color: Colors.amber,
+        );
+        cornerWidget = const Icon(
+          Icons.card_giftcard,
+          size: 16,
+          color: Colors.amber,
+        );
+        break;
+    }
+
+    return MinimalistCard(
+      cardColor: getCardBgColor,
+      centerWidget: centerWidget,
+      cornerWidget: cornerWidget,
+    );
+  }
+}
+
+class ColorRing extends StatelessWidget {
+  /// Creates the 4-color ring for Wild cards
+  const ColorRing({super.key, required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        shape: .circle,
+        // Use hard stops to create discrete color blocks instead of a blend
+        gradient: SweepGradient(
+          colors: [
+            Colors.red,
+            Colors.red,
+            Colors.blue,
+            Colors.blue,
+            Colors.amber,
+            Colors.amber,
+            Colors.green,
+            Colors.green,
+          ],
+          stops: [
+            0.0, 0.25, // Red quadrant
+            0.25, 0.5, // Blue quadrant
+            0.5, 0.75, // Amber quadrant
+            0.75, 1.0, // Green quadrant
+          ],
+        ),
+      ),
+      // The inner black circle makes it look like a hollow ring
+      child: Padding(
+        padding: .all(size * 0.15),
+        child: Container(
+          decoration: const BoxDecoration(
+            shape: .circle,
+            color: Colors.black, // Matches the wild card background
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class CardBack extends StatelessWidget {
+  const CardBack({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 120,
+      height: 180,
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: .circular(12),
+      ),
+      child: const Center(
+        child: Text(
+          "ISHI",
+          style: TextStyle(color: Colors.red, fontSize: 30, fontWeight: .bold),
+        ),
+      ),
+    );
+  }
+}

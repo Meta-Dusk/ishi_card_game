@@ -1,0 +1,44 @@
+import 'animated_card.dart';
+import 'animated_card_list.dart';
+import 'package:esther_gift/models/uno_card.dart';
+import 'package:flutter/material.dart';
+
+class CurvedCard extends StatelessWidget {
+  const CurvedCard({
+    super.key,
+    required this.index,
+    required this.animation,
+    required this.card,
+    required this.totalCards,
+    required this.scrollController,
+    required this.onTapCard,
+  });
+
+  final int index;
+  final int totalCards;
+  final UnoCard card;
+  final Animation<double> animation;
+  final ScrollController? scrollController;
+  final void Function(UnoCard) onTapCard;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (_, child) {
+        return Align(
+          alignment: .center,
+          widthFactor: animation.value,
+          child: SizedBox(width: itemWidth, child: child),
+        );
+      },
+      child: AnimatedCard(
+        scrollController: scrollController,
+        card: card,
+        index: index,
+        totalCards: totalCards,
+        onTapCard: onTapCard,
+      ),
+    );
+  }
+}
