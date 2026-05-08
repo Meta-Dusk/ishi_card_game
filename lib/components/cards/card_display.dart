@@ -219,12 +219,33 @@ class CardBack extends StatelessWidget {
         color: Colors.black,
         borderRadius: .circular(12),
       ),
-      child: const Center(
-        child: Text(
-          "ISHI",
-          style: TextStyle(color: Colors.red, fontSize: 30, fontWeight: .bold),
-        ),
-      ),
+      child: Center(child: _title()),
     );
   }
+
+  Widget _title({double fontSize = 20}) => Stack(
+    children: [
+      Text(
+        "ISHI",
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: .w900,
+          letterSpacing: 16,
+          foreground: Paint()
+            ..style = .stroke
+            ..strokeWidth = 1
+            ..color = Colors.white,
+        ),
+      ),
+      Text(
+        "ISHI",
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: .w900,
+          letterSpacing: 16,
+          color: Colors.black,
+        ),
+      ),
+    ],
+  );
 }

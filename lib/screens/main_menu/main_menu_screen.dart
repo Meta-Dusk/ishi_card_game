@@ -1,8 +1,9 @@
+import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'game_mode_menu.dart';
 import 'lan_setup_menu.dart';
 import 'local_setup_menu.dart';
 import 'menu_button.dart';
-import 'package:flutter/material.dart';
 
 enum MenuState { root, playMode, localSetup, lanSetup }
 
@@ -16,8 +17,20 @@ class MainMenuScreen extends StatefulWidget {
 class _MainMenuScreenState extends State<MainMenuScreen> {
   int _playerCount = 2;
   int _startingHandSize = 7;
-
   MenuState _currentMenu = .root;
+  String _appVersion = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAppVersion();
+  }
+
+  Future<void> _fetchAppVersion() async {
+    final PackageInfo info = await PackageInfo.fromPlatform();
+    if (!mounted) return;
+    setState(() => _appVersion = 'v${info.version}+${info.buildNumber}');
+  }
 
   void _changeMenu(MenuState newState) =>
       setState(() => _currentMenu = newState);
@@ -35,19 +48,22 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   @override
   Widget build(BuildContext context) {
     final mainContent = [
-      AnimatedContainer(
-        alignment: .center,
-        duration: const Duration(seconds: 1),
-        child: const Text(
-          "ISHI: THE UNOLIKE ROGUELIKE",
+      _title(),
+      _subtitle(),
+
+      if (_appVersion.isNotEmpty) ...[
+        const SizedBox(height: 16),
+        Text(
+          _appVersion,
           style: TextStyle(
-            fontSize: 44,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 2,
+            fontSize: 16,
+            fontWeight: .w300,
+            color: Colors.grey.shade500,
+            letterSpacing: 4,
           ),
-          textAlign: .center,
         ),
-      ),
+      ],
+
       const SizedBox(height: 40),
 
       // THE GAME MENU ANIMATION ENGINE
@@ -75,6 +91,44 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
     return _menuHandler(mainContent);
   }
+
+  Widget _title() => Stack(
+    children: [
+      Text(
+        "ISHI",
+        style: TextStyle(
+          fontSize: 80,
+          fontWeight: .w900,
+          letterSpacing: 16,
+          foreground: Paint()
+            ..style = .stroke
+            ..strokeWidth = 8.0
+            ..color = Colors.black,
+        ),
+      ),
+      const Text(
+        "ISHI",
+        style: TextStyle(
+          fontSize: 80,
+          fontWeight: .w900,
+          letterSpacing: 16,
+          color: Colors.white,
+        ),
+      ),
+    ],
+  );
+
+  Widget _subtitle() => const Text(
+    "The Unolike rogulike\ncard game.",
+    textAlign: .center,
+    style: TextStyle(
+      fontSize: 22,
+      fontWeight: .w400,
+      letterSpacing: 2.5,
+      color: Colors.black,
+      height: 1.4,
+    ),
+  );
 
   PopScope<Object> _menuHandler(List<Widget> mainContent) {
     final scrollView = SingleChildScrollView(
