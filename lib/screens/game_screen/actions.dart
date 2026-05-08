@@ -226,7 +226,6 @@ extension GameScreenActions on GameScreenState {
     final controller = scrollControllers[localUIIndex];
     if (controller == null) return;
 
-    // 1. SMOOTH SCROLL TO START
     // Glides the camera to the first card over 400ms
     await controller.animateTo(
       0.0,
@@ -234,10 +233,9 @@ extension GameScreenActions on GameScreenState {
       curve: Curves.easeInOutCubic,
     );
 
-    // 2. HIDE THE DATA SWAP (The Smoke & Mirrors)
     // Flip all cards face down
     updateUI(() {
-      for (var card in currentHand) {
+      for (UnoCard card in currentHand) {
         card.isFaceUp = false;
       }
     });

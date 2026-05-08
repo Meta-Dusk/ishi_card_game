@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:esther_gift/core/data_types.dart';
 import 'package:esther_gift/core/network_keys.dart';
 
@@ -13,7 +12,11 @@ class SocketService {
   SocketService._internal();
 
   // --- PERSISTENT STATES ---
-  int currentPlayers = 1; // Always starts with 1 (the Host)
+  int currentPlayers = 1;
+
+  // THE NEW GLOBAL PLAYERS LIST
+  List<Map<String, dynamic>> playersList = [];
+  Timer? _pingTimer;
 
   // --- HOST STATE ---
   HttpServer? _server;
@@ -22,11 +25,9 @@ class SocketService {
   // --- CLIENT STATE ---
   WebSocket? _clientSocket;
 
-  // UI listens to this stream for updates!
   final _messageController = StreamController<StringDynamicMap>.broadcast();
   Stream<StringDynamicMap> get messages => _messageController.stream;
 
-  // Helper getters
   bool get isHost => _server != null;
   bool get isConnected => _clientSocket != null || isHost;
 
@@ -34,34 +35,79 @@ class SocketService {
   // HOST: START SERVER
   // ==========================================
   Future<void> startServer(String ip, int port) async {
-    // Bind to 'anyIPv4' so it listens on both 127.0.0.1 AND 192.168.x.x!
     _server = await HttpServer.bind(InternetAddress.anyIPv4, port);
+    playersList = [
+      {NetKey.playerName: "Host (You)", NetKey.pingMs: 0},
+    ];
 
-    debugPrint('Host Server running internally on all interfaces, port: $port');
-    debugPrint('Broadcasting IP to UI as: $ip');
+    _pingTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      broadcast({
+        NetKey.type: NetKey.ping,
+        NetKey.timestamp: DateTime.now().millisecondsSinceEpoch,
+      });
+    });
 
     _server!.listen((HttpRequest request) async {
       if (WebSocketTransformer.isUpgradeRequest(request)) {
         WebSocket socket = await WebSocketTransformer.upgrade(request);
         _clients.add(socket);
         currentPlayers = _clients.length + 1;
+        playersList.add({
+          NetKey.playerName: "Player $currentPlayers",
+          NetKey.pingMs: 0,
+        });
+
+        // Immediately broadcast the total count and list to EVERYONE
+        broadcast({
+          NetKey.type: NetKey.playerJoined,
+          NetKey.totalPlayers: currentPlayers, // Use explicit total!
+        });
+        broadcast({
+          NetKey.type: NetKey.lobbyState,
+          NetKey.playersList: playersList,
+        });
 
         socket.listen(
-          (data) {
-            final message = jsonDecode(data);
-            _messageController.add(message);
-          },
+          (data) => _onStartServer(data, socket),
           onDone: () => _handleDisconnect(socket),
           onError: (_) => _handleDisconnect(socket),
         );
-
-        debugPrint('Client connected! Total clients: ${_clients.length}');
-        broadcast({
-          NetKey.type: NetKey.playerJoined,
-          NetKey.clientCount: _clients.length,
-        });
       }
     });
+  }
+
+  void _onStartServer(dynamic data, WebSocket socket) {
+    final message = jsonDecode(data);
+
+    if (message[NetKey.type] == NetKey.pong) {
+      int rtt =
+          DateTime.now().millisecondsSinceEpoch -
+          (message[NetKey.timestamp] as int);
+      int clientIndex = _clients.indexOf(socket) + 1;
+      if (clientIndex > 0 && clientIndex < playersList.length) {
+        playersList[clientIndex][NetKey.pingMs] = rtt ~/ 2;
+      }
+      broadcast({
+        NetKey.type: NetKey.lobbyState,
+        NetKey.playersList: playersList,
+      });
+      return;
+    }
+
+    // Respond to late-joining clients asking for the state!
+    if (message[NetKey.type] == NetKey.requestLobbyState) {
+      broadcast({
+        NetKey.type: NetKey.lobbyState,
+        NetKey.playersList: playersList,
+      });
+      broadcast({
+        NetKey.type: NetKey.playerJoined,
+        NetKey.totalPlayers: currentPlayers,
+      });
+      return;
+    }
+
+    _messageController.add(message);
   }
 
   // ==========================================
@@ -70,34 +116,59 @@ class SocketService {
   Future<bool> connectToHost(String wsUrl) async {
     try {
       _clientSocket = await WebSocket.connect(wsUrl);
-      debugPrint('Connected to Host: $wsUrl');
 
       _clientSocket!.listen(
-        (data) {
-          final message = jsonDecode(data);
-
-          if (message[NetKey.type] == NetKey.playerJoined) {
-            currentPlayers = message[NetKey.clientCount];
-          }
-
-          _messageController.add(message); // Pass to UI
-        },
+        (data) => _onConnectToHost(data),
         onDone: () => disconnect(),
         onError: (_) => disconnect(),
       );
       return true;
     } catch (e) {
-      debugPrint('Connection failed: $e');
       return false;
     }
   }
 
+  void _onConnectToHost(dynamic data) {
+    final message = jsonDecode(data);
+
+    if (message[NetKey.type] == NetKey.ping) {
+      sendIntent({
+        NetKey.type: NetKey.pong,
+        NetKey.timestamp: message[NetKey.timestamp],
+      });
+      return;
+    }
+
+    if (message[NetKey.type] == NetKey.lobbyState) {
+      playersList = List<Map<String, dynamic>>.from(
+        message[NetKey.playersList],
+      );
+    }
+
+    // Safely parse the total players regardless of old/new keys
+    if (message[NetKey.type] == NetKey.playerJoined) {
+      currentPlayers =
+          message[NetKey.totalPlayers] ?? (message[NetKey.clientCount] + 1);
+    }
+
+    _messageController.add(message);
+  }
+
   void _handleDisconnect(WebSocket socket) {
+    int index = _clients.indexOf(socket);
+    if (index != -1 && index + 1 < playersList.length) {
+      playersList.removeAt(index + 1);
+    }
     _clients.remove(socket);
     currentPlayers = _clients.length + 1;
+
     broadcast({
       NetKey.type: NetKey.playerJoined,
-      NetKey.clientCount: currentPlayers,
+      NetKey.totalPlayers: currentPlayers,
+    });
+    broadcast({
+      NetKey.type: NetKey.lobbyState,
+      NetKey.playersList: playersList,
     });
   }
 
@@ -130,10 +201,12 @@ class SocketService {
   }
 
   void disconnect() {
+    _pingTimer?.cancel();
     _server?.close(force: true);
     _clientSocket?.close();
     _server = null;
     _clientSocket = null;
     _clients.clear();
+    playersList.clear();
   }
 }

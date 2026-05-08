@@ -8,6 +8,16 @@ class NetKey {
   static const String lobbySyncResponse = "LOBBY_SYNC_RESPONSE";
 
   // --- LOBBY PAYLOADS ---
+  static const String ping = 'PING';
+  static const String pong = 'PONG';
+  static const String timestamp = 'timestamp';
+
+  static const String lobbyState = 'LOBBY_STATE';
+  static const String lobbyName = 'lobbyName';
+  static const String playersList = 'playersList';
+  static const String playerName = 'playerName';
+  static const String pingMs = 'pingMs';
+
   static const String clientCount = 'clientCount';
   static const String totalPlayers = 'totalPlayers';
 

@@ -31,6 +31,9 @@ class GameScreenState extends State<GameScreen> {
   late Map<int, GlobalKey<AnimatedListState>> listKeys;
   late Map<int, ScrollController> scrollControllers;
 
+  bool _showPingOverlay = false;
+  StreamSubscription? _pingSubscription;
+
   int get localUIIndex => _manager.localPlayerIndex + 1;
   AnimatedListState? get getCurrentState =>
       listKeys[localUIIndex]?.currentState;
@@ -56,11 +59,19 @@ class GameScreenState extends State<GameScreen> {
     }
 
     initializeNetworkSync();
+
+    // This safely rebuilds ONLY the overlay when new pings arrive
+    _pingSubscription = _socket.messages.listen((data) {
+      if (data[NetKey.type] == NetKey.lobbyState && _showPingOverlay) {
+        updateUI(() {});
+      }
+    });
   }
 
   @override
   void dispose() {
     socketSubscription?.cancel();
+    _pingSubscription?.cancel();
     for (var controller in scrollControllers.values) {
       controller.dispose();
     }
@@ -147,7 +158,94 @@ class GameScreenState extends State<GameScreen> {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      body: SafeArea(child: Column(children: mainContent)),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Column(children: mainContent),
+            _pingToggleButton(),
+            if (_showPingOverlay) LivePingPanel(socket: _socket),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Positioned _pingToggleButton() {
+    return Positioned(
+      top: 16,
+      right: 16,
+      child: IconButton(
+        icon: Icon(_showPingOverlay ? Icons.close : Icons.network_ping),
+        color: Colors.grey.shade800,
+        onPressed: () => updateUI(() => _showPingOverlay = !_showPingOverlay),
+      ),
+    );
+  }
+}
+
+class LivePingPanel extends StatelessWidget {
+  const LivePingPanel({super.key, required this.socket});
+
+  final SocketService socket;
+
+  @override
+  Widget build(BuildContext context) {
+    final mainContent = [
+      const Text(
+        "NETWORK PING",
+        style: TextStyle(
+          color: Colors.white70,
+          fontSize: 12,
+          fontWeight: .bold,
+        ),
+      ),
+      const Divider(color: Colors.white24),
+
+      // Dynamically build the rows from the SocketService!
+      ...socket.playersList.map((player) {
+        int ping = player[NetKey.pingMs] ?? 0;
+        Color pingColor = ping < 60
+            ? Colors.greenAccent
+            : (ping < 150 ? Colors.amber : Colors.redAccent);
+
+        return _playerRow(player, ping, pingColor);
+      }),
+    ];
+
+    return Positioned(
+      top: 60,
+      right: 16,
+      child: Container(
+        width: 220,
+        padding: const .all(12),
+        decoration: BoxDecoration(
+          color: Colors.black87,
+          borderRadius: .circular(12),
+          border: .all(color: Colors.white24),
+        ),
+        child: Column(
+          crossAxisAlignment: .start,
+          mainAxisSize: .min,
+          children: mainContent,
+        ),
+      ),
+    );
+  }
+
+  Padding _playerRow(Map<String, dynamic> player, int ping, Color pingColor) {
+    final mainContent = [
+      Text(
+        player[NetKey.playerName] ?? "Unknown",
+        style: const TextStyle(color: Colors.white, fontSize: 13),
+      ),
+      Text(
+        "${ping}ms",
+        style: TextStyle(color: pingColor, fontWeight: .bold, fontSize: 13),
+      ),
+    ];
+    return Padding(
+      padding: const .only(bottom: 6.0),
+      child: Row(mainAxisAlignment: .spaceBetween, children: mainContent),
     );
   }
 }

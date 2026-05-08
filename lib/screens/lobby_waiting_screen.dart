@@ -27,20 +27,19 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     _socketSubscription = _socket.messages.listen((data) {
       if (!mounted) return;
 
-      // LOBBY SYNC
-      if (data[NetKey.type] == NetKey.playerJoined) {
+      // UNIFIED LOBBY SYNC
+      // Whenever the host sends an update, just grab the truth from the socket!
+      if (data[NetKey.type] == NetKey.playerJoined ||
+          data[NetKey.type] == NetKey.lobbyState ||
+          data[NetKey.type] == NetKey.lobbySyncResponse) {
         setState(() {
-          if (data.containsKey(NetKey.totalPlayers)) {
-            _connectedPlayers = data[NetKey.totalPlayers];
-          } else {
-            _connectedPlayers = (data[NetKey.clientCount] as int) + 1;
-          }
+          _connectedPlayers = _socket.currentPlayers;
         });
       }
 
       if (data[NetKey.type] == NetKey.gameStateUpdate) {
         final localManager = GameManager(
-          playerCount: _connectedPlayers,
+          playerCount: _socket.currentPlayers,
           startingHandSize: 7,
         );
         localManager.applyGameStateJson(data);
@@ -49,20 +48,6 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
           context,
           MaterialPageRoute(builder: (_) => GameScreen(manager: localManager)),
         );
-      }
-
-      // HOST SYNC
-      if (data[NetKey.type] == NetKey.lobbySyncResponse) {
-        setState(() => _connectedPlayers = data[NetKey.totalPlayers]);
-      }
-
-      if (_socket.isHost &&
-          (data[NetKey.type] == NetKey.requestLobbyState ||
-              data[NetKey.type] == NetKey.requestLobbyState)) {
-        _socket.broadcast({
-          NetKey.type: NetKey.lobbySyncResponse,
-          NetKey.totalPlayers: _connectedPlayers,
-        });
       }
     });
 
@@ -100,20 +85,26 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final players = _socket.playersList;
+
     final mainContent = [
-      const Icon(Icons.router, size: 80, color: Colors.greenAccent),
-      const SizedBox(height: 20),
       Text(
-        "PLAYERS CONNECTED: $_connectedPlayers",
+        "PLAYERS CONNECTED: $_connectedPlayers/10",
         style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
+          color: Colors.white70,
+          fontSize: 16,
           fontWeight: .bold,
+          letterSpacing: 1.5,
         ),
       ),
-      const SizedBox(height: 40),
+      const SizedBox(height: 16),
 
-      if (_socket.isHost) _startGameButton() else _clientView(),
+      // THE VERBOSE PLAYER LIST
+      VerbosePlayerList(players: players),
+
+      const SizedBox(height: 20),
+      Center(child: _socket.isHost ? _startGameButton() : _clientView()),
+      const SizedBox(height: 20),
     ];
 
     return Scaffold(
@@ -131,21 +122,37 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
         ),
         centerTitle: true,
       ),
-      body: Center(
-        child: Column(mainAxisAlignment: .center, children: mainContent),
+      body: Padding(
+        padding: const .all(16.0),
+        child: Column(crossAxisAlignment: .start, children: mainContent),
       ),
     );
   }
 
-  Column _clientView() => const Column(
-    children: [
-      CircularProgressIndicator(color: Colors.orangeAccent),
-      SizedBox(height: 20),
-      Text(
-        "Waiting for Host to start...",
-        style: TextStyle(color: Colors.grey),
-      ),
-    ],
+  Widget _clientView() => Container(
+    padding: const .all(16),
+    decoration: BoxDecoration(
+      color: Colors.black26,
+      borderRadius: .circular(12),
+    ),
+    child: const Row(
+      mainAxisSize: .min,
+      children: [
+        SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            color: Colors.orangeAccent,
+            strokeWidth: 3,
+          ),
+        ),
+        SizedBox(width: 16),
+        Text(
+          "Waiting for Host to start...",
+          style: TextStyle(color: Colors.white70, fontWeight: .bold),
+        ),
+      ],
+    ),
   );
 
   ElevatedButton _startGameButton() => ElevatedButton.icon(
@@ -161,4 +168,65 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
       style: TextStyle(fontSize: 18, fontWeight: .bold),
     ),
   );
+}
+
+class VerbosePlayerList extends StatelessWidget {
+  const VerbosePlayerList({super.key, required this.players});
+
+  final List<Map<String, dynamic>> players;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: ListView.builder(
+        itemCount: players.length,
+        itemBuilder: (_, index) {
+          final player = players[index];
+          final isHost = index == 0;
+          final ping = player[NetKey.pingMs] ?? 0;
+
+          Color pingColor = ping < 60
+              ? Colors.greenAccent
+              : (ping < 150 ? Colors.amber : Colors.redAccent);
+          IconData pingIcon = ping < 60
+              ? Icons.wifi
+              : (ping < 150 ? Icons.wifi_2_bar : Icons.wifi_1_bar);
+
+          return Card(
+            color: Colors.grey.shade800,
+            margin: const .only(bottom: 8),
+            shape: RoundedRectangleBorder(borderRadius: .circular(12)),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: isHost ? Colors.amber : Colors.blueAccent,
+                child: Icon(
+                  isHost ? Icons.star : Icons.person,
+                  color: Colors.white,
+                ),
+              ),
+              title: Text(
+                player[NetKey.playerName] ?? "Player ${index + 1}",
+                style: const TextStyle(color: Colors.white, fontWeight: .bold),
+              ),
+              trailing: Column(
+                mainAxisAlignment: .center,
+                crossAxisAlignment: .end,
+                children: [
+                  Icon(pingIcon, color: pingColor, size: 20),
+                  Text(
+                    "${ping}ms",
+                    style: TextStyle(
+                      color: pingColor,
+                      fontSize: 12,
+                      fontWeight: .bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 }
