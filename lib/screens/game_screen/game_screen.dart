@@ -110,6 +110,20 @@ class GameScreenState extends State<GameScreen> {
       ),
     );
 
+    final playerHand = Container(
+      height: 280,
+      padding: const .symmetric(horizontal: 8, vertical: 12),
+      child: RawScrollbar(
+        key: ValueKey(scrollControllers[localUIIndex]),
+        controller: scrollControllers[localUIIndex],
+        thumbVisibility: true,
+        thumbColor: Colors.black26,
+        radius: const .circular(8),
+        thickness: 6,
+        child: animatedList,
+      ),
+    );
+
     final mainContent = [
       Padding(
         padding: const .all(8.0),
@@ -128,21 +142,7 @@ class GameScreenState extends State<GameScreen> {
       const Spacer(),
       CardCounter(currentHandLength: currentHand.length),
       handControls,
-      const SizedBox(height: 10),
-      Container(
-        height: 280,
-        padding: const .symmetric(horizontal: 8),
-        child: RawScrollbar(
-          key: ValueKey(scrollControllers[localUIIndex]),
-          controller: scrollControllers[localUIIndex],
-          thumbVisibility: true,
-          thumbColor: Colors.black26,
-          radius: const .circular(8),
-          thickness: 6,
-          child: animatedList,
-        ),
-      ),
-      const SizedBox(height: 10),
+      playerHand,
     ];
 
     return Scaffold(
