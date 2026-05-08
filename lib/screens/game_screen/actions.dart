@@ -221,4 +221,41 @@ extension GameScreenActions on GameScreenState {
       );
     });
   }
+
+  Future<void> animatedSort(bool byColor) async {
+    final controller = scrollControllers[localUIIndex];
+    if (controller == null) return;
+
+    // 1. SMOOTH SCROLL TO START
+    // Glides the camera to the first card over 400ms
+    await controller.animateTo(
+      0.0,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOutCubic,
+    );
+
+    // 2. HIDE THE DATA SWAP (The Smoke & Mirrors)
+    // Flip all cards face down
+    updateUI(() {
+      for (var card in currentHand) {
+        card.isFaceUp = false;
+      }
+    });
+
+    /// Wait for the 3D flip animation to physically finish
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    updateUI(() {
+      _manager.sortHand(_manager.localPlayerIndex, byColor: byColor);
+
+      // Swap the GlobalKey to force the AnimatedList to cleanly rebuild
+      // the new sorted order without throwing index errors
+      listKeys[localUIIndex] = GlobalKey<AnimatedListState>();
+    });
+
+    for (int i = 0; i < currentHand.length; i++) {
+      await Future.delayed(const Duration(milliseconds: 50));
+      updateUI(() => currentHand[i].isFaceUp = true);
+    }
+  }
 }

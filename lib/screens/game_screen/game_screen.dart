@@ -103,7 +103,7 @@ class GameScreenState extends State<GameScreen> {
         child: HandControls(
           onEndTurn: endTurnAction,
           onFlipAllCard: flipAllCardsAction,
-          onSortHand: sortHandAction,
+          onSortHand: animatedSort,
           onTakePenalty: takePenaltyAction,
           manager: _manager,
         ),

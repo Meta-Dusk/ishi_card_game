@@ -1,7 +1,7 @@
 import 'animated_card_list.dart';
 import 'draggable_card.dart';
-import '../cards/card_display.dart';
-import '../cards/flip_card.dart';
+import 'package:esther_gift/components/cards/card_display.dart';
+import 'package:esther_gift/components/cards/flip_card.dart';
 import 'package:esther_gift/models/uno_card.dart';
 import 'package:flutter/material.dart';
 
@@ -23,32 +23,48 @@ class AnimatedCardBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      key: ValueKey('${card.id}_tween'),
+      tween: Tween<double>(end: index.toDouble()),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      builder: _tweenAnimationBuilder,
+    );
+  }
+
+  Widget _tweenAnimationBuilder(
+    BuildContext _,
+    double animatedIndex,
+    Widget? _,
+  ) {
     double offset = 0.0;
-    if (scrollController.hasClients) offset = scrollController.offset;
+    if (scrollController.hasClients && scrollController.positions.length == 1) {
+      offset = scrollController.offset;
+    }
 
     // --- MATH FOUNDATIONS ---
     final double centerIndex = offset / itemWidth;
-    final double distFromCenter = index - centerIndex;
+    // Use the animatedIndex for all physical calculations!
+    final double distFromCenter = animatedIndex - centerIndex;
     final int activeIndex = (offset / itemWidth).round();
+
+    // Keep the raw integer index for user interaction logic
     final bool isCenter = index == activeIndex;
 
-    // THE WAVE: Goes from 1.0 (perfectly centered) down to 0.0 (one slot away)
-    // This allows the highlight effect to trigger smoothly as you scroll!
+    // Parabola Drop & Rotation
     final double highlightFactor = (1.0 - distFromCenter.abs()).clamp(0.0, 1.0);
 
     final double curveMultiplier = totalCards > 7 ? 25.0 / totalCards : 6.0;
 
-    // Smoothly straightens out to 0.0 as it reaches the center!
     final double rotation = (distFromCenter * 0.15) * (1.0 - highlightFactor);
 
-    // Y-AXIS (Pop Up): Combines the parabola curve with a 40px upward slide!
     final double baseOffsetY =
         (distFromCenter * distFromCenter) * curveMultiplier;
     final double offsetY = baseOffsetY - (40.0 * highlightFactor);
 
-    // X-AXIS (Parting the Sea): Pushes inactive cards left and right
+    // X-Axis Push
     double pushFactor = distFromCenter.abs().clamp(0.0, 1.0);
-    double offsetX = distFromCenter.sign * 60.0 * pushFactor;
+    double offsetX = distFromCenter.sign * 45.0 * pushFactor;
 
     // Smooth Scale & Opacity Gradients
     double scale = 1.15 - (distFromCenter.abs() * 0.15);
@@ -66,13 +82,15 @@ class AnimatedCardBuilder extends StatelessWidget {
     );
 
     final gestureDetector = GestureDetector(
-      onTap: () => scrollController.animateTo(
-        index * itemWidth,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-      ),
+      onTap: () {
+        scrollController.animateTo(
+          index * itemWidth,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        );
+      },
       child: Opacity(
-        opacity: opacity, // Smooth gradient fade
+        opacity: opacity,
         child: AbsorbPointer(child: cardUI),
       ),
     );
