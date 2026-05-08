@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:esther_gift/core/network_keys.dart';
 import 'package:flutter/material.dart';
 import 'game_components.dart';
 import 'package:esther_gift/core/data_types.dart';
@@ -84,10 +85,13 @@ class GameScreenState extends State<GameScreen> {
           onDrawCard: drawCardAction,
           onPlayCard: playCardAction,
         ),
-        if (attackMessage != null)
+        if (_manager.pendingDrawCount > 0)
           Positioned(
             top: -20,
-            child: FloatingCombatText(key: attackKey, text: attackMessage!),
+            child: FloatingCombatText(
+              key: ValueKey(_manager.pendingDrawCount),
+              text: "STACK: +${_manager.pendingDrawCount}!",
+            ),
           ),
       ],
     );
@@ -128,6 +132,7 @@ class GameScreenState extends State<GameScreen> {
         height: 280,
         padding: const .symmetric(horizontal: 8),
         child: RawScrollbar(
+          key: ValueKey(scrollControllers[localUIIndex]),
           controller: scrollControllers[localUIIndex],
           thumbVisibility: true,
           thumbColor: Colors.black26,

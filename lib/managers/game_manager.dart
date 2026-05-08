@@ -1,6 +1,7 @@
 import 'package:esther_gift/core/data_types.dart';
 import 'package:esther_gift/models/relic.dart';
 import 'package:esther_gift/models/uno_card.dart';
+import '../core/network_keys.dart';
 
 class GameManager {
   int playerCount;
@@ -53,10 +54,8 @@ class GameManager {
     }
 
     // Safely grab the top card
-    Map<String, dynamic>? topCardJson;
-    if (discardPile.isNotEmpty) {
-      topCardJson = discardPile.last.toJson();
-    }
+    StringDynamicMap? topCardJson;
+    if (discardPile.isNotEmpty) topCardJson = discardPile.last.toJson();
 
     // Serialize ONLY the target player's hand!
     List<StringDynamicMap> myHandJson = playerHands[targetPlayerIndex]
@@ -68,62 +67,83 @@ class GameManager {
     }).toList();
 
     return {
-      "type": "GAME_STATE_UPDATE",
-      "myPlayerIndex": targetPlayerIndex, // Tells the Client who they are!
-      "currentPlayer": currentPlayer,
-      "direction": isClockwise,
-      "topCard": topCardJson,
-      "deckSize": deck.length,
-      "myHand": myHandJson,
-      "opponentHandSizes": handSizes,
-      "pendingDrawCount": pendingDrawCount,
-      "declaredColor": declaredColor?.index,
-      "myActionPoints": actionPoints[targetPlayerIndex],
-      "myCardDraws": cardDraws[targetPlayerIndex],
-      "hasPlayedCard": hasPlayedCard,
-      "hasDrawnCard": hasDrawnCard,
-      "playerRelics": serializedRelics,
+      NetKey.type: NetKey.gameStateUpdate,
+      NetKey.myPlayerIndex: targetPlayerIndex,
+      NetKey.currentPlayer: currentPlayer,
+      NetKey.direction: isClockwise,
+      NetKey.topCard: topCardJson,
+      NetKey.deckSize: deck.length,
+      NetKey.myHand: myHandJson,
+      NetKey.opponentHandSizes: handSizes,
+      NetKey.pendingDrawCount: pendingDrawCount,
+      NetKey.declaredColor: declaredColor?.index,
+      NetKey.actionPoints: actionPoints,
+      NetKey.cardDraws: cardDraws,
+      NetKey.hasPlayedCard: hasPlayedCard,
+      NetKey.hasDrawnCard: hasDrawnCard,
+      NetKey.playerRelics: serializedRelics,
     };
   }
 
   /// CLIENT ONLY: Takes the JSON from the Host and forces the local UI to match it.
-  void applyGameStateJson(Map<String, dynamic> json) {
-    localPlayerIndex = json['myPlayerIndex'] as int;
-    currentPlayer = json['currentPlayer'] as int;
-    isClockwise = json['direction'] as bool;
-    pendingDrawCount = json['pendingDrawCount'] as int;
+  void applyGameStateJson(StringDynamicMap json) {
+    localPlayerIndex = json[NetKey.myPlayerIndex] as int;
+    currentPlayer = json[NetKey.currentPlayer] as int;
+    isClockwise = json[NetKey.direction] as bool;
+    pendingDrawCount = json[NetKey.pendingDrawCount] as int;
 
-    if (json['declaredColor'] != null) {
-      declaredColor = CardColor.values[json['declaredColor'] as int];
+    if (json[NetKey.declaredColor] != null) {
+      declaredColor = CardColor.values[json[NetKey.declaredColor] as int];
     } else {
       declaredColor = null;
     }
 
-    // Initialize arrays if they haven't been built yet
     if (opponentHandSizes.isEmpty) {
-      opponentHandSizes = List<int>.from(json['opponentHandSizes']);
+      opponentHandSizes = List<int>.from(json[NetKey.opponentHandSizes]);
       playerHands = List.generate(opponentHandSizes.length, (_) => []);
-      actionPoints = List.filled(opponentHandSizes.length, 0);
-      cardDraws = List.filled(opponentHandSizes.length, 0);
       playerRelics = List.generate(opponentHandSizes.length, (_) => []);
     } else {
-      opponentHandSizes = List<int>.from(json['opponentHandSizes']);
+      opponentHandSizes = List<int>.from(json[NetKey.opponentHandSizes]);
     }
 
-    if (json['topCard'] != null) {
-      discardPile = [UnoCard.fromJson(json['topCard'])];
+    actionPoints = List<int>.from(
+      json[NetKey.actionPoints] ?? List.filled(opponentHandSizes.length, 0),
+    );
+    cardDraws = List<int>.from(
+      json[NetKey.cardDraws] ?? List.filled(opponentHandSizes.length, 0),
+    );
+
+    if (json[NetKey.topCard] != null) {
+      discardPile = [UnoCard.fromJson(json[NetKey.topCard])];
     }
 
-    // Inject the Client's actual hand directly into their specific index!
-    if (json['myHand'] != null) {
-      final List<dynamic> handData = json['myHand'];
-      playerHands[localPlayerIndex] = handData
+    if (json[NetKey.myHand] != null) {
+      final List<dynamic> handData = json[NetKey.myHand];
+      List<UnoCard> incomingHand = handData
           .map((c) => UnoCard.fromJson(c))
           .toList();
+
+      List<UnoCard> mergedHand = [];
+      for (var newCard in incomingHand) {
+        // Check if we already hold this exact card ID in our local hand
+        int existingIdx = playerHands[localPlayerIndex].indexWhere(
+          (card) => card.id == newCard.id,
+        );
+
+        if (existingIdx != -1) {
+          // If we do, keep the exact local object! This perfectly preserves
+          // the face-up status and any ongoing animations.
+          mergedHand.add(playerHands[localPlayerIndex][existingIdx]);
+        } else {
+          // If we don't, it's a freshly drawn card. Add the new one!
+          mergedHand.add(newCard);
+        }
+      }
+      playerHands[localPlayerIndex] = mergedHand;
     }
 
-    if (json['playerRelics'] != null) {
-      List<dynamic> incomingRelics = json['playerRelics'];
+    if (json[NetKey.playerRelics] != null) {
+      List<dynamic> incomingRelics = json[NetKey.playerRelics];
       for (int i = 0; i < incomingRelics.length; i++) {
         List<dynamic> relicIds = incomingRelics[i];
 
@@ -134,10 +154,39 @@ class GameManager {
       }
     }
 
-    actionPoints[localPlayerIndex] = json['myActionPoints'] as int;
-    cardDraws[localPlayerIndex] = json['myCardDraws'] as int;
-    hasPlayedCard = json['hasPlayedCard'] as bool? ?? false;
-    hasDrawnCard = json['hasDrawnCard'] as bool? ?? false;
+    int incomingDeckSize = json[NetKey.deckSize] as int? ?? 0;
+    if (deck.length != incomingDeckSize) {
+      deck.clear();
+      deck.addAll(
+        List.generate(
+          incomingDeckSize,
+          (i) => UnoCard(id: 'dummy_$i', color: .wild, type: .number),
+        ),
+      );
+    }
+
+    if (json[NetKey.myHand] != null) {
+      final List<dynamic> handData = json[NetKey.myHand];
+      List<UnoCard> incomingHand = handData
+          .map((c) => UnoCard.fromJson(c))
+          .toList();
+
+      for (var newCard in incomingHand) {
+        // Look to see if we already hold this card locally
+        final existingCard = playerHands[localPlayerIndex]
+            .cast<UnoCard?>()
+            .firstWhere((c) => c?.id == newCard.id, orElse: () => null);
+
+        // If we do, copy our local face-up state to the new incoming card!
+        if (existingCard != null) {
+          newCard.isFaceUp = existingCard.isFaceUp;
+        }
+      }
+      playerHands[localPlayerIndex] = incomingHand;
+    }
+
+    hasPlayedCard = json[NetKey.hasPlayedCard] as bool? ?? false;
+    hasDrawnCard = json[NetKey.hasDrawnCard] as bool? ?? false;
   }
 
   int getCardIndexByPlayerIndex(UnoCard card) =>

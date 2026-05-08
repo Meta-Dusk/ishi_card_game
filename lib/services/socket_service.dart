@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:esther_gift/core/data_types.dart';
+import 'package:esther_gift/core/network_keys.dart';
 
 class SocketService {
   // Singleton pattern so the whole app shares one connection
@@ -55,7 +56,10 @@ class SocketService {
         );
 
         debugPrint('Client connected! Total clients: ${_clients.length}');
-        broadcast({"type": "PLAYER_JOINED", "clientCount": _clients.length});
+        broadcast({
+          NetKey.type: NetKey.playerJoined,
+          NetKey.clientCount: _clients.length,
+        });
       }
     });
   }
@@ -72,8 +76,8 @@ class SocketService {
         (data) {
           final message = jsonDecode(data);
 
-          if (message['type'] == 'PLAYER_JOINED') {
-            currentPlayers = message['clientCount'];
+          if (message[NetKey.type] == NetKey.playerJoined) {
+            currentPlayers = message[NetKey.clientCount];
           }
 
           _messageController.add(message); // Pass to UI
@@ -91,7 +95,10 @@ class SocketService {
   void _handleDisconnect(WebSocket socket) {
     _clients.remove(socket);
     currentPlayers = _clients.length + 1;
-    broadcast({"type": "PLAYER_JOINED", "clientCount": currentPlayers});
+    broadcast({
+      NetKey.type: NetKey.playerJoined,
+      NetKey.clientCount: currentPlayers,
+    });
   }
 
   // ==========================================
@@ -118,9 +125,8 @@ class SocketService {
 
   /// Client asks Host to do something (e.g., play a card)
   void sendIntent(StringDynamicMap data) {
-    if (_clientSocket != null) {
-      _clientSocket!.add(jsonEncode(data));
-    }
+    if (_clientSocket == null) return;
+    _clientSocket!.add(jsonEncode(data));
   }
 
   void disconnect() {

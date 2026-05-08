@@ -3,6 +3,7 @@ import 'package:esther_gift/managers/game_manager.dart';
 import 'package:flutter/material.dart';
 import '../services/socket_service.dart';
 import 'game_screen/game_screen.dart';
+import '../core/network_keys.dart';
 
 class LobbyWaitingScreen extends StatefulWidget {
   const LobbyWaitingScreen({super.key});
@@ -21,18 +22,23 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
   @override
   void initState() {
     super.initState();
-    _connectedPlayers = getConnectedPlayerCount;
+    _connectedPlayers = _socket.currentPlayers;
 
     _socketSubscription = _socket.messages.listen((data) {
       if (!mounted) return;
 
-      if (data['type'] == 'PLAYER_JOINED') {
-        setState(() => _connectedPlayers = (data['clientCount'] as int) + 1);
+      // LOBBY SYNC
+      if (data[NetKey.type] == NetKey.playerJoined) {
+        setState(() {
+          if (data.containsKey(NetKey.totalPlayers)) {
+            _connectedPlayers = data[NetKey.totalPlayers];
+          } else {
+            _connectedPlayers = (data[NetKey.clientCount] as int) + 1;
+          }
+        });
       }
 
-      // --- THE LOADING DOCK FIX ---
-      // When the Client receives their personalized hand, they build the engine and launch!
-      if (data['type'] == 'GAME_STATE_UPDATE') {
+      if (data[NetKey.type] == NetKey.gameStateUpdate) {
         final localManager = GameManager(
           playerCount: _connectedPlayers,
           startingHandSize: 7,
@@ -45,22 +51,29 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
         );
       }
 
-      if (_socket.isHost && data['type'] == 'REQUEST_LOBBY_STATE') {
+      // HOST SYNC
+      if (data[NetKey.type] == NetKey.lobbySyncResponse) {
+        setState(() => _connectedPlayers = data[NetKey.totalPlayers]);
+      }
+
+      if (_socket.isHost &&
+          (data[NetKey.type] == NetKey.requestLobbyState ||
+              data[NetKey.type] == NetKey.requestLobbyState)) {
         _socket.broadcast({
-          "type": "PLAYER_JOINED",
-          "clientCount": _connectedPlayers - 1,
+          NetKey.type: NetKey.lobbySyncResponse,
+          NetKey.totalPlayers: _connectedPlayers,
         });
       }
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_socket.isHost) _socket.sendIntent({"type": "REQUEST_LOBBY_STATE"});
+      if (_socket.isHost) return;
+      _socket.sendIntent({NetKey.type: NetKey.requestLobbyState});
     });
   }
 
   @override
   void dispose() {
-    // Clean up the listener when leaving the screen
     _socketSubscription?.cancel();
     super.dispose();
   }
@@ -73,7 +86,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     );
     masterManager.initializeGame();
 
-    // Send targeted starting states. This JSON acts as the "START MATCH" signal for clients!
+    // Host deals the cards. (This JSON acts as the Start signal for clients!)
     for (int i = 1; i < getConnectedPlayerCount; i++) {
       final personalizedState = masterManager.generateGameStateJson(i);
       _socket.sendToClient(i - 1, personalizedState);
@@ -91,7 +104,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
       const Icon(Icons.router, size: 80, color: Colors.greenAccent),
       const SizedBox(height: 20),
       Text(
-        "PLAYERS CONNECTED: $getConnectedPlayerCount",
+        "PLAYERS CONNECTED: $_connectedPlayers",
         style: const TextStyle(
           color: Colors.white,
           fontSize: 24,
@@ -124,32 +137,28 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     );
   }
 
-  Column _clientView() {
-    return const Column(
-      children: [
-        CircularProgressIndicator(color: Colors.orangeAccent),
-        SizedBox(height: 20),
-        Text(
-          "Waiting for Host to start...",
-          style: TextStyle(color: Colors.grey),
-        ),
-      ],
-    );
-  }
+  Column _clientView() => const Column(
+    children: [
+      CircularProgressIndicator(color: Colors.orangeAccent),
+      SizedBox(height: 20),
+      Text(
+        "Waiting for Host to start...",
+        style: TextStyle(color: Colors.grey),
+      ),
+    ],
+  );
 
-  ElevatedButton _startGameButton() {
-    return ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(
-        padding: const .symmetric(horizontal: 40, vertical: 16),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-      ),
-      onPressed: _onStartGame,
-      icon: const Icon(Icons.play_arrow),
-      label: const Text(
-        "START MATCH",
-        style: TextStyle(fontSize: 18, fontWeight: .bold),
-      ),
-    );
-  }
+  ElevatedButton _startGameButton() => ElevatedButton.icon(
+    style: ElevatedButton.styleFrom(
+      padding: const .symmetric(horizontal: 40, vertical: 16),
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black,
+    ),
+    onPressed: _onStartGame,
+    icon: const Icon(Icons.play_arrow),
+    label: const Text(
+      "START MATCH",
+      style: TextStyle(fontSize: 18, fontWeight: .bold),
+    ),
+  );
 }

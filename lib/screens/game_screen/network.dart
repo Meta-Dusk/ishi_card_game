@@ -4,18 +4,15 @@ extension GameScreenNetwork on GameScreenState {
   void _onGameStateUpdate(StringDynamicMap data) {
     updateUI(() {
       int oldSize = currentHand.length;
+
       _manager.applyGameStateJson(data);
+
       int newSize = currentHand.length;
 
+      // We only animate if cards were actually added to our hand!
       if (newSize <= oldSize) return;
-
-      if (oldSize == 0) {
-        listKeys[localUIIndex] = GlobalKey<AnimatedListState>();
-        scrollControllers[localUIIndex] = ScrollController();
-        return;
-      }
-
       int diff = newSize - oldSize;
+
       for (int i = 0; i < diff; i++) {
         getCurrentState?.insertItem(
           0,

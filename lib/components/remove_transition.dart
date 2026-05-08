@@ -17,11 +17,23 @@ class RemoveTransition extends StatelessWidget {
     return SizeTransition(
       sizeFactor: animation,
       axis: .horizontal,
-      child: FadeTransition(
-        opacity: animation,
-        child: Padding(
-          padding: const .only(right: 8.0, bottom: 12.0),
-          child: CardFront(card: removedCard),
+      axisAlignment: -1.0,
+      child: SlideTransition(
+        position: animation.drive(
+          Tween<Offset>(
+            begin: const Offset(0, -0.8),
+            end: Offset.zero,
+          ).chain(CurveTween(curve: Curves.easeInBack)),
+        ),
+        child: FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: animation.drive(Tween<double>(begin: 0.6, end: 1.0)),
+            child: Align(
+              alignment: .bottomCenter,
+              child: CardFront(card: removedCard),
+            ),
+          ),
         ),
       ),
     );

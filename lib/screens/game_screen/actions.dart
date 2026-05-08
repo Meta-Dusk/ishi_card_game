@@ -36,9 +36,9 @@ extension GameScreenActions on GameScreenState {
       broadcastGameState();
     } else {
       _socket.sendIntent({
-        "type": "PLAY_INTENT",
-        "action": "DRAW_CARD",
-        "playerIndex": _manager.localPlayerIndex,
+        NetKey.type: NetKey.playIntent,
+        NetKey.action: "DRAW_CARD",
+        NetKey.playerIndex: _manager.localPlayerIndex,
       });
     }
   }
@@ -48,14 +48,13 @@ extension GameScreenActions on GameScreenState {
     if (_socket.isHost) {
       updateUI(() {
         _manager.endTurn();
-        attackMessage = null;
       });
       broadcastGameState();
     } else {
       _socket.sendIntent({
-        "type": "PLAY_INTENT",
-        "action": "END_TURN",
-        "playerIndex": _manager.localPlayerIndex,
+        NetKey.type: NetKey.playIntent,
+        NetKey.action: NetKey.endTurn,
+        NetKey.playerIndex: _manager.localPlayerIndex,
       });
     }
   }
@@ -72,14 +71,13 @@ extension GameScreenActions on GameScreenState {
             duration: const Duration(milliseconds: 400),
           );
         }
-        attackMessage = null;
       });
       broadcastGameState();
     } else {
       _socket.sendIntent({
-        "type": "PLAY_INTENT",
-        "action": "TAKE_PENALTY",
-        "playerIndex": _manager.localPlayerIndex,
+        NetKey.type: NetKey.playIntent,
+        NetKey.action: "TAKE_PENALTY",
+        NetKey.playerIndex: _manager.localPlayerIndex,
       });
     }
   }
@@ -119,11 +117,6 @@ extension GameScreenActions on GameScreenState {
         }
       }
 
-      if (card.type == .draw2 || card.type == .wildDraw4) {
-        attackMessage = "STACK: +${_manager.pendingDrawCount}!";
-        attackKey = UniqueKey();
-      }
-
       if (removedCard != null) _removeCard(cardIndex, removedCard);
     });
     broadcastGameState();
@@ -149,12 +142,12 @@ extension GameScreenActions on GameScreenState {
     });
 
     _socket.sendIntent({
-      "type": "PLAY_INTENT",
-      "action": "PLAY_CARD",
-      "playerIndex": playerIndex,
-      "cardId": card.id,
-      "declaredColor": declaredColorIndex,
-      "relicId": chosenRelic?.id,
+      NetKey.type: NetKey.playIntent,
+      NetKey.action: NetKey.playCard,
+      NetKey.playerIndex: playerIndex,
+      NetKey.cardId: card.id,
+      NetKey.declaredColor: declaredColorIndex,
+      NetKey.relicId: chosenRelic?.id,
     });
   }
 
