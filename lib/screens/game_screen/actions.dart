@@ -37,7 +37,7 @@ extension GameScreenActions on GameScreenState {
     } else {
       _socket.sendIntent({
         NetKey.type: NetKey.playIntent,
-        NetKey.action: "DRAW_CARD",
+        NetKey.action: NetKey.drawCard,
         NetKey.playerIndex: _manager.localPlayerIndex,
       });
     }
@@ -76,7 +76,7 @@ extension GameScreenActions on GameScreenState {
     } else {
       _socket.sendIntent({
         NetKey.type: NetKey.playIntent,
-        NetKey.action: "TAKE_PENALTY",
+        NetKey.action: NetKey.takePenalty,
         NetKey.playerIndex: _manager.localPlayerIndex,
       });
     }

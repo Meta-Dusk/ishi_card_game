@@ -23,11 +23,11 @@ extension GameScreenNetwork on GameScreenState {
   }
 
   void _onHostListener(StringDynamicMap data) {
-    if (data['type'] == 'PLAY_INTENT') {
+    if (data[NetKey.type] == NetKey.playIntent) {
       processClientIntent(data);
-    } else if (data['type'] == 'REQUEST_STATE') {
+    } else if (data[NetKey.type] == NetKey.requestLobbyState) {
       // Send the specific client their missing cards!
-      int targetPlayer = data['playerIndex'];
+      int targetPlayer = data[NetKey.playerIndex];
       _socket.sendToClient(
         targetPlayer - 1,
         _manager.generateGameStateJson(targetPlayer),
@@ -38,7 +38,7 @@ extension GameScreenNetwork on GameScreenState {
   void initializeNetworkSync() {
     socketSubscription = _socket.messages.listen((data) {
       if (!mounted) return;
-      if (data['type'] == 'GAME_STATE_UPDATE') _onGameStateUpdate(data);
+      if (data[NetKey.type] == NetKey.gameStateUpdate) _onGameStateUpdate(data);
       if (_socket.isHost) _onHostListener(data);
     });
   }
@@ -53,8 +53,8 @@ extension GameScreenNetwork on GameScreenState {
   void processClientIntent(StringDynamicMap data) {
     updateUI(
       () => _clientIntent(
-        playerIndex: data['playerIndex'],
-        action: data['action'],
+        playerIndex: data[NetKey.playerIndex],
+        action: data[NetKey.action],
         data: data,
       ),
     );
@@ -71,22 +71,24 @@ extension GameScreenNetwork on GameScreenState {
   void _onIntentTakePenalty() => _manager.resolvePendingAttack();
 
   void _onIntentPlayCard(int pIndex, String action, StringDynamicMap data) {
-    String cardId = data['cardId'];
+    String cardId = data[NetKey.cardId];
     int cIndex = _manager.playerHands[pIndex].indexWhere((c) => c.id == cardId);
 
     if (cIndex == -1) return;
     _manager.playCard(pIndex, cIndex);
 
-    if (data['declaredColor'] != null) {
-      _manager.setDeclaredColor(CardColor.values[data['declaredColor'] as int]);
+    if (data[NetKey.declaredColor] != null) {
+      _manager.setDeclaredColor(
+        CardColor.values[data[NetKey.declaredColor] as int],
+      );
     }
 
-    if (data['relicId'] == null) return;
+    if (data[NetKey.relicId] == null) return;
 
-    final relic = relicPool.firstWhere((r) => r.id == data['relicId']);
+    final relic = relicPool.firstWhere((r) => r.id == data[NetKey.relicId]);
     _manager.playerRelics[pIndex].add(relic);
 
-    if (relic.effect == RelicEffect.immediateDraw3) {
+    if (relic.effect == .immediateDraw3) {
       for (int i = 0; i < 3; i++) {
         _manager.drawCard(pIndex);
       }
@@ -100,16 +102,16 @@ extension GameScreenNetwork on GameScreenState {
     required StringDynamicMap data,
   }) {
     switch (action) {
-      case "DRAW_CARD":
+      case NetKey.drawCard:
         _clientDrawCard(playerIndex);
         break;
-      case "END_TURN":
+      case NetKey.endTurn:
         _onIntentEndTurn();
         break;
-      case "TAKE_PENALTY":
+      case NetKey.takePenalty:
         _onIntentTakePenalty();
         break;
-      case "PLAY_CARD":
+      case NetKey.playCard:
         _onIntentPlayCard(playerIndex, action, data);
         break;
     }
