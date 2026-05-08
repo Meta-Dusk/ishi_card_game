@@ -21,20 +21,23 @@ class AnimatedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final animatedBuilder = AnimatedBuilder(
-      animation: scrollController!,
-      builder: (_, _) => AnimatedCardBuilder(
-        scrollController: scrollController!,
-        index: index,
-        totalCards: totalCards,
-        card: card,
-        onTapCard: onTapCard,
-      ),
-    );
     return OverflowBox(
       maxWidth: 160.0,
       maxHeight: 300.0,
-      child: scrollController == null ? CardFront(card: card) : animatedBuilder,
+      child: scrollController == null
+          ? CardFront(card: card)
+          : _animatedCardView(),
     );
   }
+
+  AnimatedBuilder _animatedCardView() => AnimatedBuilder(
+    animation: scrollController!,
+    builder: (_, _) => AnimatedCardBuilder(
+      scrollController: scrollController!,
+      index: index,
+      totalCards: totalCards,
+      card: card,
+      onTapCard: onTapCard,
+    ),
+  );
 }

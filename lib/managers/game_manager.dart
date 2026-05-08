@@ -1,8 +1,9 @@
+import 'package:esther_gift/core/data_types.dart';
 import 'package:esther_gift/models/relic.dart';
 import 'package:esther_gift/models/uno_card.dart';
 
 class GameManager {
-  final int playerCount;
+  int playerCount;
 
   // --- CORE STATES ---
   List<UnoCard> deck = [];
@@ -15,6 +16,7 @@ class GameManager {
   late List<int> actionPoints;
   late List<int> cardDraws;
   late List<List<Relic>> playerRelics;
+  final int startingHandSize;
 
   // --- TURN STATES ---
   int currentPlayer = 1;
@@ -32,8 +34,110 @@ class GameManager {
   bool hasDrawnCard = false;
   bool hasDeflected = false;
 
-  GameManager({required this.playerCount, required int startingHandSize}) {
-    _initializeGame(startingHandSize);
+  // LAN STATES
+
+  /// The Host is always 0. Clients will update this!
+  int localPlayerIndex = 0;
+
+  /// Stores the card counts for the UI.
+  List<int> opponentHandSizes = [];
+
+  GameManager({required this.playerCount, required this.startingHandSize});
+
+  /// HOST ONLY: Generates a strictly personalized JSON package for a specific player.
+  StringDynamicMap generateGameStateJson(int targetPlayerIndex) {
+    // Calculate how many cards everyone else has
+    List<int> handSizes = [];
+    for (int i = 0; i < playerHands.length; i++) {
+      handSizes.add(playerHands[i].length);
+    }
+
+    // Safely grab the top card
+    Map<String, dynamic>? topCardJson;
+    if (discardPile.isNotEmpty) {
+      topCardJson = discardPile.last.toJson();
+    }
+
+    // Serialize ONLY the target player's hand!
+    List<StringDynamicMap> myHandJson = playerHands[targetPlayerIndex]
+        .map((card) => card.toJson())
+        .toList();
+
+    List<List<String>> serializedRelics = playerRelics.map((playerList) {
+      return playerList.map((relic) => relic.id).toList();
+    }).toList();
+
+    return {
+      "type": "GAME_STATE_UPDATE",
+      "myPlayerIndex": targetPlayerIndex, // Tells the Client who they are!
+      "currentPlayer": currentPlayer,
+      "direction": isClockwise,
+      "topCard": topCardJson,
+      "deckSize": deck.length,
+      "myHand": myHandJson,
+      "opponentHandSizes": handSizes,
+      "pendingDrawCount": pendingDrawCount,
+      "declaredColor": declaredColor?.index,
+      "myActionPoints": actionPoints[targetPlayerIndex],
+      "myCardDraws": cardDraws[targetPlayerIndex],
+      "hasPlayedCard": hasPlayedCard,
+      "hasDrawnCard": hasDrawnCard,
+      "playerRelics": serializedRelics,
+    };
+  }
+
+  /// CLIENT ONLY: Takes the JSON from the Host and forces the local UI to match it.
+  void applyGameStateJson(Map<String, dynamic> json) {
+    localPlayerIndex = json['myPlayerIndex'] as int;
+    currentPlayer = json['currentPlayer'] as int;
+    isClockwise = json['direction'] as bool;
+    pendingDrawCount = json['pendingDrawCount'] as int;
+
+    if (json['declaredColor'] != null) {
+      declaredColor = CardColor.values[json['declaredColor'] as int];
+    } else {
+      declaredColor = null;
+    }
+
+    // Initialize arrays if they haven't been built yet
+    if (opponentHandSizes.isEmpty) {
+      opponentHandSizes = List<int>.from(json['opponentHandSizes']);
+      playerHands = List.generate(opponentHandSizes.length, (_) => []);
+      actionPoints = List.filled(opponentHandSizes.length, 0);
+      cardDraws = List.filled(opponentHandSizes.length, 0);
+      playerRelics = List.generate(opponentHandSizes.length, (_) => []);
+    } else {
+      opponentHandSizes = List<int>.from(json['opponentHandSizes']);
+    }
+
+    if (json['topCard'] != null) {
+      discardPile = [UnoCard.fromJson(json['topCard'])];
+    }
+
+    // Inject the Client's actual hand directly into their specific index!
+    if (json['myHand'] != null) {
+      final List<dynamic> handData = json['myHand'];
+      playerHands[localPlayerIndex] = handData
+          .map((c) => UnoCard.fromJson(c))
+          .toList();
+    }
+
+    if (json['playerRelics'] != null) {
+      List<dynamic> incomingRelics = json['playerRelics'];
+      for (int i = 0; i < incomingRelics.length; i++) {
+        List<dynamic> relicIds = incomingRelics[i];
+
+        // Convert the string IDs back into actual Relic objects using the pool
+        playerRelics[i] = relicIds
+            .map((id) => relicPool.firstWhere((r) => r.id == id))
+            .toList();
+      }
+    }
+
+    actionPoints[localPlayerIndex] = json['myActionPoints'] as int;
+    cardDraws[localPlayerIndex] = json['myCardDraws'] as int;
+    hasPlayedCard = json['hasPlayedCard'] as bool? ?? false;
+    hasDrawnCard = json['hasDrawnCard'] as bool? ?? false;
   }
 
   int getCardIndexByPlayerIndex(UnoCard card) =>
@@ -46,7 +150,7 @@ class GameManager {
     return playerHands[playerIndex][cardIndex];
   }
 
-  void _initializeGame(int startingHandSize) {
+  void initializeGame() {
     deck = generateStandardDeck();
     discardPile.add(deck.removeLast());
     discardPile.last.isFaceUp = true;
