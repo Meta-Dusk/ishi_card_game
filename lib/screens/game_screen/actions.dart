@@ -87,7 +87,7 @@ extension GameScreenActions on GameScreenState {
       cardIndex,
       (_, animation) =>
           RemoveTransition(removedCard: removedCard, animation: animation),
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 500),
     );
   }
 
@@ -132,13 +132,7 @@ extension GameScreenActions on GameScreenState {
     updateUI(() {
       final removedCard = _manager.playerHands[playerIndex].removeAt(cardIndex);
       _manager.hasPlayedCard = true;
-
-      getCurrentState?.removeItem(
-        cardIndex,
-        (_, animation) =>
-            RemoveTransition(removedCard: removedCard, animation: animation),
-        duration: const Duration(milliseconds: 300),
-      );
+      _removeCard(cardIndex, removedCard);
     });
 
     _socket.sendIntent({

@@ -128,6 +128,7 @@ class GameScreenState extends State<GameScreen> {
       const Spacer(),
       CardCounter(currentHandLength: currentHand.length),
       handControls,
+      const SizedBox(height: 10),
       Container(
         height: 280,
         padding: const .symmetric(horizontal: 8),

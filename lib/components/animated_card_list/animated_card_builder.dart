@@ -1,7 +1,7 @@
 import 'animated_card_list.dart';
 import 'draggable_card.dart';
-import 'package:esther_gift/components/cards/card_display.dart';
-import 'package:esther_gift/components/cards/flip_card.dart';
+import '../cards/card_display.dart';
+import '../cards/flip_card.dart';
 import 'package:esther_gift/models/uno_card.dart';
 import 'package:flutter/material.dart';
 
@@ -24,22 +24,31 @@ class AnimatedCardBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     double offset = 0.0;
-    if (scrollController.hasClients) {
-      offset = scrollController.offset;
-    }
+    if (scrollController.hasClients) offset = scrollController.offset;
 
-    // Math Foundations
+    // --- MATH FOUNDATIONS ---
     final double centerIndex = offset / itemWidth;
     final double distFromCenter = index - centerIndex;
-
-    // Calculate exactly the active index to prevent opacity flickering!
     final int activeIndex = (offset / itemWidth).round();
     final bool isCenter = index == activeIndex;
 
-    // Parabola Drop & Rotation
+    // THE WAVE: Goes from 1.0 (perfectly centered) down to 0.0 (one slot away)
+    // This allows the highlight effect to trigger smoothly as you scroll!
+    final double highlightFactor = (1.0 - distFromCenter.abs()).clamp(0.0, 1.0);
+
     final double curveMultiplier = totalCards > 7 ? 25.0 / totalCards : 6.0;
-    final double rotation = distFromCenter * 0.15;
-    final double offsetY = (distFromCenter * distFromCenter) * curveMultiplier;
+
+    // Smoothly straightens out to 0.0 as it reaches the center!
+    final double rotation = (distFromCenter * 0.15) * (1.0 - highlightFactor);
+
+    // Y-AXIS (Pop Up): Combines the parabola curve with a 40px upward slide!
+    final double baseOffsetY =
+        (distFromCenter * distFromCenter) * curveMultiplier;
+    final double offsetY = baseOffsetY - (40.0 * highlightFactor);
+
+    // X-AXIS (Parting the Sea): Pushes inactive cards left and right
+    double pushFactor = distFromCenter.abs().clamp(0.0, 1.0);
+    double offsetX = distFromCenter.sign * 60.0 * pushFactor;
 
     // Smooth Scale & Opacity Gradients
     double scale = 1.15 - (distFromCenter.abs() * 0.15);
@@ -48,27 +57,20 @@ class AnimatedCardBuilder extends StatelessWidget {
     double opacity = 1.0 - (distFromCenter.abs() * 0.35);
     opacity = opacity.clamp(0.4, 1.0);
 
-    // THE Z-INDEX FIX: "Parting the Sea"
-    // Pushes inactive cards outward on the X-axis to make room for the active card
-    double pushFactor = distFromCenter.abs().clamp(0.0, 1.0);
-    double offsetX = distFromCenter.sign * 45.0 * pushFactor;
-
     final Widget cardUI = FlipCard(
       key: ValueKey('${card.id}_flip'),
       isFaceUp: card.isFaceUp,
       onTap: () => onTapCard(card),
       front: CardFront(card: card),
-      back: CardBack(),
+      back: const CardBack(),
     );
 
     final gestureDetector = GestureDetector(
-      onTap: () {
-        scrollController.animateTo(
-          index * itemWidth,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOutCubic,
-        );
-      },
+      onTap: () => scrollController.animateTo(
+        index * itemWidth,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+      ),
       child: Opacity(
         opacity: opacity, // Smooth gradient fade
         child: AbsorbPointer(child: cardUI),
@@ -79,15 +81,12 @@ class AnimatedCardBuilder extends StatelessWidget {
         ? DraggableCard(card: card, cardUI: cardUI)
         : gestureDetector;
 
-    // Apply all transformations
-    final transformScale = Transform.scale(scale: scale, child: cardView);
-    final transformRotate = Transform.rotate(
-      angle: rotation,
-      child: transformScale,
-    );
     return Transform.translate(
-      offset: Offset(offsetX, offsetY), // Applied the new X offset!
-      child: transformRotate,
+      offset: Offset(offsetX, offsetY),
+      child: Transform.rotate(
+        angle: rotation,
+        child: Transform.scale(scale: scale, child: cardView),
+      ),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:esther_gift/components/animated_card_list/animated_card_list.dart';
 import 'package:esther_gift/models/uno_card.dart';
 import 'package:flutter/material.dart';
 import 'card_display.dart';
@@ -14,22 +15,29 @@ class RemoveTransition extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final slideTransition = SlideTransition(
+      position: animation.drive(
+        Tween<Offset>(
+          begin: const Offset(0.2, -1.5),
+          end: const Offset(0, -0.4),
+        ).chain(CurveTween(curve: Curves.easeInExpo)),
+      ),
+      child: FadeTransition(
+        opacity: animation,
+        child: CardFront(card: removedCard),
+      ),
+    );
+
     return Align(
-      alignment: .center,
-      widthFactor: 0.7 * animation.value,
+      alignment: .bottomCenter,
+      widthFactor: animation.value * 0.7,
       child: SizedBox(
-        width: 120,
-        child: SlideTransition(
-          position: animation.drive(
-            Tween<Offset>(
-              begin: const Offset(0, -0.8),
-              end: Offset.zero,
-            ).chain(CurveTween(curve: Curves.easeOut)),
-          ),
-          child: FadeTransition(
-            opacity: animation,
-            child: CardFront(card: removedCard),
-          ),
+        width: itemWidth,
+        child: OverflowBox(
+          maxWidth: 160.0,
+          maxHeight: 300.0,
+          alignment: .bottomCenter,
+          child: slideTransition,
         ),
       ),
     );
