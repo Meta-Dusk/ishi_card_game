@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/uno_card.dart';
+import '../../models/uno_card.dart';
 import 'card_display.dart';
 
 class RemoveTransition extends StatelessWidget {

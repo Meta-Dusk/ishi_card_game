@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'card_designs.dart';
 import 'minimalist_card.dart';
-import '../models/uno_card.dart';
+import '../../models/uno_card.dart';
 
 class CardFront extends StatelessWidget {
   const CardFront({

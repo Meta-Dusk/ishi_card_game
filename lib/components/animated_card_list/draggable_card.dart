@@ -1,4 +1,4 @@
-import 'package:esther_gift/components/card_display.dart';
+import 'package:esther_gift/components/cards/card_display.dart';
 import 'package:esther_gift/models/uno_card.dart';
 import 'package:flutter/material.dart';
 

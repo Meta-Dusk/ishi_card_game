@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../managers/game_manager.dart';
 import '../models/uno_card.dart';
-import 'card_display.dart';
+import 'cards/card_display.dart';
 
 class PlayAndPileDeck extends StatelessWidget {
   const PlayAndPileDeck({
