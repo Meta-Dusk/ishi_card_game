@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../managers/game_manager.dart';
 import '../models/uno_card.dart';
-import 'card_display.dart';
+import 'cards/card_display.dart';
 
 class PlayAndPileDeck extends StatelessWidget {
   const PlayAndPileDeck({
@@ -181,12 +181,12 @@ class _CardAnimatedRotation extends StatelessWidget {
       // 0.0 is default (Clockwise)
       // -0.5 flips it 180 degrees (Counter-Clockwise)
       turns: manager.isClockwise ? 0.0 : -0.5,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(seconds: 1),
       curve: Curves.easeInOutBack,
       child: Icon(
         Icons.sync,
         size: 280,
-        color: Colors.grey.withValues(alpha: 0.08),
+        color: Colors.grey.withValues(alpha: 0.2),
       ),
     );
   }

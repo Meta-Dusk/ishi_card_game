@@ -1,7 +1,7 @@
+import 'package:flutter/material.dart';
 import 'animated_card.dart';
 import 'animated_card_list.dart';
 import 'package:esther_gift/models/uno_card.dart';
-import 'package:flutter/material.dart';
 
 class CurvedCard extends StatelessWidget {
   const CurvedCard({
@@ -23,15 +23,26 @@ class CurvedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final slideAnimation = animation.drive(
+      Tween<Offset>(
+        begin: const Offset(0, -0.8),
+        end: Offset.zero,
+      ).chain(CurveTween(curve: Curves.easeOutBack)),
+    );
+
     return AnimatedBuilder(
       animation: animation,
-      builder: (_, child) {
-        return Align(
-          alignment: .center,
-          widthFactor: animation.value,
-          child: SizedBox(width: itemWidth, child: child),
-        );
-      },
+      builder: (_, child) => Align(
+        alignment: .center,
+        widthFactor: animation.value,
+        child: SizedBox(
+          width: itemWidth,
+          child: SlideTransition(
+            position: slideAnimation,
+            child: FadeTransition(opacity: animation, child: child),
+          ),
+        ),
+      ),
       child: AnimatedCard(
         scrollController: scrollController,
         card: card,

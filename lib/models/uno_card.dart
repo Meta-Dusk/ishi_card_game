@@ -37,6 +37,28 @@ class UnoCard {
   });
 
   bool get isFaceDown => !isFaceUp;
+
+  /// Converts the card into a map that can be sent over the WebSocket
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'color': color.index,
+      'type': type.index,
+      'number': number,
+      'isFaceUp': isFaceUp,
+    };
+  }
+
+  /// Rebuilds the card when the Client receives the JSON
+  factory UnoCard.fromJson(Map<String, dynamic> json) {
+    return UnoCard(
+      id: json['id'],
+      color: CardColor.values[json['color'] as int],
+      type: CardType.values[json['type'] as int],
+      number: json['number'],
+      isFaceUp: json['isFaceUp'] ?? true,
+    );
+  }
 }
 
 // Generates a basic standard Uno deck (simplified for testing)

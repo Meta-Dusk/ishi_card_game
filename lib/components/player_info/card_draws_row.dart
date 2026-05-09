@@ -38,7 +38,9 @@ class CardDrawsRow extends StatelessWidget {
   /// Dynamically draws card draws based on CD.
   List<Widget> _generateCD() {
     return List.generate(
-      manager.cardDraws[manager.currentPlayer - 1],
+      manager.cardDraws[manager.playerCount == 1
+          ? 0
+          : manager.currentPlayer - 1],
       (index) => const Icon(Icons.style, color: Colors.blueAccent, size: 20),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/data_types.dart';
 
 enum RelicEffect { addActionPoint, addCardDraw, immediateDraw3 }
 
@@ -18,6 +19,16 @@ class Relic {
     required this.color,
     required this.effect,
   });
+
+  StringDynamicMap toJson() => {'id': id};
+
+  // The Client rebuilds the UI object by looking up the ID in the master pool!
+  factory Relic.fromJson(StringDynamicMap json) {
+    return relicPool.firstWhere(
+      (relic) => relic.id == json['id'],
+      orElse: () => relicPool.first, // Fallback safety
+    );
+  }
 }
 
 /// The master pool of relics the chest can pull from.
