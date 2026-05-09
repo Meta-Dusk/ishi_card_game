@@ -1,16 +1,16 @@
-import 'package:esther_gift/components/cards/card_display.dart';
-import 'package:esther_gift/models/uno_card.dart';
+import 'package:ishi/components/cards/card_display.dart';
+import 'package:ishi/models/uno_card.dart';
 import 'package:flutter/material.dart';
 
 class DraggableCard extends StatelessWidget {
   const DraggableCard({super.key, required this.card, required this.cardUI});
 
-  final UnoCard card;
+  final IshiCard card;
   final Widget cardUI;
 
   @override
   Widget build(BuildContext context) {
-    return LongPressDraggable<UnoCard>(
+    return LongPressDraggable<IshiCard>(
       data: card,
       delay: const Duration(milliseconds: 150),
       maxSimultaneousDrags: card.isFaceUp ? 1 : 0,

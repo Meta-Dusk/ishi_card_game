@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'animated_card.dart';
 import 'animated_card_list.dart';
-import 'package:esther_gift/models/uno_card.dart';
+import 'package:ishi/models/uno_card.dart';
 
 class CurvedCard extends StatelessWidget {
   const CurvedCard({
@@ -16,10 +16,10 @@ class CurvedCard extends StatelessWidget {
 
   final int index;
   final int totalCards;
-  final UnoCard card;
+  final IshiCard card;
   final Animation<double> animation;
   final ScrollController? scrollController;
-  final void Function(UnoCard) onTapCard;
+  final void Function(IshiCard) onTapCard;
 
   @override
   Widget build(BuildContext context) {

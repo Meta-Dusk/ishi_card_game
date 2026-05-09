@@ -1,6 +1,6 @@
 import 'curved_card.dart';
 import 'package:flutter/material.dart';
-import 'package:esther_gift/models/uno_card.dart';
+import 'package:ishi/models/uno_card.dart';
 
 const double itemWidth = 80.0;
 
@@ -13,10 +13,10 @@ class AnimatedCardList extends StatelessWidget {
     required this.scrollController,
   });
 
-  final void Function(UnoCard) onTapCard;
+  final void Function(IshiCard) onTapCard;
   final Key? animatedListKey;
   final ScrollController? scrollController;
-  final List<UnoCard> currentHand;
+  final List<IshiCard> currentHand;
 
   bool _onScrollNotification(ScrollNotification notification) {
     if (notification is ScrollEndNotification) {

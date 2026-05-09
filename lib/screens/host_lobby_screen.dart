@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:esther_gift/screens/lobby_waiting_screen.dart';
+import 'package:ishi/screens/lobby_waiting_screen.dart';
 
 import '../services/socket_service.dart';
 import 'package:flutter/material.dart';

@@ -1,5 +1,5 @@
-import 'package:esther_gift/managers/game_manager.dart';
-import 'package:esther_gift/models/relic.dart';
+import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/models/relic.dart';
 import 'package:flutter/material.dart';
 
 class RelicBar extends StatelessWidget {

@@ -1,5 +1,5 @@
-import 'package:esther_gift/components/animated_card_list/animated_card_list.dart';
-import 'package:esther_gift/models/uno_card.dart';
+import 'package:ishi/components/animated_card_list/animated_card_list.dart';
+import 'package:ishi/models/uno_card.dart';
 import 'package:flutter/material.dart';
 import 'card_display.dart';
 
@@ -10,7 +10,7 @@ class RemoveTransition extends StatelessWidget {
     required this.animation,
   });
 
-  final UnoCard removedCard;
+  final IshiCard removedCard;
   final Animation<double> animation;
 
   @override

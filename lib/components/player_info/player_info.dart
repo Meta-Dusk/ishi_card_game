@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:esther_gift/managers/game_manager.dart';
+import 'package:ishi/core/managers/game_manager.dart';
 import 'player_stats.dart';
 import 'relic_bar.dart';
 

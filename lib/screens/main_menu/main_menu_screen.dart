@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:ishi/screens/profile_menu.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'game_mode_menu.dart';
 import 'lan_setup_menu.dart';
 import 'local_setup_menu.dart';
 import 'menu_button.dart';
 
-enum MenuState { root, playMode, localSetup, lanSetup }
+enum MenuState { root, playMode, localSetup, lanSetup, profile }
 
 class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
@@ -38,7 +39,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   /// Android Hardware Back Button Handler
   void _onPopInvoked(bool didPop) {
     if (didPop) return;
-    if (_currentMenu == .playMode) {
+    if (_currentMenu == .playMode || _currentMenu == .profile) {
       _changeMenu(.root);
     } else if (_currentMenu == .localSetup || _currentMenu == .lanSetup) {
       _changeMenu(.playMode);
@@ -156,6 +157,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
         return _RootMenu(
           key: const ValueKey('root'),
           onPlay: () => _changeMenu(.playMode),
+          onProfile: () => _changeMenu(.profile),
+          onSettings: () {},
         );
       case .playMode:
         return GameModeMenu(
@@ -178,6 +181,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           key: const ValueKey('lanSetup'),
           onBack: () => _changeMenu(.playMode),
         );
+      case .profile:
+        return ProfileMenu(
+          key: const ValueKey('profile'),
+          onBack: () => _changeMenu(.root),
+        );
     }
   }
 }
@@ -188,7 +196,15 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
 class _RootMenu extends StatelessWidget {
   final VoidCallback onPlay;
-  const _RootMenu({super.key, required this.onPlay});
+  final VoidCallback onSettings;
+  final VoidCallback onProfile;
+
+  const _RootMenu({
+    super.key,
+    required this.onPlay,
+    required this.onSettings,
+    required this.onProfile,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -206,9 +222,14 @@ class _RootMenu extends StatelessWidget {
           title: "SETTINGS",
           icon: Icons.settings,
           color: Colors.grey.shade800,
-          onTap: () {
-            // TODO: Implement Settings
-          },
+          onTap: onSettings,
+        ),
+        const SizedBox(height: 8),
+        MenuButton(
+          title: "EDIT PROFILE",
+          icon: Icons.person,
+          color: Colors.grey.shade800,
+          onTap: onProfile,
         ),
       ],
     );

@@ -1,12 +1,11 @@
 import 'dart:async';
-import 'package:esther_gift/core/network_keys.dart';
 import 'package:flutter/material.dart';
+import 'package:ishi/core/network_messages.dart';
 import 'game_components.dart';
-import 'package:esther_gift/core/data_types.dart';
-import '../../models/relic.dart';
-import '../../models/uno_card.dart';
-import '../../managers/game_manager.dart';
-import '../../services/socket_service.dart';
+import 'package:ishi/models/relic.dart';
+import 'package:ishi/models/uno_card.dart';
+import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/services/socket_service.dart';
 
 part 'actions.dart';
 part 'network.dart';
@@ -38,7 +37,7 @@ class GameScreenState extends State<GameScreen> {
   AnimatedListState? get getCurrentState =>
       listKeys[localUIIndex]?.currentState;
   bool get isMyTurn => _manager.currentPlayer == localUIIndex;
-  List<UnoCard> get currentHand =>
+  List<IshiCard> get currentHand =>
       _manager.playerHands[_manager.localPlayerIndex];
 
   void updateUI(VoidCallback fn) {
@@ -61,8 +60,8 @@ class GameScreenState extends State<GameScreen> {
     initializeNetworkSync();
 
     // This safely rebuilds ONLY the overlay when new pings arrive
-    _pingSubscription = _socket.messages.listen((data) {
-      if (data[NetKey.type] == NetKey.lobbyState && _showPingOverlay) {
+    _pingSubscription = _socket.messages.listen((message) {
+      if (message is LobbyStateMessage && _showPingOverlay) {
         updateUI(() {});
       }
     });
@@ -203,12 +202,12 @@ class LivePingPanel extends StatelessWidget {
 
       // Dynamically build the rows from the SocketService!
       ...socket.playersList.map((player) {
-        int ping = player[NetKey.pingMs] ?? 0;
+        int ping = player.pingMs;
         Color pingColor = ping < 60
             ? Colors.greenAccent
             : (ping < 150 ? Colors.amber : Colors.redAccent);
 
-        return _playerRow(player, ping, pingColor);
+        return _playerRow(player, pingColor);
       }),
     ];
 
@@ -232,14 +231,14 @@ class LivePingPanel extends StatelessWidget {
     );
   }
 
-  Padding _playerRow(Map<String, dynamic> player, int ping, Color pingColor) {
+  Padding _playerRow(LobbyPlayer player, Color pingColor) {
     final mainContent = [
       Text(
-        player[NetKey.playerName] ?? "Unknown",
+        player.playerName,
         style: const TextStyle(color: Colors.white, fontSize: 13),
       ),
       Text(
-        "${ping}ms",
+        "${player.pingMs}ms",
         style: TextStyle(color: pingColor, fontWeight: .bold, fontSize: 13),
       ),
     ];

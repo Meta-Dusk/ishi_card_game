@@ -1,4 +1,4 @@
-import 'package:esther_gift/managers/game_manager.dart';
+import 'package:ishi/core/managers/game_manager.dart';
 import '../game_screen/game_screen.dart';
 import 'buttons.dart';
 import 'menu_button.dart';

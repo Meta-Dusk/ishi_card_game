@@ -21,14 +21,14 @@ extension CardColorExtension on CardColor {
 
 enum CardType { number, skip, reverse, draw2, wild, wildDraw4, chest }
 
-class UnoCard {
+class IshiCard {
   final String id; // Unique ID for animations
   final CardColor color;
   final CardType type;
   final int? number;
   bool isFaceUp; // State controlled by the parent!
 
-  UnoCard({
+  IshiCard({
     required this.id,
     required this.color,
     required this.type,
@@ -50,8 +50,8 @@ class UnoCard {
   }
 
   /// Rebuilds the card when the Client receives the JSON
-  factory UnoCard.fromJson(Map<String, dynamic> json) {
-    return UnoCard(
+  factory IshiCard.fromJson(Map<String, dynamic> json) {
+    return IshiCard(
       id: json['id'],
       color: CardColor.values[json['color'] as int],
       type: CardType.values[json['type'] as int],
@@ -62,14 +62,14 @@ class UnoCard {
 }
 
 // Generates a basic standard Uno deck (simplified for testing)
-List<UnoCard> generateStandardDeck() {
-  List<UnoCard> deck = [];
+List<IshiCard> generateStandardDeck() {
+  List<IshiCard> deck = [];
   int idCounter = 0;
 
   for (CardColor color in [.red, .yellow, .green, .blue]) {
     // One 0 card
     deck.add(
-      UnoCard(
+      IshiCard(
         id: 'card_${idCounter++}',
         color: color,
         type: .number,
@@ -80,7 +80,7 @@ List<UnoCard> generateStandardDeck() {
     // Two of each 1-9
     for (int i = 1; i <= 9; i++) {
       deck.add(
-        UnoCard(
+        IshiCard(
           id: 'card_${idCounter++}',
           color: color,
           type: .number,
@@ -88,7 +88,7 @@ List<UnoCard> generateStandardDeck() {
         ),
       );
       deck.add(
-        UnoCard(
+        IshiCard(
           id: 'card_${idCounter++}',
           color: color,
           type: .number,
@@ -99,25 +99,25 @@ List<UnoCard> generateStandardDeck() {
 
     // Action cards
     for (int i = 0; i < 2; i++) {
-      deck.add(UnoCard(id: 'card_${idCounter++}', color: color, type: .skip));
+      deck.add(IshiCard(id: 'card_${idCounter++}', color: color, type: .skip));
       deck.add(
-        UnoCard(id: 'card_${idCounter++}', color: color, type: .reverse),
+        IshiCard(id: 'card_${idCounter++}', color: color, type: .reverse),
       );
-      deck.add(UnoCard(id: 'card_${idCounter++}', color: color, type: .draw2));
+      deck.add(IshiCard(id: 'card_${idCounter++}', color: color, type: .draw2));
     }
   }
 
   //Add the standard 4 Wilds and 4 Wild Draw 4s
   for (int i = 0; i < 4; i++) {
-    deck.add(UnoCard(id: 'wild_${idCounter++}', color: .wild, type: .wild));
+    deck.add(IshiCard(id: 'wild_${idCounter++}', color: .wild, type: .wild));
     deck.add(
-      UnoCard(id: 'wild4_${idCounter++}', color: .wild, type: .wildDraw4),
+      IshiCard(id: 'wild4_${idCounter++}', color: .wild, type: .wildDraw4),
     );
   }
 
   // Add a couple of chests for the roguelike flavor
-  deck.add(UnoCard(id: 'chest_1', color: .wild, type: .chest));
-  deck.add(UnoCard(id: 'chest_2', color: .wild, type: .chest));
+  deck.add(IshiCard(id: 'chest_1', color: .wild, type: .chest));
+  deck.add(IshiCard(id: 'chest_2', color: .wild, type: .chest));
 
   deck.shuffle();
   return deck;

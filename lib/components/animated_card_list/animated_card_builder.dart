@@ -1,8 +1,8 @@
 import 'animated_card_list.dart';
 import 'draggable_card.dart';
-import 'package:esther_gift/components/cards/card_display.dart';
-import 'package:esther_gift/components/cards/flip_card.dart';
-import 'package:esther_gift/models/uno_card.dart';
+import 'package:ishi/components/cards/card_display.dart';
+import 'package:ishi/components/cards/flip_card.dart';
+import 'package:ishi/models/uno_card.dart';
 import 'package:flutter/material.dart';
 
 class AnimatedCardBuilder extends StatelessWidget {
@@ -18,8 +18,8 @@ class AnimatedCardBuilder extends StatelessWidget {
   final ScrollController scrollController;
   final int index;
   final int totalCards;
-  final UnoCard card;
-  final void Function(UnoCard) onTapCard;
+  final IshiCard card;
+  final void Function(IshiCard) onTapCard;
 
   @override
   Widget build(BuildContext context) {

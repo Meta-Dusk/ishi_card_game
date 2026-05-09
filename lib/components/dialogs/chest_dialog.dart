@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:esther_gift/models/relic.dart';
+import 'package:ishi/models/relic.dart';
 import 'package:flutter/material.dart';
 
 class ChestDialog extends StatefulWidget {

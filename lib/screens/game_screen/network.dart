@@ -1,11 +1,11 @@
 part of 'game_screen.dart';
 
 extension GameScreenNetwork on GameScreenState {
-  void _onGameStateUpdate(StringDynamicMap data) {
+  void _onGameStateUpdate(GameStateMessage message) {
     updateUI(() {
       int oldSize = currentHand.length;
 
-      _manager.applyGameStateJson(data);
+      _manager.applyGameStateJson(message.payload);
 
       int newSize = currentHand.length;
 
@@ -22,42 +22,65 @@ extension GameScreenNetwork on GameScreenState {
     });
   }
 
-  void _onHostListener(StringDynamicMap data) {
-    if (data[NetKey.type] == NetKey.playIntent) {
-      processClientIntent(data);
-    } else if (data[NetKey.type] == NetKey.requestLobbyState) {
-      // Send the specific client their missing cards!
-      int targetPlayer = data[NetKey.playerIndex];
-      _socket.sendToClient(
-        targetPlayer - 1,
-        _manager.generateGameStateJson(targetPlayer),
-      );
-    }
-  }
-
   void initializeNetworkSync() {
-    socketSubscription = _socket.messages.listen((data) {
+    socketSubscription = _socket.messages.listen((message) {
       if (!mounted) return;
-      if (data[NetKey.type] == NetKey.gameStateUpdate) _onGameStateUpdate(data);
-      if (_socket.isHost) _onHostListener(data);
+
+      // Dart 3 Pattern Matching completely replaces the NetKey checks!
+      switch (message) {
+        case GameStateMessage():
+          _onGameStateUpdate(message);
+          break;
+
+        case PlayIntentMessage():
+          if (_socket.isHost) processClientIntent(message);
+          break;
+
+        case RequestLobbyStateMessage(:final playerIndex):
+          if (_socket.isHost) {
+            // Send the specific client their missing cards!
+            _socket.sendToClient(
+              playerIndex - 1,
+              GameStateMessage(_manager.generateGameStateJson(playerIndex)),
+            );
+          }
+          break;
+
+        default:
+          break;
+      }
     });
   }
 
   void broadcastGameState() {
     if (!_socket.isHost) return;
     for (int i = 1; i < _manager.playerCount; i++) {
-      _socket.sendToClient(i - 1, _manager.generateGameStateJson(i));
+      _socket.sendToClient(
+        i - 1,
+        GameStateMessage(_manager.generateGameStateJson(i)),
+      );
     }
   }
 
-  void processClientIntent(StringDynamicMap data) {
-    updateUI(
-      () => _clientIntent(
-        playerIndex: data[NetKey.playerIndex],
-        action: data[NetKey.action],
-        data: data,
-      ),
-    );
+  void processClientIntent(PlayIntentMessage message) {
+    updateUI(() {
+      int pIndex = message.playerIndex;
+
+      switch (message.action) {
+        case IntentAction.drawCard:
+          _clientDrawCard(pIndex);
+          break;
+        case IntentAction.endTurn:
+          _onIntentEndTurn();
+          break;
+        case IntentAction.takePenalty:
+          _onIntentTakePenalty();
+          break;
+        case IntentAction.playCard:
+          _onIntentPlayCard(pIndex, message);
+          break;
+      }
+    });
     broadcastGameState();
   }
 
@@ -70,50 +93,31 @@ extension GameScreenNetwork on GameScreenState {
 
   void _onIntentTakePenalty() => _manager.resolvePendingAttack();
 
-  void _onIntentPlayCard(int pIndex, String action, StringDynamicMap data) {
-    String cardId = data[NetKey.cardId];
-    int cIndex = _manager.playerHands[pIndex].indexWhere((c) => c.id == cardId);
+  void _onIntentPlayCard(int pIndex, PlayIntentMessage message) {
+    if (message.cardId == null) return;
 
+    int cIndex = _manager.playerHands[pIndex].indexWhere(
+      (c) => c.id == message.cardId,
+    );
     if (cIndex == -1) return;
+
     _manager.playCard(pIndex, cIndex);
 
-    if (data[NetKey.declaredColor] != null) {
-      _manager.setDeclaredColor(
-        CardColor.values[data[NetKey.declaredColor] as int],
-      );
+    if (message.declaredColor != null) {
+      _manager.setDeclaredColor(CardColor.values[message.declaredColor!]);
     }
 
-    if (data[NetKey.relicId] == null) return;
+    if (message.relicId == null) return;
 
-    final relic = relicPool.firstWhere((r) => r.id == data[NetKey.relicId]);
+    final relic = relicPool.firstWhere((r) => r.id == message.relicId);
     _manager.playerRelics[pIndex].add(relic);
 
-    if (relic.effect == .immediateDraw3) {
+    // Assuming your Relic model uses an enum called 'effect'
+    if (relic.effect == RelicEffect.immediateDraw3) {
       for (int i = 0; i < 3; i++) {
         _manager.drawCard(pIndex);
       }
       _manager.playerRelics[pIndex].remove(relic);
-    }
-  }
-
-  void _clientIntent({
-    required int playerIndex,
-    required String action,
-    required StringDynamicMap data,
-  }) {
-    switch (action) {
-      case NetKey.drawCard:
-        _clientDrawCard(playerIndex);
-        break;
-      case NetKey.endTurn:
-        _onIntentEndTurn();
-        break;
-      case NetKey.takePenalty:
-        _onIntentTakePenalty();
-        break;
-      case NetKey.playCard:
-        _onIntentPlayCard(playerIndex, action, data);
-        break;
     }
   }
 }

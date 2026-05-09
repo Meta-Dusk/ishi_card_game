@@ -1,6 +1,6 @@
 import 'dart:io' show Platform;
 
-import 'package:esther_gift/screens/lobby_waiting_screen.dart';
+import 'package:ishi/screens/lobby_waiting_screen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../services/socket_service.dart';
 import 'package:flutter/material.dart';
