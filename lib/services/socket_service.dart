@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:async';
 
 import 'package:ishi/core/data_types.dart';
+import 'package:ishi/core/managers/profile_manager.dart';
 import 'package:ishi/core/network_keys.dart';
 
 class SocketService {
@@ -37,7 +38,7 @@ class SocketService {
   Future<void> startServer(String ip, int port) async {
     _server = await HttpServer.bind(InternetAddress.anyIPv4, port);
     playersList = [
-      {NetKey.playerName: "Host (You)", NetKey.pingMs: 0},
+      {NetKey.playerName: ProfileManager().playerName, NetKey.pingMs: 0},
     ];
 
     _pingTimer = Timer.periodic(const Duration(seconds: 2), (_) {
@@ -53,7 +54,7 @@ class SocketService {
         _clients.add(socket);
         currentPlayers = _clients.length + 1;
         playersList.add({
-          NetKey.playerName: "Player $currentPlayers",
+          NetKey.playerName: ProfileManager().playerName,
           NetKey.pingMs: 0,
         });
 
@@ -116,6 +117,11 @@ class SocketService {
   Future<bool> connectToHost(String wsUrl) async {
     try {
       _clientSocket = await WebSocket.connect(wsUrl);
+
+      sendIntent({
+        NetKey.type: NetKey.setProfile,
+        NetKey.playerName: ProfileManager().playerName,
+      });
 
       _clientSocket!.listen(
         (data) => _onConnectToHost(data),

@@ -20,6 +20,7 @@ class NetKey {
 
   static const String clientCount = 'clientCount';
   static const String totalPlayers = 'totalPlayers';
+  static const String avatarColor = 'avatarColor';
 
   // --- GAME STATE PAYLOADS ---
   static const String playerIndex = 'playerIndex';
@@ -44,6 +45,7 @@ class NetKey {
   static const String endTurn = 'END_TURN';
   static const String takePenalty = 'TAKE_PENALTY';
   static const String playCard = 'PLAY_CARD';
+  static const String setProfile = "SET_PROFILE";
 
   // --- ACTION PAYLOADS ---
   static const String cardId = 'cardId';
