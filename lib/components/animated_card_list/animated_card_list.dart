@@ -13,10 +13,10 @@ class AnimatedCardList extends StatelessWidget {
     required this.scrollController,
   });
 
-  final void Function(UnoCard) onTapCard;
+  final void Function(IshiCard) onTapCard;
   final Key? animatedListKey;
   final ScrollController? scrollController;
-  final List<UnoCard> currentHand;
+  final List<IshiCard> currentHand;
 
   bool _onScrollNotification(ScrollNotification notification) {
     if (notification is ScrollEndNotification) {

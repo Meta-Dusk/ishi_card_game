@@ -35,11 +35,12 @@ extension GameScreenActions on GameScreenState {
       });
       broadcastGameState();
     } else {
-      _socket.sendIntent({
-        NetKey.type: NetKey.playIntent,
-        NetKey.action: NetKey.drawCard,
-        NetKey.playerIndex: _manager.localPlayerIndex,
-      });
+      _socket.sendIntent(
+        PlayIntentMessage(
+          action: .drawCard,
+          playerIndex: _manager.localPlayerIndex,
+        ),
+      );
     }
   }
 
@@ -51,11 +52,12 @@ extension GameScreenActions on GameScreenState {
       });
       broadcastGameState();
     } else {
-      _socket.sendIntent({
-        NetKey.type: NetKey.playIntent,
-        NetKey.action: NetKey.endTurn,
-        NetKey.playerIndex: _manager.localPlayerIndex,
-      });
+      _socket.sendIntent(
+        PlayIntentMessage(
+          action: .endTurn,
+          playerIndex: _manager.localPlayerIndex,
+        ),
+      );
     }
   }
 
@@ -74,15 +76,16 @@ extension GameScreenActions on GameScreenState {
       });
       broadcastGameState();
     } else {
-      _socket.sendIntent({
-        NetKey.type: NetKey.playIntent,
-        NetKey.action: NetKey.takePenalty,
-        NetKey.playerIndex: _manager.localPlayerIndex,
-      });
+      _socket.sendIntent(
+        PlayIntentMessage(
+          action: .takePenalty,
+          playerIndex: _manager.localPlayerIndex,
+        ),
+      );
     }
   }
 
-  void _removeCard(int cardIndex, UnoCard removedCard) {
+  void _removeCard(int cardIndex, IshiCard removedCard) {
     getCurrentState?.removeItem(
       cardIndex,
       (_, animation) =>
@@ -96,7 +99,7 @@ extension GameScreenActions on GameScreenState {
     required int cardIndex,
     required int? declaredColorIndex,
     required Relic? chosenRelic,
-    required UnoCard card,
+    required IshiCard card,
   }) {
     updateUI(() {
       final removedCard = _manager.getCardOfCurrentPlayer(card);
@@ -127,7 +130,7 @@ extension GameScreenActions on GameScreenState {
     required int cardIndex,
     required int? declaredColorIndex,
     required Relic? chosenRelic,
-    required UnoCard card,
+    required IshiCard card,
   }) {
     updateUI(() {
       final removedCard = _manager.playerHands[playerIndex].removeAt(cardIndex);
@@ -135,17 +138,18 @@ extension GameScreenActions on GameScreenState {
       _removeCard(cardIndex, removedCard);
     });
 
-    _socket.sendIntent({
-      NetKey.type: NetKey.playIntent,
-      NetKey.action: NetKey.playCard,
-      NetKey.playerIndex: playerIndex,
-      NetKey.cardId: card.id,
-      NetKey.declaredColor: declaredColorIndex,
-      NetKey.relicId: chosenRelic?.id,
-    });
+    _socket.sendIntent(
+      PlayIntentMessage(
+        action: .playCard,
+        playerIndex: playerIndex,
+        cardId: card.id,
+        declaredColor: declaredColorIndex,
+        relicId: chosenRelic?.id,
+      ),
+    );
   }
 
-  Future<void> playCardAction(UnoCard card) async {
+  Future<void> playCardAction(IshiCard card) async {
     if (!isMyTurn) return;
 
     final int playerIndex = _manager.localPlayerIndex;
@@ -204,7 +208,7 @@ extension GameScreenActions on GameScreenState {
   void flipAllCardsAction() {
     updateUI(() {
       final bool anyFaceDown = currentHand.any((card) => card.isFaceDown);
-      for (UnoCard card in currentHand) {
+      for (IshiCard card in currentHand) {
         card.isFaceUp = anyFaceDown;
       }
     });
@@ -235,7 +239,7 @@ extension GameScreenActions on GameScreenState {
 
     // Flip all cards face down
     updateUI(() {
-      for (UnoCard card in currentHand) {
+      for (IshiCard card in currentHand) {
         card.isFaceUp = false;
       }
     });

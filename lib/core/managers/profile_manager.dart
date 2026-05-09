@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ishi/core/network_keys.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileManager {
@@ -12,17 +11,17 @@ class ProfileManager {
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
-    playerName = prefs.getString(NetKey.playerName) ?? "Player";
+    playerName = prefs.getString("playerName") ?? "Player";
 
-    int? colorInt = prefs.getInt(NetKey.avatarColor);
+    int? colorInt = prefs.getInt("avatarColor");
     if (colorInt == null) return;
     avatarColor = Color(colorInt);
   }
 
   Future<void> saveProfile(String name, Color color) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(NetKey.playerName, name);
-    await prefs.setInt(NetKey.avatarColor, color.toARGB32());
+    await prefs.setString("playerName", name);
+    await prefs.setInt("avatarColor", color.toARGB32());
 
     playerName = name;
     avatarColor = color;

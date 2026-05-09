@@ -10,7 +10,7 @@ class CardFront extends StatelessWidget {
     this.underlinedNumbers = const [6, 9],
   });
 
-  final UnoCard card;
+  final IshiCard card;
   final List<int> underlinedNumbers;
 
   Color get getCardBgColor {

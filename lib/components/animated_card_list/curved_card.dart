@@ -16,10 +16,10 @@ class CurvedCard extends StatelessWidget {
 
   final int index;
   final int totalCards;
-  final UnoCard card;
+  final IshiCard card;
   final Animation<double> animation;
   final ScrollController? scrollController;
-  final void Function(UnoCard) onTapCard;
+  final void Function(IshiCard) onTapCard;
 
   @override
   Widget build(BuildContext context) {

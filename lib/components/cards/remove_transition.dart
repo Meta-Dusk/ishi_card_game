@@ -10,7 +10,7 @@ class RemoveTransition extends StatelessWidget {
     required this.animation,
   });
 
-  final UnoCard removedCard;
+  final IshiCard removedCard;
   final Animation<double> animation;
 
   @override

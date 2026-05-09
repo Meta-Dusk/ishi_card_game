@@ -2,9 +2,8 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
 
-import 'package:ishi/core/data_types.dart';
 import 'package:ishi/core/managers/profile_manager.dart';
-import 'package:ishi/core/network_keys.dart';
+import 'package:ishi/core/network_messages.dart';
 
 class SocketService {
   // Singleton pattern so the whole app shares one connection
@@ -16,7 +15,7 @@ class SocketService {
   int currentPlayers = 1;
 
   // THE NEW GLOBAL PLAYERS LIST
-  List<Map<String, dynamic>> playersList = [];
+  List<LobbyPlayer> playersList = [];
   Timer? _pingTimer;
 
   // --- HOST STATE ---
@@ -26,8 +25,8 @@ class SocketService {
   // --- CLIENT STATE ---
   WebSocket? _clientSocket;
 
-  final _messageController = StreamController<StringDynamicMap>.broadcast();
-  Stream<StringDynamicMap> get messages => _messageController.stream;
+  final _messageController = StreamController<NetMessage>.broadcast();
+  Stream<NetMessage> get messages => _messageController.stream;
 
   bool get isHost => _server != null;
   bool get isConnected => _clientSocket != null || isHost;
@@ -38,14 +37,11 @@ class SocketService {
   Future<void> startServer(String ip, int port) async {
     _server = await HttpServer.bind(InternetAddress.anyIPv4, port);
     playersList = [
-      {NetKey.playerName: ProfileManager().playerName, NetKey.pingMs: 0},
+      LobbyPlayer(playerName: ProfileManager().playerName, pingMs: 0),
     ];
 
     _pingTimer = Timer.periodic(const Duration(seconds: 2), (_) {
-      broadcast({
-        NetKey.type: NetKey.ping,
-        NetKey.timestamp: DateTime.now().millisecondsSinceEpoch,
-      });
+      broadcast(PingMessage(DateTime.now().millisecondsSinceEpoch));
     });
 
     _server!.listen((HttpRequest request) async {
@@ -53,20 +49,13 @@ class SocketService {
         WebSocket socket = await WebSocketTransformer.upgrade(request);
         _clients.add(socket);
         currentPlayers = _clients.length + 1;
-        playersList.add({
-          NetKey.playerName: ProfileManager().playerName,
-          NetKey.pingMs: 0,
-        });
+        playersList.add(
+          LobbyPlayer(playerName: "Player $currentPlayers", pingMs: 0),
+        );
 
         // Immediately broadcast the total count and list to EVERYONE
-        broadcast({
-          NetKey.type: NetKey.playerJoined,
-          NetKey.totalPlayers: currentPlayers, // Use explicit total!
-        });
-        broadcast({
-          NetKey.type: NetKey.lobbyState,
-          NetKey.playersList: playersList,
-        });
+        broadcast(PlayerJoinedMessage(currentPlayers));
+        broadcast(LobbyStateMessage(playersList));
 
         socket.listen(
           (data) => _onStartServer(data, socket),
@@ -78,37 +67,36 @@ class SocketService {
   }
 
   void _onStartServer(dynamic data, WebSocket socket) {
-    final message = jsonDecode(data);
+    final rawJson = jsonDecode(data);
+    final message = NetMessage.fromJson(rawJson);
 
-    if (message[NetKey.type] == NetKey.pong) {
-      int rtt =
-          DateTime.now().millisecondsSinceEpoch -
-          (message[NetKey.timestamp] as int);
-      int clientIndex = _clients.indexOf(socket) + 1;
-      if (clientIndex > 0 && clientIndex < playersList.length) {
-        playersList[clientIndex][NetKey.pingMs] = rtt ~/ 2;
-      }
-      broadcast({
-        NetKey.type: NetKey.lobbyState,
-        NetKey.playersList: playersList,
-      });
-      return;
+    switch (message) {
+      case PongMessage(:final timestamp):
+        int rtt = DateTime.now().millisecondsSinceEpoch - timestamp;
+        int clientIndex = _clients.indexOf(socket) + 1;
+        if (clientIndex > 0 && clientIndex < playersList.length) {
+          playersList[clientIndex].pingMs = rtt ~/ 2;
+        }
+        broadcast(LobbyStateMessage(playersList));
+        break;
+
+      case RequestLobbyStateMessage():
+        broadcast(LobbyStateMessage(playersList));
+        broadcast(PlayerJoinedMessage(currentPlayers));
+        break;
+
+      case SetProfileMessage(:final playerName):
+        // Update the name when the client officially connects!
+        int clientIndex = _clients.indexOf(socket) + 1;
+        if (clientIndex > 0 && clientIndex < playersList.length) {
+          playersList[clientIndex].playerName = playerName;
+        }
+        broadcast(LobbyStateMessage(playersList));
+        break;
+
+      default:
+        _messageController.add(message);
     }
-
-    // Respond to late-joining clients asking for the state!
-    if (message[NetKey.type] == NetKey.requestLobbyState) {
-      broadcast({
-        NetKey.type: NetKey.lobbyState,
-        NetKey.playersList: playersList,
-      });
-      broadcast({
-        NetKey.type: NetKey.playerJoined,
-        NetKey.totalPlayers: currentPlayers,
-      });
-      return;
-    }
-
-    _messageController.add(message);
   }
 
   // ==========================================
@@ -118,10 +106,12 @@ class SocketService {
     try {
       _clientSocket = await WebSocket.connect(wsUrl);
 
-      sendIntent({
-        NetKey.type: NetKey.setProfile,
-        NetKey.playerName: ProfileManager().playerName,
-      });
+      sendIntent(
+        SetProfileMessage(
+          ProfileManager().playerName,
+          ProfileManager().avatarColor.toARGB32(),
+        ),
+      );
 
       _clientSocket!.listen(
         (data) => _onConnectToHost(data),
@@ -135,29 +125,27 @@ class SocketService {
   }
 
   void _onConnectToHost(dynamic data) {
-    final message = jsonDecode(data);
+    final rawJson = jsonDecode(data);
+    final message = NetMessage.fromJson(rawJson);
 
-    if (message[NetKey.type] == NetKey.ping) {
-      sendIntent({
-        NetKey.type: NetKey.pong,
-        NetKey.timestamp: message[NetKey.timestamp],
-      });
-      return;
+    switch (message) {
+      case PingMessage(:final timestamp):
+        sendIntent(PongMessage(timestamp));
+        break;
+
+      case LobbyStateMessage(:final playersList):
+        this.playersList = List<LobbyPlayer>.from(playersList);
+        _messageController.add(message); // Forward to UI
+        break;
+
+      case PlayerJoinedMessage(:final totalPlayers):
+        currentPlayers = totalPlayers;
+        _messageController.add(message); // Forward to UI
+        break;
+
+      default:
+        _messageController.add(message);
     }
-
-    if (message[NetKey.type] == NetKey.lobbyState) {
-      playersList = List<Map<String, dynamic>>.from(
-        message[NetKey.playersList],
-      );
-    }
-
-    // Safely parse the total players regardless of old/new keys
-    if (message[NetKey.type] == NetKey.playerJoined) {
-      currentPlayers =
-          message[NetKey.totalPlayers] ?? (message[NetKey.clientCount] + 1);
-    }
-
-    _messageController.add(message);
   }
 
   void _handleDisconnect(WebSocket socket) {
@@ -168,14 +156,8 @@ class SocketService {
     _clients.remove(socket);
     currentPlayers = _clients.length + 1;
 
-    broadcast({
-      NetKey.type: NetKey.playerJoined,
-      NetKey.totalPlayers: currentPlayers,
-    });
-    broadcast({
-      NetKey.type: NetKey.lobbyState,
-      NetKey.playersList: playersList,
-    });
+    broadcast(PlayerJoinedMessage(currentPlayers));
+    broadcast(LobbyStateMessage(playersList));
   }
 
   // ==========================================
@@ -183,27 +165,27 @@ class SocketService {
   // ==========================================
 
   /// Send data ONLY to a specific client (used for dealing private hands)
-  void sendToClient(int clientIndex, StringDynamicMap data) {
+  void sendToClient(int clientIndex, NetMessage message) {
     // Safety check to ensure the client exists
     if (clientIndex >= 0 && clientIndex < _clients.length) {
-      _clients[clientIndex].add(jsonEncode(data));
+      _clients[clientIndex].add(jsonEncode(message.toJson()));
     }
   }
 
   /// Host updates all clients
-  void broadcast(StringDynamicMap data) {
-    final jsonStr = jsonEncode(data);
+  void broadcast(NetMessage message) {
+    final jsonStr = jsonEncode(message.toJson());
     for (WebSocket client in _clients) {
       client.add(jsonStr);
     }
 
-    if (isHost) _messageController.add(data);
+    if (isHost) _messageController.add(message);
   }
 
   /// Client asks Host to do something (e.g., play a card)
-  void sendIntent(StringDynamicMap data) {
+  void sendIntent(NetMessage message) {
     if (_clientSocket == null) return;
-    _clientSocket!.add(jsonEncode(data));
+    _clientSocket!.add(jsonEncode(message.toJson()));
   }
 
   void disconnect() {

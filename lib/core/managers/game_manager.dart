@@ -1,17 +1,33 @@
 import 'package:ishi/core/data_types.dart';
 import 'package:ishi/models/relic.dart';
 import 'package:ishi/models/uno_card.dart';
-import '../network_keys.dart';
+
+class _BoardKeys {
+  static const String myPlayerIndex = 'myPlayerIndex';
+  static const String currentPlayer = 'currentPlayer';
+  static const String direction = 'direction';
+  static const String topCard = 'topCard';
+  static const String deckSize = 'deckSize';
+  static const String myHand = 'myHand';
+  static const String opponentHandSizes = 'opponentHandSizes';
+  static const String pendingDrawCount = 'pendingDrawCount';
+  static const String declaredColor = 'declaredColor';
+  static const String actionPoints = 'actionPoints';
+  static const String cardDraws = 'cardDraws';
+  static const String hasPlayedCard = 'hasPlayedCard';
+  static const String hasDrawnCard = 'hasDrawnCard';
+  static const String playerRelics = 'playerRelics';
+}
 
 class GameManager {
   int playerCount;
 
   // --- CORE STATES ---
-  List<UnoCard> deck = [];
-  List<UnoCard> discardPile = [];
+  List<IshiCard> deck = [];
+  List<IshiCard> discardPile = [];
 
   /// `playerHands`[`playerIndex`][`cardIndex`]
-  late List<List<UnoCard>> playerHands;
+  late List<List<IshiCard>> playerHands;
 
   // --- ECONOMY STATES ---
   late List<int> actionPoints;
@@ -67,64 +83,63 @@ class GameManager {
     }).toList();
 
     return {
-      NetKey.type: NetKey.gameStateUpdate,
-      NetKey.myPlayerIndex: targetPlayerIndex,
-      NetKey.currentPlayer: currentPlayer,
-      NetKey.direction: isClockwise,
-      NetKey.topCard: topCardJson,
-      NetKey.deckSize: deck.length,
-      NetKey.myHand: myHandJson,
-      NetKey.opponentHandSizes: handSizes,
-      NetKey.pendingDrawCount: pendingDrawCount,
-      NetKey.declaredColor: declaredColor?.index,
-      NetKey.actionPoints: actionPoints,
-      NetKey.cardDraws: cardDraws,
-      NetKey.hasPlayedCard: hasPlayedCard,
-      NetKey.hasDrawnCard: hasDrawnCard,
-      NetKey.playerRelics: serializedRelics,
+      _BoardKeys.myPlayerIndex: targetPlayerIndex,
+      _BoardKeys.currentPlayer: currentPlayer,
+      _BoardKeys.direction: isClockwise,
+      _BoardKeys.topCard: topCardJson,
+      _BoardKeys.deckSize: deck.length,
+      _BoardKeys.myHand: myHandJson,
+      _BoardKeys.opponentHandSizes: handSizes,
+      _BoardKeys.pendingDrawCount: pendingDrawCount,
+      _BoardKeys.declaredColor: declaredColor?.index,
+      _BoardKeys.actionPoints: actionPoints,
+      _BoardKeys.cardDraws: cardDraws,
+      _BoardKeys.hasPlayedCard: hasPlayedCard,
+      _BoardKeys.hasDrawnCard: hasDrawnCard,
+      _BoardKeys.playerRelics: serializedRelics,
     };
   }
 
   /// CLIENT ONLY: Takes the JSON from the Host and forces the local UI to match it.
   void applyGameStateJson(StringDynamicMap json) {
-    localPlayerIndex = json[NetKey.myPlayerIndex] as int;
-    currentPlayer = json[NetKey.currentPlayer] as int;
-    isClockwise = json[NetKey.direction] as bool;
-    pendingDrawCount = json[NetKey.pendingDrawCount] as int;
+    localPlayerIndex = json[_BoardKeys.myPlayerIndex] as int;
+    currentPlayer = json[_BoardKeys.currentPlayer] as int;
+    isClockwise = json[_BoardKeys.direction] as bool;
+    pendingDrawCount = json[_BoardKeys.pendingDrawCount] as int;
 
-    if (json[NetKey.declaredColor] != null) {
-      declaredColor = CardColor.values[json[NetKey.declaredColor] as int];
+    if (json[_BoardKeys.declaredColor] != null) {
+      declaredColor = CardColor.values[json[_BoardKeys.declaredColor] as int];
     } else {
       declaredColor = null;
     }
 
     if (opponentHandSizes.isEmpty) {
-      opponentHandSizes = List<int>.from(json[NetKey.opponentHandSizes]);
+      opponentHandSizes = List<int>.from(json[_BoardKeys.opponentHandSizes]);
       playerHands = List.generate(opponentHandSizes.length, (_) => []);
       playerRelics = List.generate(opponentHandSizes.length, (_) => []);
     } else {
-      opponentHandSizes = List<int>.from(json[NetKey.opponentHandSizes]);
+      opponentHandSizes = List<int>.from(json[_BoardKeys.opponentHandSizes]);
     }
 
     actionPoints = List<int>.from(
-      json[NetKey.actionPoints] ?? List.filled(opponentHandSizes.length, 0),
+      json[_BoardKeys.actionPoints] ?? List.filled(opponentHandSizes.length, 0),
     );
     cardDraws = List<int>.from(
-      json[NetKey.cardDraws] ?? List.filled(opponentHandSizes.length, 0),
+      json[_BoardKeys.cardDraws] ?? List.filled(opponentHandSizes.length, 0),
     );
 
-    if (json[NetKey.topCard] != null) {
-      discardPile = [UnoCard.fromJson(json[NetKey.topCard])];
+    if (json[_BoardKeys.topCard] != null) {
+      discardPile = [IshiCard.fromJson(json[_BoardKeys.topCard])];
     }
 
-    if (json[NetKey.myHand] != null) {
-      final List<dynamic> handData = json[NetKey.myHand];
-      List<UnoCard> incomingHand = handData
-          .map((c) => UnoCard.fromJson(c))
+    if (json[_BoardKeys.myHand] != null) {
+      final List<dynamic> handData = json[_BoardKeys.myHand];
+      List<IshiCard> incomingHand = handData
+          .map((c) => IshiCard.fromJson(c as StringDynamicMap))
           .toList();
 
-      List<UnoCard> mergedHand = [];
-      for (var newCard in incomingHand) {
+      List<IshiCard> mergedHand = [];
+      for (IshiCard newCard in incomingHand) {
         // Check if we already hold this exact card ID in our local hand
         int existingIdx = playerHands[localPlayerIndex].indexWhere(
           (card) => card.id == newCard.id,
@@ -142,8 +157,8 @@ class GameManager {
       playerHands[localPlayerIndex] = mergedHand;
     }
 
-    if (json[NetKey.playerRelics] != null) {
-      List<dynamic> incomingRelics = json[NetKey.playerRelics];
+    if (json[_BoardKeys.playerRelics] != null) {
+      List<dynamic> incomingRelics = json[_BoardKeys.playerRelics];
       for (int i = 0; i < incomingRelics.length; i++) {
         List<dynamic> relicIds = incomingRelics[i];
 
@@ -154,45 +169,25 @@ class GameManager {
       }
     }
 
-    int incomingDeckSize = json[NetKey.deckSize] as int? ?? 0;
+    int incomingDeckSize = json[_BoardKeys.deckSize] as int? ?? 0;
     if (deck.length != incomingDeckSize) {
       deck.clear();
       deck.addAll(
         List.generate(
           incomingDeckSize,
-          (i) => UnoCard(id: 'dummy_$i', color: .wild, type: .number),
+          (i) => IshiCard(id: 'dummy_$i', color: .wild, type: .number),
         ),
       );
     }
 
-    if (json[NetKey.myHand] != null) {
-      final List<dynamic> handData = json[NetKey.myHand];
-      List<UnoCard> incomingHand = handData
-          .map((c) => UnoCard.fromJson(c))
-          .toList();
-
-      for (var newCard in incomingHand) {
-        // Look to see if we already hold this card locally
-        final existingCard = playerHands[localPlayerIndex]
-            .cast<UnoCard?>()
-            .firstWhere((c) => c?.id == newCard.id, orElse: () => null);
-
-        // If we do, copy our local face-up state to the new incoming card!
-        if (existingCard != null) {
-          newCard.isFaceUp = existingCard.isFaceUp;
-        }
-      }
-      playerHands[localPlayerIndex] = incomingHand;
-    }
-
-    hasPlayedCard = json[NetKey.hasPlayedCard] as bool? ?? false;
-    hasDrawnCard = json[NetKey.hasDrawnCard] as bool? ?? false;
+    hasPlayedCard = json[_BoardKeys.hasPlayedCard] as bool? ?? false;
+    hasDrawnCard = json[_BoardKeys.hasDrawnCard] as bool? ?? false;
   }
 
-  int getCardIndexByPlayerIndex(UnoCard card) =>
+  int getCardIndexByPlayerIndex(IshiCard card) =>
       playerHands[currentPlayer - 1].indexOf(card);
 
-  UnoCard? getCardOfCurrentPlayer(UnoCard card) {
+  IshiCard? getCardOfCurrentPlayer(IshiCard card) {
     final int playerIndex = currentPlayer - 1;
     final int cardIndex = getCardIndexByPlayerIndex(card);
     if (cardIndex == -1) return null;
@@ -241,10 +236,10 @@ class GameManager {
   }
 
   /// Gets the current active card on the play pile.
-  UnoCard get topCard => discardPile.last;
+  IshiCard get topCard => discardPile.last;
 
   /// RULE EVALUATION: Can this card be played?
-  bool canPlay(UnoCard card, int playerIndex) {
+  bool canPlay(IshiCard card, int playerIndex) {
     if (actionPoints[playerIndex] <= 0) return false;
 
     if (pendingDrawCount > 0) {
@@ -288,7 +283,7 @@ class GameManager {
   /// ACTION: Play a card and apply its effects
   void playCard(int playerIndex, int cardIndex) {
     bool wasUnderAttack = pendingDrawCount > 0;
-    UnoCard playedCard = playerHands[playerIndex].removeAt(cardIndex);
+    IshiCard playedCard = playerHands[playerIndex].removeAt(cardIndex);
     actionPoints[playerIndex]--;
 
     playedCard.isFaceUp = true;
@@ -303,16 +298,16 @@ class GameManager {
   void setDeclaredColor(CardColor color) => declaredColor = color;
 
   /// ACTION: Draw a card
-  UnoCard drawCard(int playerIndex) {
+  IshiCard drawCard(int playerIndex) {
     cardDraws[playerIndex]--;
-    UnoCard drawn = deck.removeLast();
+    IshiCard drawn = deck.removeLast();
     playerHands[playerIndex].insert(0, drawn);
     hasDrawnCard = true;
     return drawn;
   }
 
   // THE UNO RULES ENGINE
-  void _applyCardEffect(UnoCard card) {
+  void _applyCardEffect(IshiCard card) {
     switch (card.type) {
       case .reverse:
         if (playerCount == 2) {
@@ -346,7 +341,7 @@ class GameManager {
   void forceDraw(int targetPlayerIndex, int count) {
     for (int i = 0; i < count; i++) {
       if (deck.isNotEmpty) {
-        UnoCard drawn = deck.removeLast();
+        IshiCard drawn = deck.removeLast();
         playerHands[targetPlayerIndex].insert(0, drawn);
       }
     }

@@ -18,8 +18,8 @@ class AnimatedCardBuilder extends StatelessWidget {
   final ScrollController scrollController;
   final int index;
   final int totalCards;
-  final UnoCard card;
-  final void Function(UnoCard) onTapCard;
+  final IshiCard card;
+  final void Function(IshiCard) onTapCard;
 
   @override
   Widget build(BuildContext context) {

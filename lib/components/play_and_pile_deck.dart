@@ -13,7 +13,7 @@ class PlayAndPileDeck extends StatelessWidget {
 
   final GameManager manager;
   final VoidCallback onDrawCard;
-  final void Function(UnoCard) onPlayCard;
+  final void Function(IshiCard) onPlayCard;
 
   @override
   Widget build(BuildContext context) {
@@ -39,11 +39,11 @@ class _PlayCardsPile extends StatelessWidget {
   const _PlayCardsPile({required this.manager, required this.onPlayCard});
 
   final GameManager manager;
-  final void Function(UnoCard) onPlayCard;
+  final void Function(IshiCard) onPlayCard;
 
   @override
   Widget build(BuildContext context) {
-    return DragTarget<UnoCard>(
+    return DragTarget<IshiCard>(
       onWillAcceptWithDetails: (details) =>
           manager.canPlay(details.data, manager.currentPlayer - 1),
       onAcceptWithDetails: (details) => onPlayCard(details.data),

@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:ishi/core/managers/game_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:ishi/core/network_messages.dart';
 import '../services/socket_service.dart';
 import 'game_screen/game_screen.dart';
-import '../core/network_keys.dart';
 
 class LobbyWaitingScreen extends StatefulWidget {
   const LobbyWaitingScreen({super.key});
@@ -24,36 +24,48 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     super.initState();
     _connectedPlayers = _socket.currentPlayers;
 
-    _socketSubscription = _socket.messages.listen((data) {
+    _socketSubscription = _socket.messages.listen((message) {
       if (!mounted) return;
 
       // UNIFIED LOBBY SYNC
       // Whenever the host sends an update, just grab the truth from the socket!
-      if (data[NetKey.type] == NetKey.playerJoined ||
-          data[NetKey.type] == NetKey.lobbyState ||
-          data[NetKey.type] == NetKey.lobbySyncResponse) {
-        setState(() {
-          _connectedPlayers = _socket.currentPlayers;
-        });
-      }
+      switch (message) {
+        // Any message that changes the player count updates the UI
+        case PlayerJoinedMessage(:final totalPlayers):
+        case LobbySyncResponseMessage(:final totalPlayers):
+          setState(() => _connectedPlayers = totalPlayers);
+          break;
 
-      if (data[NetKey.type] == NetKey.gameStateUpdate) {
-        final localManager = GameManager(
-          playerCount: _socket.currentPlayers,
-          startingHandSize: 7,
-        );
-        localManager.applyGameStateJson(data);
+        case LobbyStateMessage():
+          // The socket service automatically updates its playersList,
+          // we just need to trigger a UI rebuild to paint it!
+          setState(() => _connectedPlayers = _socket.currentPlayers);
+          break;
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => GameScreen(manager: localManager)),
-        );
+        case GameStateMessage(:final payload):
+          final localManager = GameManager(
+            playerCount: _socket.currentPlayers,
+            startingHandSize: 7,
+          );
+          // Pass the unpacked payload directly to the engine
+          localManager.applyGameStateJson(payload);
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => GameScreen(manager: localManager),
+            ),
+          );
+          break;
+
+        default:
+          break;
       }
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_socket.isHost) return;
-      _socket.sendIntent({NetKey.type: NetKey.requestLobbyState});
+      _socket.sendIntent(const RequestLobbyStateMessage(0));
     });
   }
 
@@ -74,7 +86,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     // Host deals the cards. (This JSON acts as the Start signal for clients!)
     for (int i = 1; i < getConnectedPlayerCount; i++) {
       final personalizedState = masterManager.generateGameStateJson(i);
-      _socket.sendToClient(i - 1, personalizedState);
+      _socket.sendToClient(i - 1, GameStateMessage(personalizedState));
     }
 
     Navigator.pushReplacement(
@@ -98,10 +110,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
         ),
       ),
       const SizedBox(height: 16),
-
-      // THE VERBOSE PLAYER LIST
       VerbosePlayerList(players: players),
-
       const SizedBox(height: 20),
       Center(child: _socket.isHost ? _startGameButton() : _clientView()),
       const SizedBox(height: 20),
@@ -173,60 +182,68 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
 class VerbosePlayerList extends StatelessWidget {
   const VerbosePlayerList({super.key, required this.players});
 
-  final List<Map<String, dynamic>> players;
+  final List<LobbyPlayer> players;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: ListView.builder(
         itemCount: players.length,
-        itemBuilder: (_, index) {
-          final player = players[index];
-          final isHost = index == 0;
-          final ping = player[NetKey.pingMs] ?? 0;
-
-          Color pingColor = ping < 60
-              ? Colors.greenAccent
-              : (ping < 150 ? Colors.amber : Colors.redAccent);
-          IconData pingIcon = ping < 60
-              ? Icons.wifi
-              : (ping < 150 ? Icons.wifi_2_bar : Icons.wifi_1_bar);
-
-          return Card(
-            color: Colors.grey.shade800,
-            margin: const .only(bottom: 8),
-            shape: RoundedRectangleBorder(borderRadius: .circular(12)),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: isHost ? Colors.amber : Colors.blueAccent,
-                child: Icon(
-                  isHost ? Icons.star : Icons.person,
-                  color: Colors.white,
-                ),
-              ),
-              title: Text(
-                player[NetKey.playerName] ?? "Player ${index + 1}",
-                style: const TextStyle(color: Colors.white, fontWeight: .bold),
-              ),
-              trailing: Column(
-                mainAxisAlignment: .center,
-                crossAxisAlignment: .end,
-                children: [
-                  Icon(pingIcon, color: pingColor, size: 20),
-                  Text(
-                    "${ping}ms",
-                    style: TextStyle(
-                      color: pingColor,
-                      fontSize: 12,
-                      fontWeight: .bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+        itemBuilder: (_, index) =>
+            _PlayerListEntry(index: index, players: players),
       ),
+    );
+  }
+}
+
+class _PlayerListEntry extends StatelessWidget {
+  const _PlayerListEntry({required this.index, required this.players});
+
+  final int index;
+  final List<LobbyPlayer> players;
+
+  @override
+  Widget build(BuildContext context) {
+    final player = players[index];
+    final isHost = index == 0;
+    final ping = player.pingMs;
+
+    Color pingColor = ping < 60
+        ? Colors.greenAccent
+        : (ping < 150 ? Colors.amber : Colors.redAccent);
+    IconData pingIcon = ping < 60
+        ? Icons.wifi
+        : (ping < 150 ? Icons.wifi_2_bar : Icons.wifi_1_bar);
+
+    return Card(
+      color: Colors.grey.shade800,
+      margin: const .only(bottom: 8),
+      shape: RoundedRectangleBorder(borderRadius: .circular(12)),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Color(player.avatarColor),
+          child: Icon(isHost ? Icons.star : Icons.person, color: Colors.white),
+        ),
+        title: Text(
+          player.playerName,
+          style: const TextStyle(color: Colors.white, fontWeight: .bold),
+        ),
+        trailing: _trailingPingIcon(pingIcon, pingColor, ping),
+      ),
+    );
+  }
+
+  Column _trailingPingIcon(IconData pingIcon, Color pingColor, int ping) {
+    return Column(
+      mainAxisAlignment: .center,
+      crossAxisAlignment: .end,
+      children: [
+        Icon(pingIcon, color: pingColor, size: 20),
+        Text(
+          "${ping}ms",
+          style: TextStyle(color: pingColor, fontSize: 12, fontWeight: .bold),
+        ),
+      ],
     );
   }
 }
