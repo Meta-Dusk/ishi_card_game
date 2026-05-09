@@ -1,7 +1,7 @@
 name: esther_gift
 description: "A Rogulike Card Game Made with Flutter."
 publish_to: "none"
-version: 0.4.0+1
+version: 0.4.1+1
 
 environment:
     sdk: ^3.11.3
@@ -17,6 +17,7 @@ dev_dependencies:
     flutter_test:
         sdk: flutter
     flutter_lints: ^6.0.0
+    flutter_launcher_icons: ^0.14.4
 
 flutter:
     uses-material-design: true
