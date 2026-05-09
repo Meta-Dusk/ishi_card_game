@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'package:esther_gift/core/network_keys.dart';
+import 'package:ishi/core/network_keys.dart';
 import 'package:flutter/material.dart';
 import 'game_components.dart';
-import 'package:esther_gift/core/data_types.dart';
+import 'package:ishi/core/data_types.dart';
 import '../../models/relic.dart';
 import '../../models/uno_card.dart';
-import '../../managers/game_manager.dart';
+import '../../core/managers/game_manager.dart';
 import '../../services/socket_service.dart';
 
 part 'actions.dart';

@@ -2,8 +2,8 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
 
-import 'package:esther_gift/core/data_types.dart';
-import 'package:esther_gift/core/network_keys.dart';
+import 'package:ishi/core/data_types.dart';
+import 'package:ishi/core/network_keys.dart';
 
 class SocketService {
   // Singleton pattern so the whole app shares one connection

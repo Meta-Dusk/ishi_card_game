@@ -1,4 +1,4 @@
-import 'package:esther_gift/managers/game_manager.dart';
+import 'package:ishi/core/managers/game_manager.dart';
 import 'package:flutter/material.dart';
 
 class HandControls extends StatelessWidget {

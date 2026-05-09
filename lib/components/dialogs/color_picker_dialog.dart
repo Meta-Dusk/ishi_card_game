@@ -1,4 +1,4 @@
-import 'package:esther_gift/models/uno_card.dart';
+import 'package:ishi/models/uno_card.dart';
 import 'package:flutter/material.dart';
 
 class ColorPickerDialog extends StatelessWidget {

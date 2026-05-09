@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:esther_gift/managers/game_manager.dart';
+import 'package:ishi/core/managers/game_manager.dart';
 import 'package:flutter/material.dart';
 import '../services/socket_service.dart';
 import 'game_screen/game_screen.dart';

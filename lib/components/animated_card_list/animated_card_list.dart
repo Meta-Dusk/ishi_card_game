@@ -1,6 +1,6 @@
 import 'curved_card.dart';
 import 'package:flutter/material.dart';
-import 'package:esther_gift/models/uno_card.dart';
+import 'package:ishi/models/uno_card.dart';
 
 const double itemWidth = 80.0;
 

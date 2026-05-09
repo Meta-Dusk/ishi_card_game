@@ -1,7 +1,7 @@
-import 'package:esther_gift/core/data_types.dart';
-import 'package:esther_gift/models/relic.dart';
-import 'package:esther_gift/models/uno_card.dart';
-import '../core/network_keys.dart';
+import 'package:ishi/core/data_types.dart';
+import 'package:ishi/models/relic.dart';
+import 'package:ishi/models/uno_card.dart';
+import '../network_keys.dart';
 
 class GameManager {
   int playerCount;
