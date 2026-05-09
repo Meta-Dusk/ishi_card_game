@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.esther_gift"
+    namespace = "com.example.ishi"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

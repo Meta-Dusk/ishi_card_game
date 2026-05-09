@@ -3,6 +3,7 @@ import 'package:ishi/core/managers/profile_manager.dart';
 import 'screens/main_menu/main_menu_screen.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await ProfileManager().init();
   runApp(const MainApp());
 }
