@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:ishi/screens/settings_menu.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../online_multiplayer/online_setup_menu.dart';
-import '../profile_menu.dart';
+import '../profile_menu/profile_menu.dart';
 import '../lan_multiplayer/lan_setup_menu.dart';
 import '../local_setup_menu.dart';
 import 'root_menu.dart';
 import 'game_mode_menu.dart';
 
-enum MenuState { root, playMode, localSetup, lanSetup, onlineSetup, profile }
+enum MenuState {
+  root,
+  playMode,
+  localSetup,
+  lanSetup,
+  onlineSetup,
+  profile,
+  settings,
+}
 
 class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
@@ -43,6 +52,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     switch (_currentMenu) {
       case .playMode:
       case .profile:
+      case .settings:
         _changeMenu(.root);
         break;
 
@@ -218,7 +228,7 @@ class _ActiveMenu extends StatelessWidget {
           key: const ValueKey('root'),
           onPlay: () => onChangeMenu(.playMode),
           onProfile: () => onChangeMenu(.profile),
-          onSettings: () {},
+          onSettings: () => onChangeMenu(.settings),
         );
       case .playMode:
         return GameModeMenu(
@@ -243,6 +253,11 @@ class _ActiveMenu extends StatelessWidget {
       case .profile:
         return ProfileMenu(
           key: const ValueKey('profile'),
+          onBack: () => onChangeMenu(.root),
+        );
+      case .settings:
+        return SettingsMenu(
+          key: const ValueKey('settings'),
           onBack: () => onChangeMenu(.root),
         );
     }

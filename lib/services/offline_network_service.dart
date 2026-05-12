@@ -31,7 +31,7 @@ class OfflineNetworkService implements NetworkService {
       if (index == 0) {
         return LobbyPlayer(
           playerName: ProfileManager().playerName,
-          avatarColor: ProfileManager().avatarColor.toARGB32(),
+          avatarColorName: ProfileManager().avatarColorName,
           pingMs: 0,
         );
       }

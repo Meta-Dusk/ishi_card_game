@@ -224,23 +224,23 @@ class PlayIntentMessage extends NetMessage {
 class LobbyPlayer {
   String playerName;
   int pingMs;
-  int avatarColor;
+  String avatarColorName;
 
   LobbyPlayer({
     required this.playerName,
     this.pingMs = 0,
-    this.avatarColor = 0xFF2196F3,
+    this.avatarColorName = "blue",
   });
 
   Map<String, dynamic> toJson() => {
     _NetKey.playerName: playerName,
     _NetKey.pingMs: pingMs,
-    _NetKey.avatarColor: avatarColor,
+    _NetKey.avatarColor: avatarColorName,
   };
 
   factory LobbyPlayer.fromJson(Map<String, dynamic> json) => LobbyPlayer(
     playerName: json[_NetKey.playerName] as String,
     pingMs: json[_NetKey.pingMs] as int,
-    avatarColor: json[_NetKey.avatarColor] as int? ?? 0xFF2196F3,
+    avatarColorName: json[_NetKey.avatarColor] as String,
   );
 }
