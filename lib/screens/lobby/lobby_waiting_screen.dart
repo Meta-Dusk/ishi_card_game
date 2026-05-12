@@ -25,7 +25,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
   StreamSubscription? _netSubscription;
   String? get roomCode => _net.currentRoomCode;
 
-  int get getConnectedPlayerCount => _net.currentPlayers;
+  int get getConnectedPlayerCount => _net.currentPlayer;
 
   @override
   void initState() {
@@ -55,12 +55,12 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
       case LobbyStateMessage():
         // The socket service automatically updates its playersList,
         // we just need to trigger a UI rebuild to paint it!
-        setState(() => _connectedPlayers = _net.currentPlayers);
+        setState(() => _connectedPlayers = _net.currentPlayer);
         break;
 
       case GameStateMessage(:final payload):
         final localManager = GameManager(
-          playerCount: _net.currentPlayers,
+          playerCount: _net.currentPlayer,
           startingHandSize: 7,
         );
         // Pass the unpacked payload directly to the engine

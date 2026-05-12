@@ -4,7 +4,7 @@ import 'package:ishi/core/network_messages.dart';
 abstract class NetworkService {
   bool get isHost;
   bool get isConnected;
-  int get currentPlayers;
+  int get currentPlayer;
   List<LobbyPlayer> get playersList;
   Stream<NetMessage> get messages;
 

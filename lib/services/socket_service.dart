@@ -18,7 +18,7 @@ class SocketService implements NetworkService {
 
   // --- PERSISTENT STATES ---
   @override
-  int currentPlayers = 1;
+  int currentPlayer = 1;
 
   @override
   List<LobbyPlayer> playersList = [];
@@ -49,7 +49,11 @@ class SocketService implements NetworkService {
   Future<void> startServer(String ip, int port) async {
     _server = await HttpServer.bind(InternetAddress.anyIPv4, port);
     playersList = [
-      LobbyPlayer(playerName: ProfileManager().playerName, pingMs: 0),
+      LobbyPlayer(
+        playerName: ProfileManager().playerName,
+        pingMs: 0,
+        avatarColorName: ProfileManager().avatarColorName,
+      ),
     ];
 
     _pingTimer = Timer.periodic(const Duration(seconds: 2), (_) {
@@ -60,13 +64,17 @@ class SocketService implements NetworkService {
       if (WebSocketTransformer.isUpgradeRequest(request)) {
         WebSocket socket = await WebSocketTransformer.upgrade(request);
         _clients.add(socket);
-        currentPlayers = _clients.length + 1;
+        currentPlayer = _clients.length + 1;
         playersList.add(
-          LobbyPlayer(playerName: "Player $currentPlayers", pingMs: 0),
+          LobbyPlayer(
+            playerName: ProfileManager().playerName,
+            pingMs: 0,
+            avatarColorName: ProfileManager().avatarColorName,
+          ),
         );
 
         // Immediately broadcast the total count and list to EVERYONE
-        broadcast(PlayerJoinedMessage(currentPlayers));
+        broadcast(PlayerJoinedMessage(currentPlayer));
         broadcast(LobbyStateMessage(playersList));
 
         socket.listen(
@@ -94,7 +102,7 @@ class SocketService implements NetworkService {
 
       case RequestLobbyStateMessage():
         broadcast(LobbyStateMessage(playersList));
-        broadcast(PlayerJoinedMessage(currentPlayers));
+        broadcast(PlayerJoinedMessage(currentPlayer));
         break;
 
       case SetProfileMessage(:final playerName):
@@ -151,7 +159,7 @@ class SocketService implements NetworkService {
         break;
 
       case PlayerJoinedMessage(:final totalPlayers):
-        currentPlayers = totalPlayers;
+        currentPlayer = totalPlayers;
         _messageController.add(message); // Forward to UI
         break;
 
@@ -166,9 +174,9 @@ class SocketService implements NetworkService {
       playersList.removeAt(index + 1);
     }
     _clients.remove(socket);
-    currentPlayers = _clients.length + 1;
+    currentPlayer = _clients.length + 1;
 
-    broadcast(PlayerJoinedMessage(currentPlayers));
+    broadcast(PlayerJoinedMessage(currentPlayer));
     broadcast(LobbyStateMessage(playersList));
   }
 

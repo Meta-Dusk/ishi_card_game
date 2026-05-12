@@ -79,7 +79,7 @@ class LocalSetupMenu extends StatelessWidget {
       MaterialPageRoute(
         builder: (_) => GameScreen(
           manager: manager,
-          network: OfflineNetworkService(currentPlayers: playerCount),
+          network: OfflineNetworkService(currentPlayer: playerCount),
         ),
       ),
     );

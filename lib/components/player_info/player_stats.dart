@@ -1,18 +1,21 @@
+import 'package:flutter/material.dart';
+import 'package:ishi/services/network_service.dart';
+import 'package:ishi/core/managers/game_manager.dart';
 import 'action_points_row.dart';
 import 'card_draws_row.dart';
-import 'package:ishi/core/managers/game_manager.dart';
-import 'package:flutter/material.dart';
 
 class PlayerStats extends StatelessWidget {
-  const PlayerStats({super.key, required this.manager});
+  const PlayerStats({super.key, required this.manager, required this.network});
 
   final GameManager manager;
+  final NetworkService network;
 
   @override
   Widget build(BuildContext context) {
+    final currentPlayer = network.playersList[network.currentPlayer];
     final mainContent = [
       Text(
-        "Player ${manager.currentPlayer}'s Turn",
+        "Player ${currentPlayer.playerName}'s Turn",
         style: const TextStyle(fontSize: 24, fontWeight: .bold),
       ),
       const SizedBox(height: 4),

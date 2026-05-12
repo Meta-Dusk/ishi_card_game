@@ -24,7 +24,7 @@ class WebRTCService implements NetworkService {
 
   // --- PERSISTENT STATES ---
   @override
-  int currentPlayers = 1;
+  int currentPlayer = 1;
 
   @override
   List<LobbyPlayer> get playersList => listOfPlayers;
@@ -69,7 +69,11 @@ class WebRTCService implements NetworkService {
     currentRoomCode = _generateRoomCode();
 
     listOfPlayers = [
-      LobbyPlayer(playerName: ProfileManager().playerName, pingMs: 0),
+      LobbyPlayer(
+        playerName: ProfileManager().playerName,
+        pingMs: 0,
+        avatarColorName: ProfileManager().avatarColorName,
+      ),
     ];
 
     // Register room code in the database
@@ -259,9 +263,9 @@ class WebRTCService implements NetworkService {
     channel.onDataChannelState = (RTCDataChannelState state) {
       if (state == .RTCDataChannelOpen && isHost) {
         // A new client successfully tunneled in!
-        currentPlayers = _clientIds.length + 1;
+        currentPlayer = _clientIds.length + 1;
         listOfPlayers.add(LobbyPlayer(playerName: "Connecting...", pingMs: 0));
-        broadcast(PlayerJoinedMessage(currentPlayers));
+        broadcast(PlayerJoinedMessage(currentPlayer));
         broadcast(LobbyStateMessage(listOfPlayers));
       } else if (state == .RTCDataChannelClosed) {
         _handleDisconnect(peerId);
@@ -285,7 +289,7 @@ class WebRTCService implements NetworkService {
           break;
         case RequestLobbyStateMessage():
           broadcast(LobbyStateMessage(listOfPlayers));
-          broadcast(PlayerJoinedMessage(currentPlayers));
+          broadcast(PlayerJoinedMessage(currentPlayer));
           break;
         case SetProfileMessage(:final playerName):
           int clientIndex = _clientIds.indexOf(peerId) + 1;
@@ -307,7 +311,7 @@ class WebRTCService implements NetworkService {
           _messageController.add(message);
           break;
         case PlayerJoinedMessage(:final totalPlayers):
-          currentPlayers = totalPlayers;
+          currentPlayer = totalPlayers;
           _messageController.add(message);
           break;
         default:
@@ -326,9 +330,9 @@ class WebRTCService implements NetworkService {
       _dataChannels.remove(peerId);
 
       if (index + 1 < listOfPlayers.length) listOfPlayers.removeAt(index + 1);
-      currentPlayers = _clientIds.length + 1;
+      currentPlayer = _clientIds.length + 1;
 
-      broadcast(PlayerJoinedMessage(currentPlayers));
+      broadcast(PlayerJoinedMessage(currentPlayer));
       broadcast(LobbyStateMessage(listOfPlayers));
     } else {
       disconnect(); // Host dropped, client leaves

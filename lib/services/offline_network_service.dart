@@ -7,7 +7,7 @@ class OfflineNetworkService implements NetworkService {
   final _messageController = StreamController<NetMessage>.broadcast();
 
   @override
-  final int currentPlayers;
+  final int currentPlayer;
 
   @override
   late final List<LobbyPlayer> playersList;
@@ -25,9 +25,9 @@ class OfflineNetworkService implements NetworkService {
   @override
   Stream<NetMessage> get messages => _messageController.stream;
 
-  OfflineNetworkService({required this.currentPlayers}) {
+  OfflineNetworkService({required this.currentPlayer}) {
     // Automatically generate the local players/bots list
-    playersList = List.generate(currentPlayers, (index) {
+    playersList = List.generate(currentPlayer, (index) {
       if (index == 0) {
         return LobbyPlayer(
           playerName: ProfileManager().playerName,
