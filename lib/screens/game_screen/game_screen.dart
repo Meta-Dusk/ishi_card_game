@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:ishi/core/network_messages.dart';
+import 'package:ishi/core/managers/game_manager.dart';
 import 'package:ishi/services/network_service.dart';
-import 'game_components.dart';
 import 'package:ishi/models/relic.dart';
 import 'package:ishi/models/uno_card.dart';
-import 'package:ishi/core/managers/game_manager.dart';
+import 'game_components.dart';
+import 'card_counter.dart';
+import 'live_ping_panel.dart';
+import 'ping_toggle_button.dart';
 
 part 'actions.dart';
 part 'network.dart';
@@ -36,9 +39,12 @@ class GameScreenState extends State<GameScreen> {
   StreamSubscription? _pingSubscription;
 
   int get localUIIndex => _manager.localPlayerIndex + 1;
+
   AnimatedListState? get getCurrentState =>
       listKeys[localUIIndex]?.currentState;
+
   bool get isMyTurn => _manager.currentPlayer == localUIIndex;
+
   List<IshiCard> get currentHand =>
       _manager.playerHands[_manager.localPlayerIndex];
 
@@ -73,7 +79,7 @@ class GameScreenState extends State<GameScreen> {
   void dispose() {
     _netSubscription?.cancel();
     _pingSubscription?.cancel();
-    for (var controller in scrollControllers.values) {
+    for (ScrollController controller in scrollControllers.values) {
       controller.dispose();
     }
     super.dispose();
@@ -143,12 +149,12 @@ class GameScreenState extends State<GameScreen> {
           isMyTurn ? "YOUR TURN" : "WAITING FOR OPPONENT...",
           style: TextStyle(
             color: isMyTurn ? Colors.green.shade700 : Colors.orangeAccent,
-            fontWeight: FontWeight.bold,
+            fontWeight: .bold,
             letterSpacing: 2,
           ),
         ),
       ),
-      PlayerInfo(manager: _manager),
+      PlayerInfo(manager: _manager, network: _net),
       const Spacer(),
       playPileAndDeck,
       const Spacer(),
@@ -157,122 +163,18 @@ class GameScreenState extends State<GameScreen> {
       playerHand,
     ];
 
+    final stackedContent = [
+      Column(children: mainContent),
+      PingToggleButton(
+        showPingOverlay: _showPingOverlay,
+        onToggle: () => updateUI(() => _showPingOverlay = !_showPingOverlay),
+      ),
+      if (_showPingOverlay) LivePingPanel(network: _net),
+    ];
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Column(children: mainContent),
-            _pingToggleButton(),
-            if (_showPingOverlay) LivePingPanel(network: _net),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Positioned _pingToggleButton() {
-    return Positioned(
-      top: 16,
-      right: 16,
-      child: IconButton(
-        icon: Icon(_showPingOverlay ? Icons.close : Icons.network_ping),
-        color: Colors.grey.shade800,
-        onPressed: () => updateUI(() => _showPingOverlay = !_showPingOverlay),
-      ),
-    );
-  }
-}
-
-class LivePingPanel extends StatelessWidget {
-  const LivePingPanel({super.key, required this.network});
-
-  final NetworkService network;
-
-  @override
-  Widget build(BuildContext context) {
-    final mainContent = [
-      const Text(
-        "NETWORK PING",
-        style: TextStyle(
-          color: Colors.white70,
-          fontSize: 12,
-          fontWeight: .bold,
-        ),
-      ),
-      const Divider(color: Colors.white24),
-
-      // Dynamically build the rows from the SocketService!
-      ...network.playersList.map((player) {
-        int ping = player.pingMs;
-        Color pingColor = ping < 60
-            ? Colors.greenAccent
-            : (ping < 150 ? Colors.amber : Colors.redAccent);
-
-        return _playerRow(player, pingColor);
-      }),
-    ];
-
-    return Positioned(
-      top: 60,
-      right: 16,
-      child: Container(
-        width: 220,
-        padding: const .all(12),
-        decoration: BoxDecoration(
-          color: Colors.black87,
-          borderRadius: .circular(12),
-          border: .all(color: Colors.white24),
-        ),
-        child: Column(
-          crossAxisAlignment: .start,
-          mainAxisSize: .min,
-          children: mainContent,
-        ),
-      ),
-    );
-  }
-
-  Padding _playerRow(LobbyPlayer player, Color pingColor) {
-    final mainContent = [
-      Text(
-        player.playerName,
-        style: const TextStyle(color: Colors.white, fontSize: 13),
-      ),
-      Text(
-        "${player.pingMs}ms",
-        style: TextStyle(color: pingColor, fontWeight: .bold, fontSize: 13),
-      ),
-    ];
-    return Padding(
-      padding: const .only(bottom: 6.0),
-      child: Row(mainAxisAlignment: .spaceBetween, children: mainContent),
-    );
-  }
-}
-
-class CardCounter extends StatelessWidget {
-  const CardCounter({super.key, required this.currentHandLength});
-  final int currentHandLength;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const .symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
-        borderRadius: .circular(20),
-        border: .all(color: Colors.white24),
-      ),
-      child: Text(
-        "CARDS IN HAND: $currentHandLength",
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: .bold,
-          letterSpacing: 1.5,
-          fontSize: 12,
-        ),
-      ),
+      body: SafeArea(child: Stack(children: stackedContent)),
     );
   }
 }
