@@ -12,11 +12,15 @@ class PlayerStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentPlayer = network.playersList[network.currentPlayer];
+    final currentPlayer = network.playersList[network.currentPlayer - 1];
     final mainContent = [
       Text(
         "Player ${currentPlayer.playerName}'s Turn",
-        style: const TextStyle(fontSize: 24, fontWeight: .bold),
+        style: const TextStyle(
+          fontSize: 24,
+          fontWeight: .bold,
+          color: Colors.white,
+        ),
       ),
       const SizedBox(height: 4),
       ActionPointsRow(manager: manager),

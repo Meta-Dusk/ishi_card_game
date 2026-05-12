@@ -1,24 +1,77 @@
 part of 'game_screen.dart';
 
 extension GameScreenNetwork on GameScreenState {
+  /// Safe helper to get any player's hand size whether we are Host or Client
+  int _getHandSize(int index) {
+    if (_net.isHost) return _manager.playerHands[index].length;
+    if (_manager.opponentHandSizes.length > index) {
+      return _manager.opponentHandSizes[index];
+    }
+    return 0;
+  }
+
   void _onGameStateUpdate(GameStateMessage message) {
     updateUI(() {
-      int oldSize = currentHand.length;
+      int oldLocalSize = currentHand.length;
 
+      // Snapshot EVERY opponent's hand size before applying the new state
+      List<int> oldOpponentSizes = List.generate(
+        _manager.playerCount,
+        (i) => _getHandSize(i),
+      );
+
+      // Apply Master State
       _manager.applyGameStateJson(message.payload);
       _manager.sortHand(_manager.localPlayerIndex, _manager.handSortType);
 
-      int newSize = currentHand.length;
+      if (_manager.winnerIndex != null) {
+        _showGameOverDialog();
+        return;
+      }
 
-      // We only animate if cards were actually added to our hand!
-      if (newSize <= oldSize) return;
-      int diff = newSize - oldSize;
+      // Animate Local Player (Insertions only)
+      int newLocalSize = currentHand.length;
+      if (newLocalSize > oldLocalSize) {
+        int diff = newLocalSize - oldLocalSize;
+        for (int i = 0; i < diff; i++) {
+          getCurrentState?.insertItem(
+            0,
+            duration: const Duration(milliseconds: 400),
+          );
+        }
+      }
 
-      for (int i = 0; i < diff; i++) {
-        getCurrentState?.insertItem(
-          0,
-          duration: const Duration(milliseconds: 400),
-        );
+      // Animate EVERY Opponent's insertions AND removals!
+      for (int i = 0; i < _manager.playerCount; i++) {
+        if (i == _manager.localPlayerIndex) continue; // Skip local player
+
+        int newOppSize = _getHandSize(i);
+        int oldOppSize = oldOpponentSizes[i];
+        int diff = newOppSize - oldOppSize;
+
+        if (diff > 0) {
+          // Opponent Drew Cards
+          for (int j = 0; j < diff; j++) {
+            listKeys[i + 1]?.currentState?.insertItem(
+              0,
+              duration: const Duration(milliseconds: 300),
+            );
+          }
+        } else if (diff < 0) {
+          // Opponent Played Cards
+          for (int j = 0; j < -diff; j++) {
+            listKeys[i + 1]?.currentState?.removeItem(
+              0, // Remove the top card visually
+              (context, animation) => SizeTransition(
+                sizeFactor: animation,
+                axis: .horizontal,
+                axisAlignment: -1.0,
+                child: MiniFaceDownCard(),
+              ),
+              duration: const Duration(milliseconds: 300),
+            );
+          }
+        }
       }
     });
   }

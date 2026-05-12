@@ -19,6 +19,7 @@ class _BoardKeys {
   static const String hasPlayedCard = 'hasPlayedCard';
   static const String hasDrawnCard = 'hasDrawnCard';
   static const String playerRelics = 'playerRelics';
+  static const String winnerIndex = 'winnerIndex';
 }
 
 class GameManager {
@@ -41,6 +42,7 @@ class GameManager {
   int currentPlayer = 1;
   int pendingDrawCount = 0;
   CardColor? declaredColor;
+  int? winnerIndex;
 
   /// The turn direction.
   bool isClockwise = true;
@@ -102,6 +104,7 @@ class GameManager {
       _BoardKeys.hasPlayedCard: hasPlayedCard,
       _BoardKeys.hasDrawnCard: hasDrawnCard,
       _BoardKeys.playerRelics: serializedRelics,
+      _BoardKeys.winnerIndex: winnerIndex,
     };
   }
 
@@ -319,6 +322,7 @@ class GameManager {
     hasPlayedCard = true;
     declaredColor = null;
     if (wasUnderAttack) hasDeflected = true;
+    if (playerHands[playerIndex].isEmpty) winnerIndex = playerIndex;
   }
 
   void setDeclaredColor(CardColor color) => declaredColor = color;
