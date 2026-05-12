@@ -6,6 +6,7 @@ extension GameScreenNetwork on GameScreenState {
       int oldSize = currentHand.length;
 
       _manager.applyGameStateJson(message.payload);
+      _manager.sortHand(_manager.localPlayerIndex, _manager.handSortType);
 
       int newSize = currentHand.length;
 
@@ -23,23 +24,22 @@ extension GameScreenNetwork on GameScreenState {
   }
 
   void initializeNetworkSync() {
-    socketSubscription = _socket.messages.listen((message) {
+    _netSubscription = _net.messages.listen((message) {
       if (!mounted) return;
 
-      // Dart 3 Pattern Matching completely replaces the NetKey checks!
       switch (message) {
         case GameStateMessage():
           _onGameStateUpdate(message);
           break;
 
         case PlayIntentMessage():
-          if (_socket.isHost) processClientIntent(message);
+          if (_net.isHost) processClientIntent(message);
           break;
 
         case RequestLobbyStateMessage(:final playerIndex):
-          if (_socket.isHost) {
+          if (_net.isHost) {
             // Send the specific client their missing cards!
-            _socket.sendToClient(
+            _net.sendToClient(
               playerIndex - 1,
               GameStateMessage(_manager.generateGameStateJson(playerIndex)),
             );
@@ -53,9 +53,9 @@ extension GameScreenNetwork on GameScreenState {
   }
 
   void broadcastGameState() {
-    if (!_socket.isHost) return;
+    if (!_net.isHost) return;
     for (int i = 1; i < _manager.playerCount; i++) {
-      _socket.sendToClient(
+      _net.sendToClient(
         i - 1,
         GameStateMessage(_manager.generateGameStateJson(i)),
       );
@@ -67,16 +67,16 @@ extension GameScreenNetwork on GameScreenState {
       int pIndex = message.playerIndex;
 
       switch (message.action) {
-        case IntentAction.drawCard:
+        case .drawCard:
           _clientDrawCard(pIndex);
           break;
-        case IntentAction.endTurn:
+        case .endTurn:
           _onIntentEndTurn();
           break;
-        case IntentAction.takePenalty:
+        case .takePenalty:
           _onIntentTakePenalty();
           break;
-        case IntentAction.playCard:
+        case .playCard:
           _onIntentPlayCard(pIndex, message);
           break;
       }
@@ -113,7 +113,7 @@ extension GameScreenNetwork on GameScreenState {
     _manager.playerRelics[pIndex].add(relic);
 
     // Assuming your Relic model uses an enum called 'effect'
-    if (relic.effect == RelicEffect.immediateDraw3) {
+    if (relic.effect == .immediateDraw3) {
       for (int i = 0; i < 3; i++) {
         _manager.drawCard(pIndex);
       }

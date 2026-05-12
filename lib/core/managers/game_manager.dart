@@ -2,6 +2,8 @@ import 'package:ishi/core/data_types.dart';
 import 'package:ishi/models/relic.dart';
 import 'package:ishi/models/uno_card.dart';
 
+enum DeckSortType { byColor, byType, byValue, unsorted }
+
 class _BoardKeys {
   static const String myPlayerIndex = 'myPlayerIndex';
   static const String currentPlayer = 'currentPlayer';
@@ -20,14 +22,14 @@ class _BoardKeys {
 }
 
 class GameManager {
-  int playerCount;
-
   // --- CORE STATES ---
   List<IshiCard> deck = [];
   List<IshiCard> discardPile = [];
 
   /// `playerHands`[`playerIndex`][`cardIndex`]
   late List<List<IshiCard>> playerHands;
+
+  int playerCount;
 
   // --- ECONOMY STATES ---
   late List<int> actionPoints;
@@ -51,13 +53,16 @@ class GameManager {
   bool hasDrawnCard = false;
   bool hasDeflected = false;
 
-  // LAN STATES
+  // --- LAN STATES ---
 
   /// The Host is always 0. Clients will update this!
   int localPlayerIndex = 0;
 
   /// Stores the card counts for the UI.
   List<int> opponentHandSizes = [];
+
+  // --- VISUAL STATES ---
+  DeckSortType handSortType = .unsorted;
 
   GameManager({required this.playerCount, required this.startingHandSize});
 
@@ -211,26 +216,47 @@ class GameManager {
     }
   }
 
-  void sortHand(int playerIndex, {required bool byColor}) {
+  void sortHand(int playerIndex, DeckSortType sortType) {
+    handSortType = sortType;
+
+    if (sortType == .unsorted) return;
+
     playerHands[playerIndex].sort((a, b) {
-      if (byColor) {
-        // Sort by Color -> Type -> Number
-        int colorComp = a.color.index.compareTo(b.color.index);
-        if (colorComp != 0) return colorComp;
+      switch (sortType) {
+        case .byColor:
+          // 1. Color -> 2. Type -> 3. Number
+          int colorComp = a.color.index.compareTo(b.color.index);
+          if (colorComp != 0) return colorComp;
 
-        int typeComp = a.type.index.compareTo(b.type.index);
-        if (typeComp != 0) return typeComp;
+          int typeComp = a.type.index.compareTo(b.type.index);
+          if (typeComp != 0) return typeComp;
 
-        return (a.number ?? -1).compareTo(b.number ?? -1);
-      } else {
-        // Sort by Type -> Number -> Color
-        int typeComp = a.type.index.compareTo(b.type.index);
-        if (typeComp != 0) return typeComp;
+          return (a.number ?? -1).compareTo(b.number ?? -1);
 
-        int numComp = (a.number ?? -1).compareTo(b.number ?? -1);
-        if (numComp != 0) return numComp;
+        case .byType:
+          // 1. Type -> 2. Number -> 3. Color
+          int typeComp = a.type.index.compareTo(b.type.index);
+          if (typeComp != 0) return typeComp;
 
-        return a.color.index.compareTo(b.color.index);
+          int numComp = (a.number ?? -1).compareTo(b.number ?? -1);
+          if (numComp != 0) return numComp;
+
+          return a.color.index.compareTo(b.color.index);
+
+        case .byValue:
+          // 1. Number -> 2. Color -> 3. Type
+          //? Note: Action cards (number == null) become -1
+          //? and will group neatly together at the front!
+          int numComp = (a.number ?? -1).compareTo(b.number ?? -1);
+          if (numComp != 0) return numComp;
+
+          int colorComp = a.color.index.compareTo(b.color.index);
+          if (colorComp != 0) return colorComp;
+
+          return a.type.index.compareTo(b.type.index);
+
+        case .unsorted:
+          return 0;
       }
     });
   }

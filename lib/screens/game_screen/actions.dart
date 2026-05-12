@@ -21,7 +21,7 @@ extension GameScreenActions on GameScreenState {
       return;
     }
 
-    if (_socket.isHost) {
+    if (_net.isHost) {
       if (_manager.deck.isEmpty) {
         _triggerDeckRestockEvent();
         return;
@@ -35,7 +35,7 @@ extension GameScreenActions on GameScreenState {
       });
       broadcastGameState();
     } else {
-      _socket.sendIntent(
+      _net.sendIntent(
         PlayIntentMessage(
           action: .drawCard,
           playerIndex: _manager.localPlayerIndex,
@@ -46,13 +46,11 @@ extension GameScreenActions on GameScreenState {
 
   void endTurnAction() {
     if (!isMyTurn) return;
-    if (_socket.isHost) {
-      updateUI(() {
-        _manager.endTurn();
-      });
+    if (_net.isHost) {
+      updateUI(() => _manager.endTurn());
       broadcastGameState();
     } else {
-      _socket.sendIntent(
+      _net.sendIntent(
         PlayIntentMessage(
           action: .endTurn,
           playerIndex: _manager.localPlayerIndex,
@@ -63,7 +61,7 @@ extension GameScreenActions on GameScreenState {
 
   void takePenaltyAction() {
     if (!isMyTurn) return;
-    if (_socket.isHost) {
+    if (_net.isHost) {
       updateUI(() {
         int cardsToDraw = _manager.pendingDrawCount;
         _manager.resolvePendingAttack();
@@ -76,7 +74,7 @@ extension GameScreenActions on GameScreenState {
       });
       broadcastGameState();
     } else {
-      _socket.sendIntent(
+      _net.sendIntent(
         PlayIntentMessage(
           action: .takePenalty,
           playerIndex: _manager.localPlayerIndex,
@@ -138,7 +136,7 @@ extension GameScreenActions on GameScreenState {
       _removeCard(cardIndex, removedCard);
     });
 
-    _socket.sendIntent(
+    _net.sendIntent(
       PlayIntentMessage(
         action: .playCard,
         playerIndex: playerIndex,
@@ -176,7 +174,7 @@ extension GameScreenActions on GameScreenState {
       if (chosenRelic == null) return;
     }
 
-    if (_socket.isHost) {
+    if (_net.isHost) {
       _onPlayCardUpdateHost(
         playerIndex: playerIndex,
         cardIndex: cardIndex,
@@ -216,7 +214,7 @@ extension GameScreenActions on GameScreenState {
 
   void sortHandAction(bool byColor) {
     updateUI(() {
-      _manager.sortHand(_manager.localPlayerIndex, byColor: byColor);
+      _manager.sortHand(_manager.localPlayerIndex, _manager.handSortType);
       listKeys[localUIIndex] = GlobalKey<AnimatedListState>();
       final oldController = scrollControllers[localUIIndex];
       scrollControllers[localUIIndex] = ScrollController();
@@ -226,9 +224,9 @@ extension GameScreenActions on GameScreenState {
     });
   }
 
-  Future<void> animatedSort(bool byColor) async {
+  Future<void> animatedSort(DeckSortType sortType) async {
     final controller = scrollControllers[localUIIndex];
-    if (controller == null) return;
+    if (controller == null || sortType == .unsorted) return;
 
     // Glides the camera to the first card over 400ms
     await controller.animateTo(
@@ -248,7 +246,7 @@ extension GameScreenActions on GameScreenState {
     await Future.delayed(const Duration(milliseconds: 300));
 
     updateUI(() {
-      _manager.sortHand(_manager.localPlayerIndex, byColor: byColor);
+      _manager.sortHand(_manager.localPlayerIndex, sortType);
 
       // Swap the GlobalKey to force the AnimatedList to cleanly rebuild
       // the new sorted order without throwing index errors

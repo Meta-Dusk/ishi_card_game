@@ -4,18 +4,25 @@ import 'dart:async';
 
 import 'package:ishi/core/managers/profile_manager.dart';
 import 'package:ishi/core/network_messages.dart';
+import 'package:ishi/services/network_service.dart';
 
-class SocketService {
+class SocketService implements NetworkService {
   // Singleton pattern so the whole app shares one connection
   static final SocketService _instance = SocketService._internal();
   factory SocketService() => _instance;
   SocketService._internal();
 
+  // --- OTHER STATES ---
+  @override
+  String? get currentRoomCode => null;
+
   // --- PERSISTENT STATES ---
+  @override
   int currentPlayers = 1;
 
-  // THE NEW GLOBAL PLAYERS LIST
+  @override
   List<LobbyPlayer> playersList = [];
+
   Timer? _pingTimer;
 
   // --- HOST STATE ---
@@ -26,9 +33,14 @@ class SocketService {
   WebSocket? _clientSocket;
 
   final _messageController = StreamController<NetMessage>.broadcast();
+
+  @override
   Stream<NetMessage> get messages => _messageController.stream;
 
+  @override
   bool get isHost => _server != null;
+
+  @override
   bool get isConnected => _clientSocket != null || isHost;
 
   // ==========================================
@@ -165,6 +177,7 @@ class SocketService {
   // ==========================================
 
   /// Send data ONLY to a specific client (used for dealing private hands)
+  @override
   void sendToClient(int clientIndex, NetMessage message) {
     // Safety check to ensure the client exists
     if (clientIndex >= 0 && clientIndex < _clients.length) {
@@ -173,6 +186,7 @@ class SocketService {
   }
 
   /// Host updates all clients
+  @override
   void broadcast(NetMessage message) {
     final jsonStr = jsonEncode(message.toJson());
     for (WebSocket client in _clients) {
@@ -183,12 +197,14 @@ class SocketService {
   }
 
   /// Client asks Host to do something (e.g., play a card)
+  @override
   void sendIntent(NetMessage message) {
     if (_clientSocket == null) return;
     _clientSocket!.add(jsonEncode(message.toJson()));
   }
 
-  void disconnect() {
+  @override
+  Future<void> disconnect() async {
     _pingTimer?.cancel();
     _server?.close(force: true);
     _clientSocket?.close();

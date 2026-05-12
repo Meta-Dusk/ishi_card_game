@@ -1,9 +1,9 @@
-import '../host_lobby_screen.dart';
-import '../join_game_screen.dart';
-import 'buttons.dart';
-import 'menu_button.dart';
-import 'section_header.dart';
 import 'package:flutter/material.dart';
+import 'host_lan_screen.dart';
+import 'join_lan_screen.dart';
+import '../main_menu/buttons.dart';
+import '../main_menu/menu_button.dart';
+import '../main_menu/section_header.dart';
 
 class LanSetupMenu extends StatelessWidget {
   final VoidCallback onBack;
@@ -21,7 +21,7 @@ class LanSetupMenu extends StatelessWidget {
           color: Colors.green.shade700,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const HostLobbyScreen()),
+            MaterialPageRoute(builder: (_) => const HostLANLobbyScreen()),
           ),
         ),
         const SizedBox(height: 16),
@@ -31,7 +31,7 @@ class LanSetupMenu extends StatelessWidget {
           color: Colors.orange.shade700,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const JoinGameScreen()),
+            MaterialPageRoute(builder: (_) => const JoinLANGameScreen()),
           ),
         ),
         const SizedBox(height: 32),

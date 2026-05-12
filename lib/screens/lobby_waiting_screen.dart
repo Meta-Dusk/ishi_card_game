@@ -1,34 +1,37 @@
 import 'dart:async';
-import 'package:ishi/core/managers/game_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:ishi/core/network_messages.dart';
-import '../services/socket_service.dart';
+import 'package:ishi/services/webrtc_service.dart';
+import '../core/managers/game_manager.dart';
+import '../core/network_messages.dart';
+import '../services/network_service.dart';
 import 'game_screen/game_screen.dart';
 
 class LobbyWaitingScreen extends StatefulWidget {
-  const LobbyWaitingScreen({super.key});
+  final NetworkService network;
+
+  const LobbyWaitingScreen({super.key, required this.network});
 
   @override
   State<LobbyWaitingScreen> createState() => _LobbyWaitingScreenState();
 }
 
 class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
-  final SocketService _socket = SocketService();
-  int _connectedPlayers = 1;
-  StreamSubscription? _socketSubscription;
+  NetworkService get _net => widget.network;
 
-  int get getConnectedPlayerCount => _socket.currentPlayers;
+  int _connectedPlayers = 1;
+  StreamSubscription? _netSubscription;
+  String? get roomCode => _net.currentRoomCode;
+
+  int get getConnectedPlayerCount => _net.currentPlayers;
 
   @override
   void initState() {
     super.initState();
-    _connectedPlayers = _socket.currentPlayers;
+    _connectedPlayers = getConnectedPlayerCount;
 
-    _socketSubscription = _socket.messages.listen((message) {
+    _netSubscription = _net.messages.listen((message) {
       if (!mounted) return;
 
-      // UNIFIED LOBBY SYNC
-      // Whenever the host sends an update, just grab the truth from the socket!
       switch (message) {
         // Any message that changes the player count updates the UI
         case PlayerJoinedMessage(:final totalPlayers):
@@ -39,12 +42,12 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
         case LobbyStateMessage():
           // The socket service automatically updates its playersList,
           // we just need to trigger a UI rebuild to paint it!
-          setState(() => _connectedPlayers = _socket.currentPlayers);
+          setState(() => _connectedPlayers = _net.currentPlayers);
           break;
 
         case GameStateMessage(:final payload):
           final localManager = GameManager(
-            playerCount: _socket.currentPlayers,
+            playerCount: _net.currentPlayers,
             startingHandSize: 7,
           );
           // Pass the unpacked payload directly to the engine
@@ -53,7 +56,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => GameScreen(manager: localManager),
+              builder: (_) => GameScreen(manager: localManager, network: _net),
             ),
           );
           break;
@@ -64,14 +67,14 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_socket.isHost) return;
-      _socket.sendIntent(const RequestLobbyStateMessage(0));
+      if (_net.isHost) return;
+      _net.sendIntent(const RequestLobbyStateMessage(0));
     });
   }
 
   @override
   void dispose() {
-    _socketSubscription?.cancel();
+    _netSubscription?.cancel();
     super.dispose();
   }
 
@@ -86,20 +89,28 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     // Host deals the cards. (This JSON acts as the Start signal for clients!)
     for (int i = 1; i < getConnectedPlayerCount; i++) {
       final personalizedState = masterManager.generateGameStateJson(i);
-      _socket.sendToClient(i - 1, GameStateMessage(personalizedState));
+      _net.sendToClient(i - 1, GameStateMessage(personalizedState));
     }
+
+    if (_net is WebRTCService) (_net as WebRTCService).lockLobby();
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => GameScreen(manager: masterManager)),
+      MaterialPageRoute(
+        builder: (_) => GameScreen(manager: masterManager, network: _net),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final players = _socket.playersList;
+    final players = _net.playersList;
 
     final mainContent = [
+      if (roomCode != null) ...[
+        RoomCodeView(roomCode: roomCode),
+        const SizedBox(height: 24),
+      ],
       Text(
         "PLAYERS CONNECTED: $_connectedPlayers/10",
         style: const TextStyle(
@@ -112,7 +123,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
       const SizedBox(height: 16),
       VerbosePlayerList(players: players),
       const SizedBox(height: 20),
-      Center(child: _socket.isHost ? _startGameButton() : _clientView()),
+      Center(child: _net.isHost ? _startGameButton() : _clientView()),
       const SizedBox(height: 20),
     ];
 
@@ -177,6 +188,49 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
       style: TextStyle(fontSize: 18, fontWeight: .bold),
     ),
   );
+}
+
+class RoomCodeView extends StatelessWidget {
+  final String? roomCode;
+
+  const RoomCodeView({super.key, required this.roomCode});
+
+  @override
+  Widget build(BuildContext context) {
+    final mainContent = [
+      const Text(
+        "ROOM CODE",
+        style: TextStyle(
+          color: Colors.white54,
+          fontSize: 14,
+          fontWeight: .bold,
+          letterSpacing: 2,
+        ),
+      ),
+      const SizedBox(height: 8),
+      SelectableText(
+        // Lets users copy it easily!
+        roomCode ?? "???",
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 48,
+          fontWeight: .bold,
+          letterSpacing: 12,
+        ),
+      ),
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const .symmetric(vertical: 24),
+      decoration: BoxDecoration(
+        color: Colors.black45,
+        borderRadius: .circular(16),
+        border: .all(color: Colors.white24, width: 2),
+      ),
+      child: Column(children: mainContent),
+    );
+  }
 }
 
 class VerbosePlayerList extends StatelessWidget {
