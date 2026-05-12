@@ -1,0 +1,27 @@
+# TODO
+
+- [x] Implement LAN multiplayer
+- [x] Add online multiplayer with **Supabase**
+- [x] Add an official main menu
+- [ ] Add more relics
+- [ ] Add more special roguelike cards
+- [ ] Add proper game loop (new game => win game => end game)
+- [ ] Add leave, disband buttons
+- [ ] Add message popups for players joining/leaving
+- [ ] Add better indicators for player turn (like different bgs, some effects, and show player name)
+- [ ] Fix avatar colors not displaying correctly
+- [ ] Add sound effects and music
+- [ ] Make popup dialogs minimizable (such as color selection)
+- [ ] Add a _spectate_ feature for spectating other players
+
+## Gameplay Ideas
+
+- [ ] _God Mode_ cards (like a special card that turns all cards in your hand into _something else_)
+- [ ] _Rod of Discord_ (change position in turn order)
+- [ ] Booster packs (cards unboxing, which may include card-specific skins, etc.)
+- [ ] Achievements
+
+## Bugs
+
+- [ ] Touchscreen priority (laptop issue, where interactivity only works for the touchscreen) [_low prio_]
+- [ ] (_Online Mode_) Occasional ghost player (add kick button, and kick `null players`)
