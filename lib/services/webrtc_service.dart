@@ -257,13 +257,13 @@ class WebRTCService implements NetworkService {
     };
 
     channel.onDataChannelState = (RTCDataChannelState state) {
-      if (state == RTCDataChannelState.RTCDataChannelOpen && isHost) {
+      if (state == .RTCDataChannelOpen && isHost) {
         // A new client successfully tunneled in!
         currentPlayers = _clientIds.length + 1;
         listOfPlayers.add(LobbyPlayer(playerName: "Connecting...", pingMs: 0));
         broadcast(PlayerJoinedMessage(currentPlayers));
         broadcast(LobbyStateMessage(listOfPlayers));
-      } else if (state == RTCDataChannelState.RTCDataChannelClosed) {
+      } else if (state == .RTCDataChannelClosed) {
         _handleDisconnect(peerId);
       }
     };
@@ -352,7 +352,7 @@ class WebRTCService implements NetworkService {
   void broadcast(NetMessage message) {
     final jsonStr = jsonEncode(message.toJson());
     for (var channel in _dataChannels.values) {
-      if (channel.state == RTCDataChannelState.RTCDataChannelOpen) {
+      if (channel.state == .RTCDataChannelOpen) {
         channel.send(RTCDataChannelMessage(jsonStr));
       }
     }
@@ -361,7 +361,7 @@ class WebRTCService implements NetworkService {
 
   @override
   void sendIntent(NetMessage message) {
-    if (_hostDataChannel?.state == RTCDataChannelState.RTCDataChannelOpen) {
+    if (_hostDataChannel?.state == .RTCDataChannelOpen) {
       _hostDataChannel!.send(
         RTCDataChannelMessage(jsonEncode(message.toJson())),
       );
@@ -387,10 +387,10 @@ class WebRTCService implements NetworkService {
 
     _hostDataChannel?.close();
     _hostConnection?.close();
-    for (var dc in _dataChannels.values) {
+    for (RTCDataChannel dc in _dataChannels.values) {
       dc.close();
     }
-    for (var pc in _peerConnections.values) {
+    for (RTCPeerConnection pc in _peerConnections.values) {
       pc.close();
     }
 

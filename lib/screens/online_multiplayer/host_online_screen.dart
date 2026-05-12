@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../lobby_waiting_screen.dart';
+import '../lobby/lobby_waiting_screen.dart';
 import 'package:ishi/services/webrtc_service.dart';
 
 class HostOnlineScreen extends StatefulWidget {

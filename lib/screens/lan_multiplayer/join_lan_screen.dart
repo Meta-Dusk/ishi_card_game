@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ishi/core/data_types.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../lobby_waiting_screen.dart';
+import '../lobby/lobby_waiting_screen.dart';
 import 'package:ishi/services/socket_service.dart';
 
 class JoinLANGameScreen extends StatefulWidget {
