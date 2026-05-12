@@ -6,15 +6,17 @@ class ProfileManager {
   factory ProfileManager() => _instance;
   ProfileManager._internal();
 
-  String playerName = "Player";
-  Color avatarColor = Colors.blue.shade600;
+  static const String _defaultPlayerName = "Player";
+  static const int _defaultAvatarColor = 0x1FBFFF;
+
+  String playerName = _defaultPlayerName;
+  Color avatarColor = Color(_defaultAvatarColor);
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
-    playerName = prefs.getString("playerName") ?? "Player";
+    playerName = prefs.getString("playerName") ?? _defaultPlayerName;
 
-    int? colorInt = prefs.getInt("avatarColor");
-    if (colorInt == null) return;
+    int? colorInt = prefs.getInt("avatarColor") ?? _defaultAvatarColor;
     avatarColor = Color(colorInt);
   }
 
@@ -24,6 +26,6 @@ class ProfileManager {
     await prefs.setInt("avatarColor", color.toARGB32());
 
     playerName = name;
-    avatarColor = color;
+    avatarColor = Color(color.toARGB32());
   }
 }

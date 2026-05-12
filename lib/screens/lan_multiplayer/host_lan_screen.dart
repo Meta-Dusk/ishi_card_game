@@ -1,24 +1,30 @@
 import 'dart:io';
-import 'package:ishi/screens/lobby_waiting_screen.dart';
-
-import '../services/socket_service.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../lobby_waiting_screen.dart';
+import '../../services/socket_service.dart';
 
-class HostLobbyScreen extends StatefulWidget {
-  const HostLobbyScreen({super.key});
+class HostLANLobbyScreen extends StatefulWidget {
+  const HostLANLobbyScreen({super.key});
 
   @override
-  State<HostLobbyScreen> createState() => _HostLobbyScreenState();
+  State<HostLANLobbyScreen> createState() => _HostLANLobbyScreenState();
 }
 
-class _HostLobbyScreenState extends State<HostLobbyScreen> {
-  String? _wsUrl;
+class _HostLANLobbyScreenState extends State<HostLANLobbyScreen> {
+  String? _webSocketUrl;
 
   @override
   void initState() {
     super.initState();
     _initializeHost();
+  }
+
+  String? _checkAddress(InternetAddress address) {
+    if (!address.isLoopback && !address.address.startsWith('169.254.')) {
+      return address.address;
+    }
+    return null;
   }
 
   Future<void> _initializeHost() async {
@@ -31,22 +37,19 @@ class _HostLobbyScreenState extends State<HostLobbyScreen> {
 
     for (NetworkInterface interface in interfaces) {
       for (InternetAddress addr in interface.addresses) {
-        if (!addr.isLoopback && !addr.address.startsWith('169.254.')) {
-          localIp = addr.address;
-          break;
-        }
+        localIp = _checkAddress(addr);
+        if (localIp != null) break;
       }
       if (localIp != null) break;
     }
 
-    if (localIp != null) {
-      setState(() => _wsUrl = 'ws://$localIp:8080');
+    if (localIp == null) return;
+    setState(() => _webSocketUrl = 'ws://$localIp:8080');
 
-      try {
-        await SocketService().startServer(localIp, 8080);
-      } catch (e) {
-        debugPrint("Server failed to start: $e");
-      }
+    try {
+      await SocketService().startServer(localIp, 8080);
+    } catch (e) {
+      debugPrint("Server failed to start: $e");
     }
   }
 
@@ -55,18 +58,18 @@ class _HostLobbyScreenState extends State<HostLobbyScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade900,
       body: Center(
-        child: _wsUrl == null
+        child: _webSocketUrl == null
             ? const CircularProgressIndicator()
-            : _JoinView(wsUrl: _wsUrl),
+            : _JoinView(webSocketUrl: _webSocketUrl),
       ),
     );
   }
 }
 
 class _JoinView extends StatelessWidget {
-  const _JoinView({required this.wsUrl});
+  const _JoinView({required this.webSocketUrl});
 
-  final String? wsUrl;
+  final String? webSocketUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -82,10 +85,14 @@ class _JoinView extends StatelessWidget {
           color: Colors.white,
           borderRadius: .circular(16),
         ),
-        child: QrImageView(data: wsUrl!, version: QrVersions.auto, size: 250.0),
+        child: QrImageView(
+          data: webSocketUrl!,
+          version: QrVersions.auto,
+          size: 250.0,
+        ),
       ),
       const SizedBox(height: 20),
-      Text("IP: $wsUrl", style: const TextStyle(color: Colors.grey)),
+      Text("IP: $webSocketUrl", style: const TextStyle(color: Colors.grey)),
       const SizedBox(height: 40),
       ElevatedButton(
         style: ElevatedButton.styleFrom(
@@ -93,13 +100,12 @@ class _JoinView extends StatelessWidget {
           foregroundColor: Colors.white,
           padding: const .symmetric(horizontal: 32, vertical: 12),
         ),
-        onPressed: () {
-          // Move the Host to the waiting room
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const LobbyWaitingScreen()),
-          );
-        },
+        onPressed: () => Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LobbyWaitingScreen(network: SocketService()),
+          ),
+        ),
         child: const Text("ENTER LOBBY", style: TextStyle(fontWeight: .bold)),
       ),
     ];

@@ -1,19 +1,20 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:ishi/core/network_messages.dart';
+import 'package:ishi/services/network_service.dart';
 import 'game_components.dart';
 import 'package:ishi/models/relic.dart';
 import 'package:ishi/models/uno_card.dart';
 import 'package:ishi/core/managers/game_manager.dart';
-import 'package:ishi/services/socket_service.dart';
 
 part 'actions.dart';
 part 'network.dart';
 
 class GameScreen extends StatefulWidget {
   final GameManager manager;
+  final NetworkService network;
 
-  const GameScreen({super.key, required this.manager});
+  const GameScreen({super.key, required this.manager, required this.network});
 
   @override
   State<GameScreen> createState() => GameScreenState();
@@ -21,8 +22,9 @@ class GameScreen extends StatefulWidget {
 
 class GameScreenState extends State<GameScreen> {
   late GameManager _manager;
-  final SocketService _socket = SocketService();
-  StreamSubscription? socketSubscription;
+
+  NetworkService get _net => widget.network;
+  StreamSubscription? _netSubscription;
 
   String? attackMessage;
   Key attackKey = UniqueKey();
@@ -60,7 +62,7 @@ class GameScreenState extends State<GameScreen> {
     initializeNetworkSync();
 
     // This safely rebuilds ONLY the overlay when new pings arrive
-    _pingSubscription = _socket.messages.listen((message) {
+    _pingSubscription = _net.messages.listen((message) {
       if (message is LobbyStateMessage && _showPingOverlay) {
         updateUI(() {});
       }
@@ -69,7 +71,7 @@ class GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
-    socketSubscription?.cancel();
+    _netSubscription?.cancel();
     _pingSubscription?.cancel();
     for (var controller in scrollControllers.values) {
       controller.dispose();
@@ -162,7 +164,7 @@ class GameScreenState extends State<GameScreen> {
           children: [
             Column(children: mainContent),
             _pingToggleButton(),
-            if (_showPingOverlay) LivePingPanel(socket: _socket),
+            if (_showPingOverlay) LivePingPanel(network: _net),
           ],
         ),
       ),
@@ -183,9 +185,9 @@ class GameScreenState extends State<GameScreen> {
 }
 
 class LivePingPanel extends StatelessWidget {
-  const LivePingPanel({super.key, required this.socket});
+  const LivePingPanel({super.key, required this.network});
 
-  final SocketService socket;
+  final NetworkService network;
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +203,7 @@ class LivePingPanel extends StatelessWidget {
       const Divider(color: Colors.white24),
 
       // Dynamically build the rows from the SocketService!
-      ...socket.playersList.map((player) {
+      ...network.playersList.map((player) {
         int ping = player.pingMs;
         Color pingColor = ping < 60
             ? Colors.greenAccent

@@ -1,5 +1,5 @@
-import 'package:ishi/core/managers/game_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:ishi/core/managers/game_manager.dart';
 
 class HandControls extends StatelessWidget {
   const HandControls({
@@ -13,7 +13,7 @@ class HandControls extends StatelessWidget {
 
   final VoidCallback onFlipAllCard;
   final VoidCallback onEndTurn;
-  final void Function(bool) onSortHand;
+  final void Function(DeckSortType) onSortHand;
   final VoidCallback onTakePenalty;
   final GameManager manager;
 
@@ -27,13 +27,16 @@ class HandControls extends StatelessWidget {
         manager.actionPoints[playerIndex] > 0;
 
     final mainContent = [
-      PopupMenuButton<bool>(
+      PopupMenuButton<DeckSortType>(
         icon: const Icon(Icons.sort),
-        tooltip: "Sort Hand",
-        onSelected: (byColor) => onSortHand(byColor),
+        tooltip: "Sort Hand by ...",
+        initialValue: .unsorted,
+        onSelected: (sortType) => onSortHand(sortType),
         itemBuilder: (context) => const [
-          PopupMenuItem(value: true, child: Text("Sort by Color")),
-          PopupMenuItem(value: false, child: Text("Sort by Value")),
+          PopupMenuItem(value: .byColor, child: Text("Sort by Color")),
+          PopupMenuItem(value: .byType, child: Text("Sort by Type")),
+          PopupMenuItem(value: .byValue, child: Text("Sort by Value")),
+          PopupMenuItem(value: .unsorted, child: Text("Unsorted")),
         ],
       ),
       TextButton.icon(

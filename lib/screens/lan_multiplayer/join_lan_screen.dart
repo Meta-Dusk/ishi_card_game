@@ -1,25 +1,18 @@
-import 'dart:io' show Platform;
-
-import 'package:ishi/screens/lobby_waiting_screen.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import '../services/socket_service.dart';
 import 'package:flutter/material.dart';
+import 'package:ishi/core/data_types.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../lobby_waiting_screen.dart';
+import 'package:ishi/services/socket_service.dart';
 
-class JoinGameScreen extends StatefulWidget {
-  const JoinGameScreen({super.key});
+class JoinLANGameScreen extends StatefulWidget {
+  const JoinLANGameScreen({super.key});
 
   @override
-  State<JoinGameScreen> createState() => _JoinGameScreenState();
+  State<JoinLANGameScreen> createState() => _JoinLANGameScreenState();
 }
 
-class _JoinGameScreenState extends State<JoinGameScreen> {
+class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
   bool _isConnecting = false;
-
-  bool get _isDesktop {
-    if (kIsWeb) return false;
-    return Platform.isWindows || Platform.isLinux || Platform.isMacOS;
-  }
 
   void _onDetect(BarcodeCapture capture) async {
     if (_isConnecting) return; // Prevent multiple fires from the scanner
@@ -53,7 +46,9 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
       );
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const LobbyWaitingScreen()),
+        MaterialPageRoute(
+          builder: (_) => LobbyWaitingScreen(network: SocketService()),
+        ),
       );
     } else {
       setState(() => _isConnecting = false);
@@ -97,9 +92,9 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
   @override
   Widget build(BuildContext context) {
     final mainContent = [
-      if (!_isDesktop) _mobileScanner() else _windowsFallbackUi(),
+      if (!isPcPlatform()) _mobileScanner() else const _WindowsFallbackUI(),
       if (_isConnecting) _loadingView(),
-      if (!_isDesktop) _scanHostQrLabel(),
+      if (!isPcPlatform()) _scanHostQrLabel(),
       _ManulEntryButton(onShowManualEntry: _showManualEntry),
     ];
     return Scaffold(
@@ -132,7 +127,25 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
     );
   }
 
-  Widget _windowsFallbackUi() {
+  MobileScanner _mobileScanner() => MobileScanner(
+    onDetect: _onDetect,
+    overlayBuilder: (_, constraints) => Container(
+      decoration: BoxDecoration(
+        border: .all(color: Colors.orangeAccent, width: 4),
+        borderRadius: .circular(12),
+      ),
+      width: 250,
+      height: 250,
+      constraints: constraints,
+    ),
+  );
+}
+
+class _WindowsFallbackUI extends StatelessWidget {
+  const _WindowsFallbackUI();
+
+  @override
+  Widget build(BuildContext context) {
     final mainContent = [
       Icon(Icons.desktop_windows, size: 80, color: Colors.grey.shade800),
       const SizedBox(height: 16),
@@ -148,21 +161,6 @@ class _JoinGameScreenState extends State<JoinGameScreen> {
     ];
     return Center(
       child: Column(mainAxisAlignment: .center, children: mainContent),
-    );
-  }
-
-  MobileScanner _mobileScanner() {
-    return MobileScanner(
-      onDetect: _onDetect,
-      overlayBuilder: (_, constraints) => Container(
-        decoration: BoxDecoration(
-          border: .all(color: Colors.orangeAccent, width: 4),
-          borderRadius: .circular(12),
-        ),
-        width: 250,
-        height: 250,
-        constraints: constraints,
-      ),
     );
   }
 }
