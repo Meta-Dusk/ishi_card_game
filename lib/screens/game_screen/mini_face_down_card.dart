@@ -13,7 +13,7 @@ class MiniFaceDownCard extends StatelessWidget {
         height: 45,
         decoration: BoxDecoration(
           color: Colors.black,
-          borderRadius: .circular(4),
+          borderRadius: .circular(6),
           border: .all(color: Colors.grey.shade900, width: 1.5),
           boxShadow: const [
             BoxShadow(
@@ -24,7 +24,10 @@ class MiniFaceDownCard extends StatelessWidget {
           ],
         ),
         alignment: .center,
-        child: Text("IS", style: TextStyle(color: Colors.white)),
+        child: Text(
+          "IS",
+          style: TextStyle(color: Colors.white, letterSpacing: 2),
+        ),
       ),
     );
   }

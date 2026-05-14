@@ -12,6 +12,7 @@ class CurvedCard extends StatelessWidget {
     required this.totalCards,
     required this.scrollController,
     required this.onTapCard,
+    required this.isMyTurn,
   });
 
   final int index;
@@ -20,6 +21,7 @@ class CurvedCard extends StatelessWidget {
   final Animation<double> animation;
   final ScrollController? scrollController;
   final void Function(IshiCard) onTapCard;
+  final bool isMyTurn;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +51,7 @@ class CurvedCard extends StatelessWidget {
         index: index,
         totalCards: totalCards,
         onTapCard: onTapCard,
+        isMyTurn: isMyTurn,
       ),
     );
   }

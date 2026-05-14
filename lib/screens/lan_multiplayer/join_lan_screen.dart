@@ -18,20 +18,18 @@ class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
     if (_isConnecting) return; // Prevent multiple fires from the scanner
 
     final List<Barcode> barcodes = capture.barcodes;
-    if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
-      final String scannedCode = barcodes.first.rawValue!;
+    if (barcodes.isEmpty || barcodes.first.rawValue == null) return;
+    final String scannedCode = barcodes.first.rawValue!;
 
-      // Validate it's actually our game's WebSocket URL
-      if (scannedCode.startsWith('ws://')) {
-        setState(() => _isConnecting = true);
-        await _connect(scannedCode);
+    // Validate it's actually our game's WebSocket URL
+    if (!scannedCode.startsWith('ws://')) return;
+    setState(() => _isConnecting = true);
+    await _connect(scannedCode);
 
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Connecting to $scannedCode...')),
-        );
-      }
-    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Connecting to $scannedCode...')));
   }
 
   Future<void> _connect(String url) async {
@@ -63,30 +61,30 @@ class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
   }
 
   void _showManualEntry() {
-    final TextEditingController ipController = TextEditingController();
+    final ipTextController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) => _ManualEntryDialog(
-        ipController: ipController,
-        onJoin: () {
-          Navigator.pop(context);
-          setState(() => _isConnecting = true);
-
-          String cleanIp = ipController.text.trim();
-
-          // If you accidentally pasted the "ws://", strip it out
-          if (cleanIp.startsWith('ws://')) cleanIp = cleanIp.substring(5);
-
-          // If you accidentally pasted the ":8080", strip it out
-          if (cleanIp.endsWith(':8080')) {
-            cleanIp = cleanIp.replaceAll(':8080', '');
-          }
-
-          _connect('ws://$cleanIp:8080');
-        },
+        ipController: ipTextController,
+        onJoin: () => _joinLanLobby(ipTextController.text.trim()),
       ),
     );
+  }
+
+  void _joinLanLobby(String cleanIp) {
+    Navigator.pop(context);
+    setState(() => _isConnecting = true);
+
+    // If you accidentally pasted the "ws://", strip it out
+    if (cleanIp.startsWith('ws://')) cleanIp = cleanIp.substring(5);
+
+    // If you accidentally pasted the ":8080", strip it out
+    if (cleanIp.endsWith(':8080')) {
+      cleanIp = cleanIp.replaceAll(':8080', '');
+    }
+
+    _connect('ws://$cleanIp:8080');
   }
 
   @override
@@ -216,6 +214,7 @@ class _ManualEntryDialog extends StatelessWidget {
           hintText: "192.168.x.x",
           hintStyle: TextStyle(color: Colors.white54),
         ),
+        autofocus: true,
       ),
       actions: [
         TextButton(

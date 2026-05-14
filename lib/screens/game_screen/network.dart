@@ -58,6 +58,8 @@ extension GameScreenNetwork on GameScreenState {
             );
           }
         } else if (diff < 0) {
+          playPileKey.currentState?.animateOpponentDrop();
+
           // Opponent Played Cards
           for (int j = 0; j < -diff; j++) {
             listKeys[i + 1]?.currentState?.removeItem(
@@ -146,15 +148,17 @@ extension GameScreenNetwork on GameScreenState {
 
   void _onIntentTakePenalty() => _manager.resolvePendingAttack();
 
-  void _onIntentPlayCard(int pIndex, PlayIntentMessage message) {
+  void _onIntentPlayCard(int playerIndex, PlayIntentMessage message) {
     if (message.cardId == null) return;
 
-    int cIndex = _manager.playerHands[pIndex].indexWhere(
-      (c) => c.id == message.cardId,
+    int cardIndex = _manager.playerHands[playerIndex].indexWhere(
+      (card) => card.id == message.cardId,
     );
-    if (cIndex == -1) return;
+    if (cardIndex == -1) return;
 
-    _manager.playCard(pIndex, cIndex);
+    playPileKey.currentState?.animateOpponentDrop();
+
+    _manager.playCard(playerIndex, cardIndex);
 
     if (message.declaredColor != null) {
       _manager.setDeclaredColor(CardColor.values[message.declaredColor!]);
@@ -162,15 +166,15 @@ extension GameScreenNetwork on GameScreenState {
 
     if (message.relicId == null) return;
 
-    final relic = relicPool.firstWhere((r) => r.id == message.relicId);
-    _manager.playerRelics[pIndex].add(relic);
+    final relic = relicPool.firstWhere((relic) => relic.id == message.relicId);
+    _manager.playerRelics[playerIndex].add(relic);
 
     // Assuming your Relic model uses an enum called 'effect'
     if (relic.effect == .immediateDraw3) {
       for (int i = 0; i < 3; i++) {
-        _manager.drawCard(pIndex);
+        _manager.drawCard(playerIndex);
       }
-      _manager.playerRelics[pIndex].remove(relic);
+      _manager.playerRelics[playerIndex].remove(relic);
     }
   }
 }

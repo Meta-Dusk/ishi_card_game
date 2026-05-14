@@ -11,6 +11,7 @@ class AnimatedCard extends StatelessWidget {
     required this.index,
     required this.totalCards,
     required this.onTapCard,
+    required this.isMyTurn,
   });
 
   final ScrollController? scrollController;
@@ -18,6 +19,7 @@ class AnimatedCard extends StatelessWidget {
   final int index;
   final int totalCards;
   final void Function(IshiCard) onTapCard;
+  final bool isMyTurn;
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +40,7 @@ class AnimatedCard extends StatelessWidget {
       totalCards: totalCards,
       card: card,
       onTapCard: onTapCard,
+      isMyTurn: isMyTurn,
     ),
   );
 }

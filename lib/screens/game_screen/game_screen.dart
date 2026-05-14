@@ -4,6 +4,7 @@ import 'package:ishi/core/network_messages.dart';
 import 'package:ishi/core/managers/game_manager.dart';
 import 'package:ishi/screens/game_screen/mini_face_down_card.dart';
 import 'package:ishi/screens/game_screen/opponents_overlay.dart';
+import 'package:ishi/screens/game_screen/turn_indicator.dart';
 import 'package:ishi/services/network_service.dart';
 import 'package:ishi/models/relic.dart';
 import 'package:ishi/models/uno_card.dart';
@@ -39,6 +40,7 @@ class GameScreenState extends State<GameScreen> {
 
   bool _showPingOverlay = false;
   StreamSubscription? _pingSubscription;
+  final playPileKey = GlobalKey<PlayCardsPileState>();
 
   int get localUIIndex => _manager.localPlayerIndex + 1;
   AnimatedListState? get getCurrentState =>
@@ -89,17 +91,15 @@ class GameScreenState extends State<GameScreen> {
       mainAxisSize: .min,
       children: [
         CardCounter(currentHandLength: currentHand.length),
-        IgnorePointer(
-          ignoring: !isMyTurn,
-          child: Opacity(
-            opacity: isMyTurn ? 1.0 : 0.5,
-            child: HandControls(
-              onEndTurn: endTurnAction,
-              onFlipAllCard: flipAllCardsAction,
-              onSortHand: animatedSort,
-              onTakePenalty: takePenaltyAction,
-              manager: _manager,
-            ),
+        Opacity(
+          opacity: isMyTurn ? 1.0 : 0.5,
+          child: HandControls(
+            onEndTurn: endTurnAction,
+            onFlipAllCard: flipAllCardsAction,
+            onSortHand: animatedSort,
+            onTakePenalty: takePenaltyAction,
+            manager: _manager,
+            isMyTurn: isMyTurn,
           ),
         ),
         Container(
@@ -118,6 +118,7 @@ class GameScreenState extends State<GameScreen> {
               onTapCard: (card) =>
                   setState(() => card.isFaceUp = !card.isFaceUp),
               scrollController: scrollControllers[localUIIndex],
+              isMyTurn: isMyTurn,
             ),
           ),
         ),
@@ -133,6 +134,7 @@ class GameScreenState extends State<GameScreen> {
           manager: _manager,
           onDrawCard: drawCardAction,
           onPlayCard: playCardAction,
+          playPileKey: playPileKey,
         ),
         if (_manager.pendingDrawCount > 0)
           Positioned(
@@ -146,7 +148,7 @@ class GameScreenState extends State<GameScreen> {
     );
 
     // --- THE MASTER LAYOUT ---
-    final mainContent = [
+    final stackedContent = [
       // Top Left: Local Player Info & Ping
       Positioned(
         top: 16,
@@ -181,7 +183,13 @@ class GameScreenState extends State<GameScreen> {
       Center(child: playPileAndDeck),
 
       // Center Text: Turn Indicator
-      TurnIndicator(isMyTurn: isMyTurn),
+      Positioned(
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 245,
+        child: TurnIndicator(isMyTurn: isMyTurn),
+      ),
 
       // Bottom: Local Hand
       Align(alignment: .bottomCenter, child: lowerPanel),
@@ -192,33 +200,7 @@ class GameScreenState extends State<GameScreen> {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade900,
-      body: SafeArea(child: Stack(children: mainContent)),
-    );
-  }
-}
-
-class TurnIndicator extends StatelessWidget {
-  const TurnIndicator({super.key, required this.isMyTurn});
-
-  final bool isMyTurn;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: .center,
-      child: Padding(
-        padding: const .only(top: 220.0), // Pushed just below the deck
-        child: Text(
-          isMyTurn ? "YOUR TURN" : "WAITING...",
-          style: TextStyle(
-            color: isMyTurn ? Colors.greenAccent : Colors.orangeAccent,
-            fontSize: 16,
-            fontWeight: .bold,
-            letterSpacing: 4,
-            shadows: const [BoxShadow(color: Colors.black, blurRadius: 4)],
-          ),
-        ),
-      ),
+      body: SafeArea(child: Stack(children: stackedContent)),
     );
   }
 }

@@ -70,20 +70,12 @@ class _OpponentOverlayRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mainContent = [
-      // Stats Block
-      Column(
-        crossAxisAlignment: .end,
-        children: [
-          Text(
-            name,
-            style: TextStyle(
-              color: isTurn ? Colors.orangeAccent : Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          _OpponentStats(manager: manager, index: index, handSize: handSize),
-        ],
+      _OpponentStatsColumn(
+        isTurn: isTurn,
+        name: name,
+        manager: manager,
+        index: index,
+        handSize: handSize,
       ),
       const SizedBox(width: 12),
       _AnimatedCardFan(listKeys: listKeys, index: index, handSize: handSize),
@@ -97,6 +89,44 @@ class _OpponentOverlayRow extends StatelessWidget {
         children: mainContent,
       ),
     );
+  }
+}
+
+class _OpponentStatsColumn extends StatelessWidget {
+  const _OpponentStatsColumn({
+    required this.isTurn,
+    required this.name,
+    required this.manager,
+    required this.index,
+    required this.handSize,
+  });
+
+  final bool isTurn;
+  final String name;
+  final GameManager manager;
+  final int index;
+  final int handSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final mainContent = [
+      Row(
+        children: [
+          if (isTurn) const _AnimatedTurnArrow(),
+          if (isTurn) const SizedBox(width: 4),
+          Text(
+            name,
+            style: TextStyle(
+              color: isTurn ? Colors.orangeAccent : Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+      _OpponentStats(manager: manager, index: index, handSize: handSize),
+    ];
+    return Column(crossAxisAlignment: .end, children: mainContent);
   }
 }
 
@@ -160,15 +190,52 @@ class _AnimatedCardFan extends StatelessWidget {
         key: listKeys[index + 1],
         scrollDirection: .horizontal,
         initialItemCount: handSize,
-        itemBuilder: (_, _, animation) {
-          return SizeTransition(
-            sizeFactor: animation,
-            axis: .horizontal,
-            axisAlignment: -1.0,
-            child: MiniFaceDownCard(),
-          );
-        },
+        itemBuilder: (_, _, animation) => SizeTransition(
+          sizeFactor: animation,
+          axis: .horizontal,
+          axisAlignment: -1.0,
+          child: MiniFaceDownCard(),
+        ),
       ),
+    );
+  }
+}
+
+class _AnimatedTurnArrow extends StatefulWidget {
+  const _AnimatedTurnArrow();
+
+  @override
+  State<_AnimatedTurnArrow> createState() => _AnimatedTurnArrowState();
+}
+
+class _AnimatedTurnArrowState extends State<_AnimatedTurnArrow>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (_, child) => Transform.translate(
+        offset: Offset(_controller.value * -6.0, 0),
+        child: child,
+      ),
+      child: const Icon(Icons.play_arrow, color: Colors.orangeAccent, size: 20),
     );
   }
 }

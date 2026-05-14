@@ -9,6 +9,7 @@ class HandControls extends StatelessWidget {
     required this.onSortHand,
     required this.onTakePenalty,
     required this.manager,
+    required this.isMyTurn,
   });
 
   final VoidCallback onFlipAllCard;
@@ -16,6 +17,7 @@ class HandControls extends StatelessWidget {
   final void Function(DeckSortType) onSortHand;
   final VoidCallback onTakePenalty;
   final GameManager manager;
+  final bool isMyTurn;
 
   @override
   Widget build(BuildContext context) {
@@ -31,8 +33,9 @@ class HandControls extends StatelessWidget {
         icon: const Icon(Icons.sort),
         tooltip: "Sort Hand by ...",
         initialValue: .unsorted,
-        onSelected: (sortType) => onSortHand(sortType),
-        itemBuilder: (context) => const [
+        iconColor: Colors.white,
+        onSelected: onSortHand,
+        itemBuilder: (_) => const [
           PopupMenuItem(value: .byColor, child: Text("Sort by Color")),
           PopupMenuItem(value: .byType, child: Text("Sort by Type")),
           PopupMenuItem(value: .byValue, child: Text("Sort by Value")),
@@ -41,15 +44,16 @@ class HandControls extends StatelessWidget {
       ),
       TextButton.icon(
         onPressed: onFlipAllCard,
-        icon: const Icon(Icons.flip),
-        label: const Text("Flip Hand"),
+        icon: const Icon(Icons.flip, color: Colors.white),
+        label: const Text("Flip Hand", style: TextStyle(color: Colors.white)),
       ),
-      isUnderAttack
-          ? _TakePenaltyButton(
-              onTakePenalty: onTakePenalty,
-              pendingDrawCount: manager.pendingDrawCount,
-            )
-          : _EndTurnButton(hasActed: hasActed, onEndTurn: onEndTurn),
+      if (isMyTurn)
+        isUnderAttack
+            ? _TakePenaltyButton(
+                onTakePenalty: onTakePenalty,
+                pendingDrawCount: manager.pendingDrawCount,
+              )
+            : _EndTurnButton(hasActed: hasActed, onEndTurn: onEndTurn),
     ];
     return Padding(
       padding: const .symmetric(horizontal: 16.0, vertical: 8.0),
@@ -69,8 +73,11 @@ class _EndTurnButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: hasActed ? onEndTurn : null,
       style: ElevatedButton.styleFrom(
-        disabledBackgroundColor: Colors.grey.shade300,
-        disabledForegroundColor: Colors.grey.shade500,
+        disabledBackgroundColor: Colors.grey.shade300.withValues(alpha: 0.5),
+        disabledForegroundColor: Colors.grey.shade700.withValues(alpha: 0.5),
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        textStyle: TextStyle(color: Colors.white),
       ),
       child: const Text("End Turn"),
     );

@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:ishi/services/socket_service.dart';
 import '../lobby/lobby_waiting_screen.dart';
-import '../../services/socket_service.dart';
 
 class HostLANLobbyScreen extends StatefulWidget {
   const HostLANLobbyScreen({super.key});

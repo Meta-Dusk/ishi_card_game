@@ -13,6 +13,7 @@ class AnimatedCardBuilder extends StatelessWidget {
     required this.totalCards,
     required this.card,
     required this.onTapCard,
+    required this.isMyTurn,
   });
 
   final ScrollController scrollController;
@@ -20,6 +21,7 @@ class AnimatedCardBuilder extends StatelessWidget {
   final int totalCards;
   final IshiCard card;
   final void Function(IshiCard) onTapCard;
+  final bool isMyTurn;
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +98,7 @@ class AnimatedCardBuilder extends StatelessWidget {
     );
 
     final cardView = isCenter
-        ? DraggableCard(card: card, cardUI: cardUI)
+        ? DraggableCard(card: card, cardUI: cardUI, isMyTurn: isMyTurn)
         : gestureDetector;
 
     return Transform.translate(
