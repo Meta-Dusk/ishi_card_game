@@ -8,8 +8,8 @@
 - [ ] Add proper game loop (new game => win game => end game)
 - [ ] Add leave, disband buttons
 - [ ] Add message popups for players joining/leaving
-- [ ] Add better indicators for player turn (like different bgs, some effects, and show player name)
-- [ ] Fix avatar colors not displaying correctly
+- [x] Add better indicators for player turn (like different bgs, some effects, and show player name)
+- [x] Fix avatar colors not displaying correctly
 - [ ] Add sound effects and music
 - [ ] Make popup dialogs minimizable (such as color selection)
 - [ ] Add a _spectate_ feature for spectating other players

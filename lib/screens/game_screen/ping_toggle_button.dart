@@ -12,14 +12,10 @@ class PingToggleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      top: 16,
-      right: 16,
-      child: IconButton(
-        icon: Icon(showPingOverlay ? Icons.close : Icons.network_ping),
-        color: Colors.grey.shade800,
-        onPressed: onToggle,
-      ),
+    return IconButton(
+      icon: Icon(showPingOverlay ? Icons.close : Icons.network_ping),
+      color: Colors.grey.shade800,
+      onPressed: onToggle,
     );
   }
 }

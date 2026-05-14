@@ -11,12 +11,14 @@ class AnimatedCardList extends StatelessWidget {
     required this.currentHand,
     required this.onTapCard,
     required this.scrollController,
+    required this.isMyTurn,
   });
 
   final void Function(IshiCard) onTapCard;
   final Key? animatedListKey;
   final ScrollController? scrollController;
   final List<IshiCard> currentHand;
+  final bool isMyTurn;
 
   bool _onScrollNotification(ScrollNotification notification) {
     if (notification is ScrollEndNotification) {
@@ -67,6 +69,7 @@ class AnimatedCardList extends StatelessWidget {
             totalCards: currentHand.length,
             scrollController: scrollController,
             onTapCard: onTapCard,
+            isMyTurn: isMyTurn,
           );
         },
       ),

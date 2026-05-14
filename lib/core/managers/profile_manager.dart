@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'prefs_manager.dart';
 
 final Map<String, Color> avatarColorPalette = {
   'blue': Colors.blue.shade600,
@@ -18,8 +18,8 @@ class ProfileManager {
   static const String _defaultPlayerName = "Player";
   static const String _defaultColorName = "blue";
 
-  String playerName = _defaultPlayerName;
-  String avatarColorName = _defaultColorName;
+  late String playerName;
+  late String avatarColorName;
 
   Color get avatarColor =>
       avatarColorPalette[avatarColorName] ?? avatarColorPalette['blue']!;
@@ -28,25 +28,23 @@ class ProfileManager {
       avatarColorPalette[colorName] ?? avatarColorPalette['blue']!;
 
   Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    playerName = prefs.getString("playerName") ?? _defaultPlayerName;
-
-    avatarColorName = prefs.getString("avatarColorName") ?? _defaultColorName;
+    playerName =
+        await PrefsManager.getString(.playerName) ?? _defaultPlayerName;
+    avatarColorName =
+        await PrefsManager.getString(.avatarColorName) ?? _defaultColorName;
   }
 
   Future<void> saveProfile(String name, String colorName) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("playerName", name);
-    await prefs.setString("avatarColor", colorName);
+    await PrefsManager.setString(.playerName, name);
+    await PrefsManager.setString(.avatarColorName, colorName);
 
     playerName = name;
     avatarColorName = colorName;
   }
 
   Future<void> resetToDefaults() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove("playerName");
-    await prefs.remove("avatarColor");
+    await PrefsManager.remove(.playerName);
+    await PrefsManager.remove(.avatarColorName);
 
     playerName = _defaultPlayerName;
     avatarColorName = _defaultColorName;

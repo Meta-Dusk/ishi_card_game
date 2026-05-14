@@ -2,6 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:ishi/core/network_messages.dart';
 import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/screens/game_screen/mini_face_down_card.dart';
+import 'package:ishi/screens/game_screen/opponents_overlay.dart';
+import 'package:ishi/screens/game_screen/turn_indicator.dart';
 import 'package:ishi/services/network_service.dart';
 import 'package:ishi/models/relic.dart';
 import 'package:ishi/models/uno_card.dart';
@@ -37,14 +40,12 @@ class GameScreenState extends State<GameScreen> {
 
   bool _showPingOverlay = false;
   StreamSubscription? _pingSubscription;
+  final playPileKey = GlobalKey<PlayCardsPileState>();
 
   int get localUIIndex => _manager.localPlayerIndex + 1;
-
   AnimatedListState? get getCurrentState =>
       listKeys[localUIIndex]?.currentState;
-
   bool get isMyTurn => _manager.currentPlayer == localUIIndex;
-
   List<IshiCard> get currentHand =>
       _manager.playerHands[_manager.localPlayerIndex];
 
@@ -55,7 +56,6 @@ class GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
-
     _manager = widget.manager;
 
     listKeys = {};
@@ -67,7 +67,6 @@ class GameScreenState extends State<GameScreen> {
 
     initializeNetworkSync();
 
-    // This safely rebuilds ONLY the overlay when new pings arrive
     _pingSubscription = _net.messages.listen((message) {
       if (message is LobbyStateMessage && _showPingOverlay) {
         updateUI(() {});
@@ -87,13 +86,46 @@ class GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final animatedList = AnimatedCardList(
-      animatedListKey: listKeys[localUIIndex],
-      currentHand: currentHand,
-      onTapCard: (card) => setState(() => card.isFaceUp = !card.isFaceUp),
-      scrollController: scrollControllers[localUIIndex],
+    // --- LOCAL PLAYER DASHBOARD (Bottom) ---
+    final lowerPanel = Column(
+      mainAxisSize: .min,
+      children: [
+        CardCounter(currentHandLength: currentHand.length),
+        Opacity(
+          opacity: isMyTurn ? 1.0 : 0.5,
+          child: HandControls(
+            onEndTurn: endTurnAction,
+            onFlipAllCard: flipAllCardsAction,
+            onSortHand: animatedSort,
+            onTakePenalty: takePenaltyAction,
+            manager: _manager,
+            isMyTurn: isMyTurn,
+          ),
+        ),
+        Container(
+          height: 280,
+          padding: const .symmetric(horizontal: 8, vertical: 12),
+          child: RawScrollbar(
+            key: ValueKey(scrollControllers[localUIIndex]),
+            controller: scrollControllers[localUIIndex],
+            thumbVisibility: true,
+            thumbColor: Colors.black26,
+            radius: const .circular(8),
+            thickness: 6,
+            child: AnimatedCardList(
+              animatedListKey: listKeys[localUIIndex],
+              currentHand: currentHand,
+              onTapCard: (card) =>
+                  setState(() => card.isFaceUp = !card.isFaceUp),
+              scrollController: scrollControllers[localUIIndex],
+              isMyTurn: isMyTurn,
+            ),
+          ),
+        ),
+      ],
     );
 
+    // --- THE PLAY PILE (Center) ---
     final playPileAndDeck = Stack(
       alignment: .center,
       clipBehavior: .none,
@@ -102,6 +134,7 @@ class GameScreenState extends State<GameScreen> {
           manager: _manager,
           onDrawCard: drawCardAction,
           onPlayCard: playCardAction,
+          playPileKey: playPileKey,
         ),
         if (_manager.pendingDrawCount > 0)
           Positioned(
@@ -114,66 +147,59 @@ class GameScreenState extends State<GameScreen> {
       ],
     );
 
-    final handControls = IgnorePointer(
-      ignoring: !isMyTurn,
-      child: Opacity(
-        opacity: isMyTurn ? 1.0 : 0.5,
-        child: HandControls(
-          onEndTurn: endTurnAction,
-          onFlipAllCard: flipAllCardsAction,
-          onSortHand: animatedSort,
-          onTakePenalty: takePenaltyAction,
-          manager: _manager,
-        ),
-      ),
-    );
-
-    final playerHand = Container(
-      height: 280,
-      padding: const .symmetric(horizontal: 8, vertical: 12),
-      child: RawScrollbar(
-        key: ValueKey(scrollControllers[localUIIndex]),
-        controller: scrollControllers[localUIIndex],
-        thumbVisibility: true,
-        thumbColor: Colors.black26,
-        radius: const .circular(8),
-        thickness: 6,
-        child: animatedList,
-      ),
-    );
-
-    final mainContent = [
-      Padding(
-        padding: const .all(8.0),
-        child: Text(
-          isMyTurn ? "YOUR TURN" : "WAITING FOR OPPONENT...",
-          style: TextStyle(
-            color: isMyTurn ? Colors.green.shade700 : Colors.orangeAccent,
-            fontWeight: .bold,
-            letterSpacing: 2,
-          ),
-        ),
-      ),
-      PlayerInfo(manager: _manager, network: _net),
-      const Spacer(),
-      playPileAndDeck,
-      const Spacer(),
-      CardCounter(currentHandLength: currentHand.length),
-      handControls,
-      playerHand,
-    ];
-
+    // --- THE MASTER LAYOUT ---
     final stackedContent = [
-      Column(children: mainContent),
-      PingToggleButton(
-        showPingOverlay: _showPingOverlay,
-        onToggle: () => updateUI(() => _showPingOverlay = !_showPingOverlay),
+      // Top Left: Local Player Info & Ping
+      Positioned(
+        top: 16,
+        left: 16,
+        width: MediaQuery.of(context).size.width * 0.55,
+        child: Column(
+          crossAxisAlignment: .start,
+          children: [
+            PlayerInfo(manager: _manager, network: _net),
+            const SizedBox(height: 12),
+            PingToggleButton(
+              showPingOverlay: _showPingOverlay,
+              onToggle: () =>
+                  updateUI(() => _showPingOverlay = !_showPingOverlay),
+            ),
+          ],
+        ),
       ),
+
+      // Top Right: The New Opponent Hands Overlay!
+      Positioned(
+        top: 16,
+        right: 16,
+        child: OpponentsOverlay(
+          manager: _manager,
+          net: _net,
+          listKeys: listKeys,
+        ),
+      ),
+
+      // Center: Game Board
+      Center(child: playPileAndDeck),
+
+      // Center Text: Turn Indicator
+      Positioned(
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 245,
+        child: TurnIndicator(isMyTurn: isMyTurn),
+      ),
+
+      // Bottom: Local Hand
+      Align(alignment: .bottomCenter, child: lowerPanel),
+
+      // Overlays
       if (_showPingOverlay) LivePingPanel(network: _net),
     ];
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: Colors.grey.shade900,
       body: SafeArea(child: Stack(children: stackedContent)),
     );
   }

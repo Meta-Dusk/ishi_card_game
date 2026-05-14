@@ -208,18 +208,27 @@ class ColorRing extends StatelessWidget {
 }
 
 class CardBack extends StatelessWidget {
-  const CardBack({super.key});
+  const CardBack({
+    super.key,
+    this.width = 120,
+    this.height = 180,
+    this.fontSize = 20,
+  });
+
+  final double width;
+  final double height;
+  final double fontSize;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 120,
-      height: 180,
+      width: width,
+      height: height,
       decoration: BoxDecoration(
         color: Colors.black,
         borderRadius: .circular(12),
       ),
-      child: Center(child: _title()),
+      child: Center(child: _title(fontSize: fontSize)),
     );
   }
 

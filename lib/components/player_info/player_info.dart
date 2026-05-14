@@ -18,10 +18,6 @@ class PlayerInfo extends StatelessWidget {
         mainAxisAlignment: .spaceBetween,
         children: [
           PlayerStats(manager: manager, network: network),
-          // const Chip(
-          //   avatar: Icon(Icons.shield, size: 16),
-          //   label: Text("Shield Active"),
-          // ),
           RelicBar(manager: manager),
         ],
       ),
