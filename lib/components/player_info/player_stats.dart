@@ -21,13 +21,13 @@ class PlayerStats extends StatelessWidget {
         : 0;
 
     // Safely fetch the local player's name from the network profile
-    String playerName = "PLAYER ${localIndex + 1}";
+    String playerName = "PLAYER ${localIndex + 1} (You)";
     if (localIndex < network.playersList.length) {
-      playerName = network.playersList[localIndex].playerName;
+      playerName = "(You)\n${network.playersList[localIndex].playerName}";
     }
 
     return Column(
-      crossAxisAlignment: .start,
+      crossAxisAlignment: .center,
       mainAxisSize: .min,
       children: [
         Text(
@@ -38,36 +38,54 @@ class PlayerStats extends StatelessWidget {
             fontWeight: .bold,
             letterSpacing: 2,
           ),
+          textAlign: .center,
         ),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            const Icon(Icons.bolt, color: Colors.amber, size: 20),
-            const SizedBox(width: 4),
-            Text(
-              "$actionPoints",
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-                fontWeight: .bold,
-              ),
-            ),
-
-            const SizedBox(width: 16),
-
-            const Icon(Icons.style, color: Colors.blueAccent, size: 20),
-            const SizedBox(width: 4),
-            Text(
-              "$cardDraws",
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-                fontWeight: .bold,
-              ),
-            ),
-          ],
-        ),
+        _PlayerResourceBar(actionPoints: actionPoints, cardDraws: cardDraws),
       ],
+    );
+  }
+}
+
+class _PlayerResourceBar extends StatelessWidget {
+  const _PlayerResourceBar({
+    required this.actionPoints,
+    required this.cardDraws,
+  });
+
+  final int actionPoints;
+  final int cardDraws;
+
+  @override
+  Widget build(BuildContext context) {
+    final actionPointsDp = [
+      const Icon(Icons.bolt, color: Colors.amber, size: 20),
+      const SizedBox(width: 4),
+      Text(
+        "$actionPoints",
+        style: const TextStyle(
+          color: Colors.white70,
+          fontSize: 16,
+          fontWeight: .bold,
+        ),
+      ),
+    ];
+
+    final cardDrawsDp = [
+      const Icon(Icons.style, color: Colors.blueAccent, size: 20),
+      const SizedBox(width: 4),
+      Text(
+        "$cardDraws",
+        style: const TextStyle(
+          color: Colors.white70,
+          fontSize: 16,
+          fontWeight: .bold,
+        ),
+      ),
+    ];
+
+    return Row(
+      children: [...actionPointsDp, const SizedBox(width: 16), ...cardDrawsDp],
     );
   }
 }

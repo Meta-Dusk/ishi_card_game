@@ -169,12 +169,11 @@ extension GameScreenNetwork on GameScreenState {
     final relic = relicPool.firstWhere((relic) => relic.id == message.relicId);
     _manager.playerRelics[playerIndex].add(relic);
 
-    // Assuming your Relic model uses an enum called 'effect'
     if (relic.effect == .immediateDraw3) {
-      for (int i = 0; i < 3; i++) {
-        _manager.drawCard(playerIndex);
-      }
+      _manager.forceDraw(playerIndex, count: 3);
       _manager.playerRelics[playerIndex].remove(relic);
     }
+
+    if (_manager.winnerIndex != null) _showGameOverDialog();
   }
 }

@@ -190,6 +190,7 @@ class GameManager {
 
     hasPlayedCard = json[_BoardKeys.hasPlayedCard] as bool? ?? false;
     hasDrawnCard = json[_BoardKeys.hasDrawnCard] as bool? ?? false;
+    winnerIndex = json[_BoardKeys.winnerIndex] as int?;
   }
 
   int getCardIndexByPlayerIndex(IshiCard card) =>
@@ -368,12 +369,11 @@ class GameManager {
   }
 
   /// Forces a player to draw cards without consuming their CD points
-  void forceDraw(int targetPlayerIndex, int count) {
+  void forceDraw(int targetPlayerIndex, {int count = 1}) {
     for (int i = 0; i < count; i++) {
-      if (deck.isNotEmpty) {
-        IshiCard drawn = deck.removeLast();
-        playerHands[targetPlayerIndex].insert(0, drawn);
-      }
+      if (deck.isEmpty) break;
+      IshiCard drawn = deck.removeLast();
+      playerHands[targetPlayerIndex].insert(0, drawn);
     }
   }
 

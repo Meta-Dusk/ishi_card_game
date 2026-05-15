@@ -22,30 +22,26 @@ class LivePingPanel extends StatelessWidget {
 
       ...network.playersList.map((player) {
         int ping = player.pingMs;
-        Color pingColor = ping < 60
+        Color pingColor = ping < 100
             ? Colors.greenAccent
-            : (ping < 150 ? Colors.amber : Colors.redAccent);
+            : (ping < 300 ? Colors.amber : Colors.redAccent);
 
         return _PlayerRow(player: player, pingColor: pingColor);
       }),
     ];
 
-    return Positioned(
-      top: 60,
-      right: 16,
-      child: Container(
-        width: 220,
-        padding: const .all(12),
-        decoration: BoxDecoration(
-          color: Colors.black87,
-          borderRadius: .circular(12),
-          border: .all(color: Colors.white24),
-        ),
-        child: Column(
-          crossAxisAlignment: .start,
-          mainAxisSize: .min,
-          children: mainContent,
-        ),
+    return Container(
+      width: 220,
+      padding: const .all(12),
+      decoration: BoxDecoration(
+        color: Colors.black87,
+        borderRadius: .circular(12),
+        border: .all(color: Colors.white24),
+      ),
+      child: Column(
+        crossAxisAlignment: .start,
+        mainAxisSize: .min,
+        children: mainContent,
       ),
     );
   }

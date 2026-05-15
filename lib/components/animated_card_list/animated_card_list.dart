@@ -23,21 +23,18 @@ class AnimatedCardList extends StatelessWidget {
   bool _onScrollNotification(ScrollNotification notification) {
     if (notification is ScrollEndNotification) {
       final controller = scrollController;
-      if (controller != null && controller.hasClients) {
-        final offset = controller.offset;
-        final target = (offset / itemWidth).round() * itemWidth;
+      if (controller == null || !controller.hasClients) return false;
+      final offset = controller.offset;
+      final target = (offset / itemWidth).round() * itemWidth;
 
-        if ((offset - target).abs() > 1.0) {
-          Future.microtask(() {
-            if (!controller.hasClients) return;
-            controller.animateTo(
-              target,
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOutCubic,
-            );
-          });
-        }
-      }
+      if ((offset - target).abs() <= 1.0) return false;
+      Future.microtask(
+        () => controller.animateTo(
+          target,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+        ),
+      );
     }
     return false;
   }

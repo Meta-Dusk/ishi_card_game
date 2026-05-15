@@ -47,19 +47,21 @@ class HandControls extends StatelessWidget {
         icon: const Icon(Icons.flip, color: Colors.white),
         label: const Text("Flip Hand", style: TextStyle(color: Colors.white)),
       ),
-      if (isMyTurn)
-        isUnderAttack
-            ? _TakePenaltyButton(
-                onTakePenalty: onTakePenalty,
-                pendingDrawCount: manager.pendingDrawCount,
-              )
-            : _EndTurnButton(hasActed: hasActed, onEndTurn: onEndTurn),
+      if (isMyTurn) _getTurnButton(isUnderAttack, hasActed),
     ];
     return Padding(
       padding: const .symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(mainAxisAlignment: .spaceBetween, children: mainContent),
     );
   }
+
+  StatelessWidget _getTurnButton(bool isUnderAttack, bool hasActed) =>
+      isUnderAttack
+      ? _TakePenaltyButton(
+          onTakePenalty: onTakePenalty,
+          pendingDrawCount: manager.pendingDrawCount,
+        )
+      : _EndTurnButton(hasActed: hasActed, onEndTurn: onEndTurn);
 }
 
 class _EndTurnButton extends StatelessWidget {
