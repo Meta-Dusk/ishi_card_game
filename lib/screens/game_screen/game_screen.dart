@@ -153,18 +153,9 @@ class GameScreenState extends State<GameScreen> {
       Positioned(
         top: 16,
         left: 16,
-        width: MediaQuery.of(context).size.width * 0.55,
-        child: Column(
-          crossAxisAlignment: .start,
-          children: [
-            PlayerInfo(manager: _manager, network: _net),
-            const SizedBox(height: 12),
-            PingToggleButton(
-              showPingOverlay: _showPingOverlay,
-              onToggle: () =>
-                  updateUI(() => _showPingOverlay = !_showPingOverlay),
-            ),
-          ],
+        child: PingToggleButton(
+          showPingOverlay: _showPingOverlay,
+          onToggle: () => updateUI(() => _showPingOverlay = !_showPingOverlay),
         ),
       ),
 
@@ -195,7 +186,15 @@ class GameScreenState extends State<GameScreen> {
       Align(alignment: .bottomCenter, child: lowerPanel),
 
       // Overlays
-      if (_showPingOverlay) LivePingPanel(network: _net),
+      Positioned(
+        top: 0,
+        bottom: 0,
+        left: 8,
+        right: 0,
+        child: PlayerInfo(manager: _manager, network: _net),
+      ),
+      if (_showPingOverlay)
+        Positioned(top: 64, left: 16, child: LivePingPanel(network: _net)),
     ];
 
     return Scaffold(
