@@ -3,26 +3,32 @@ import 'package:ishi/core/managers/profile_manager.dart';
 import 'package:ishi/core/network_messages.dart';
 
 class VerbosePlayerList extends StatelessWidget {
-  const VerbosePlayerList({super.key, required this.players});
+  const VerbosePlayerList({super.key, required this.players, this.onKick});
 
   final List<LobbyPlayer> players;
+  final void Function(int)? onKick;
 
   @override
   Widget build(BuildContext context) {
     final listView = ListView.builder(
       itemCount: players.length,
       itemBuilder: (_, index) =>
-          _PlayerListEntry(index: index, players: players),
+          _PlayerListEntry(index: index, players: players, onKick: onKick),
     );
     return Expanded(child: listView);
   }
 }
 
 class _PlayerListEntry extends StatelessWidget {
-  const _PlayerListEntry({required this.index, required this.players});
+  const _PlayerListEntry({
+    required this.index,
+    required this.players,
+    this.onKick,
+  });
 
   final int index;
   final List<LobbyPlayer> players;
+  final void Function(int)? onKick;
 
   @override
   Widget build(BuildContext context) {
@@ -52,10 +58,23 @@ class _PlayerListEntry extends StatelessWidget {
           player.playerName,
           style: const TextStyle(color: Colors.white, fontWeight: .bold),
         ),
-        trailing: _TrailingPingIcon(
-          pingIcon: pingIcon,
-          pingColor: pingColor,
-          ping: ping,
+        trailing: Row(
+          mainAxisSize: .min,
+          children: [
+            if (onKick != null && index != 0) ...[
+              IconButton(
+                onPressed: () => onKick!(index),
+                icon: const Icon(Icons.person_remove, color: Colors.redAccent),
+                tooltip: "Kick ${player.playerName}?",
+              ),
+              const SizedBox(width: 16),
+            ],
+            _TrailingPingIcon(
+              pingIcon: pingIcon,
+              pingColor: pingColor,
+              ping: ping,
+            ),
+          ],
         ),
       ),
     );

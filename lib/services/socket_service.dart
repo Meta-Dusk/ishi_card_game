@@ -170,12 +170,19 @@ class SocketService implements NetworkService {
 
   void _handleDisconnect(WebSocket socket) {
     int index = _clients.indexOf(socket);
-    if (index != -1 && index + 1 < playersList.length) {
+    if (index == -1) return;
+
+    String leftName = "A player";
+    if (index + 1 < playersList.length) {
+      leftName = playersList[index + 1].playerName;
       playersList.removeAt(index + 1);
     }
+
     _clients.remove(socket);
     currentPlayer = _clients.length + 1;
 
+    // Broadcast that they left to the rest of the lobby!
+    broadcast(SystemNotificationMessage("$leftName disconnected."));
     broadcast(PlayerJoinedMessage(currentPlayer));
     broadcast(LobbyStateMessage(playersList));
   }
@@ -209,6 +216,60 @@ class SocketService implements NetworkService {
   void sendIntent(NetMessage message) {
     if (_clientSocket == null) return;
     _clientSocket!.add(jsonEncode(message.toJson()));
+  }
+
+  @override
+  void kickPlayer(int playerIndex) {
+    if (!isHost || playerIndex <= 0 || playerIndex > _clients.length) return;
+
+    // CAPTURE the exact socket so we don't close the wrong one if the array shifts
+    final targetSocket = _clients[playerIndex - 1];
+
+    // Send the kick message to the target client
+    sendToClient(playerIndex - 1, const KickedMessage());
+
+    // Give the network stack 500ms to actually flush and deliver the packet
+    Future.delayed(
+      const Duration(milliseconds: 500),
+      () => targetSocket.close(),
+    );
+  }
+
+  @override
+  void purgeInvalidPlayers() {
+    if (!isHost) return;
+    int purged = 0;
+
+    // Iterate backwards so removing items doesn't shift the array index
+    for (int i = _clients.length - 1; i >= 0; i--) {
+      final p = playersList[i + 1];
+
+      if (p.playerName == "Player" || p.playerName == "Connecting...") {
+        // Capture the socket
+        final targetSocket = _clients[i];
+
+        sendToClient(
+          i,
+          const KickedMessage("Purged by host due to invalid connection."),
+        );
+
+        Future.delayed(
+          const Duration(milliseconds: 500),
+          () => targetSocket.close(),
+        );
+        purged++;
+      }
+    }
+
+    if (purged > 0) {
+      // Wait slightly longer than the kick delay to broadcast the cleanup message
+      Future.delayed(
+        const Duration(milliseconds: 600),
+        () => broadcast(
+          SystemNotificationMessage("Purged $purged ghost connection(s)."),
+        ),
+      );
+    }
   }
 
   @override

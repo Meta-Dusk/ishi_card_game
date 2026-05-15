@@ -59,6 +59,14 @@ class OfflineNetworkService implements NetworkService {
   }
 
   @override
+  void kickPlayer(int playerIndex) {
+    playersList.remove(playersList[playerIndex]);
+  }
+
+  @override
+  void purgeInvalidPlayers() {}
+
+  @override
   Future<void> disconnect() async {
     _messageController.close();
   }

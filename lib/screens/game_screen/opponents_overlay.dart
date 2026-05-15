@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ishi/core/managers/game_manager.dart';
-import 'package:ishi/screens/game_screen/mini_face_down_card.dart';
+import 'package:ishi/components/cards/mini_face_down_card.dart';
 import 'package:ishi/services/network_service.dart';
 
 class OpponentsOverlay extends StatelessWidget {

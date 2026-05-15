@@ -2,17 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:ishi/core/network_messages.dart';
 import 'package:ishi/core/managers/game_manager.dart';
-import 'game_over_dialog.dart';
-import 'mini_face_down_card.dart';
-import 'opponents_overlay.dart';
-import 'turn_indicator.dart';
 import 'package:ishi/services/network_service.dart';
 import 'package:ishi/models/relic.dart';
 import 'package:ishi/models/uno_card.dart';
 import 'game_components.dart';
-import 'card_counter.dart';
-import 'live_ping_panel.dart';
-import 'ping_toggle_button.dart';
 
 part 'actions.dart';
 part 'network.dart';
@@ -160,9 +153,24 @@ class GameScreenState extends State<GameScreen> {
         ),
       ),
 
-      // Top Right: The New Opponent Hands Overlay!
+      // Leave Button
       Positioned(
         top: 16,
+        right: 16,
+        child: IconButton(
+          onPressed: _promptLeaveGame,
+          icon: const Icon(
+            Icons.exit_to_app,
+            color: Colors.redAccent,
+            size: 30,
+          ),
+          tooltip: "Exit game?",
+        ),
+      ),
+
+      // Top Right: Opponent Hands Overlay
+      Positioned(
+        top: 64,
         right: 16,
         child: OpponentsOverlay(
           manager: _manager,
@@ -201,6 +209,46 @@ class GameScreenState extends State<GameScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade900,
       body: SafeArea(child: Stack(children: stackedContent)),
+    );
+  }
+
+  void _promptLeaveGame() => showDialog(
+    context: context,
+    builder: (_) => LeaveGameDialog(network: _net),
+  );
+}
+
+class LeaveGameDialog extends StatelessWidget {
+  const LeaveGameDialog({super.key, required this.network});
+
+  final NetworkService network;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: Colors.grey.shade900,
+      title: const Text("Leave Game", style: TextStyle(color: Colors.white)),
+      content: const Text(
+        "Are you sure you want to leave the match?",
+        style: TextStyle(color: Colors.white70),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("CANCEL", style: TextStyle(color: Colors.white38)),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+          onPressed: () async {
+            Navigator.pop(context); // Close dialog
+            await network.disconnect(); // Alert peers
+            if (!context.mounted) return;
+            // Back to Main Menu
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          },
+          child: const Text("LEAVE", style: TextStyle(color: Colors.white)),
+        ),
+      ],
     );
   }
 }
