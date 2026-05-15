@@ -162,7 +162,7 @@ class GameScreenState extends State<GameScreen> {
 
     // --- THE MASTER LAYOUT ---
     final stackedContent = [
-      // Top Left: Local Player Info & Ping
+      // Local Player Info & Ping
       Positioned(
         top: 16,
         left: 16,
@@ -187,7 +187,7 @@ class GameScreenState extends State<GameScreen> {
         ),
       ),
 
-      // Top Right: Opponent Hands Overlay
+      // Opponent Hands Overlay
       Positioned(
         top: 64,
         right: 16,
@@ -198,22 +198,26 @@ class GameScreenState extends State<GameScreen> {
         ),
       ),
 
-      // Center: Game Board
-      Center(child: playPileAndDeck),
-
-      // Center: Large Turn Indicator
+      // Game Board
       Positioned(
-        top: 0,
+        top: (MediaQuery.of(context).size.height / 2) - 128,
         left: 0,
         right: 0,
-        bottom: 245,
+        child: playPileAndDeck,
+      ),
+
+      // Turn Indicator
+      Positioned(
+        top: 194,
+        left: 0,
+        right: 0,
         child: TurnIndicator(isMyTurn: isMyTurn),
       ),
 
-      // Bottom: Local Hand
+      // Local Hand
       Align(alignment: .bottomCenter, child: lowerPanel),
 
-      // Center: Turn Direction Indicator
+      // Turn Timeline
       Positioned(
         left: 0,
         right: 0,
@@ -223,9 +227,8 @@ class GameScreenState extends State<GameScreen> {
 
       // Overlays
       Positioned(
-        top: 0,
-        bottom: 0,
-        left: 8,
+        top: 40,
+        left: 0,
         right: 0,
         child: PlayerInfo(manager: _manager, network: _net),
       ),
