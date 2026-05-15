@@ -32,12 +32,7 @@ class PlayAndPileDeck extends StatelessWidget {
       ), // DragTarget
     ];
 
-    final stackedContent = [
-      // The Turn Direction Background
-      _CardAnimatedRotation(manager: manager),
-      Row(mainAxisAlignment: .center, children: mainContent),
-    ];
-    return Stack(alignment: .center, children: stackedContent);
+    return Row(mainAxisAlignment: .center, children: mainContent);
   }
 }
 
@@ -234,28 +229,6 @@ class _AvailableCardsPile extends StatelessWidget {
     return GestureDetector(
       onTap: onDrawCard,
       child: Stack(alignment: .center, children: stackedContent),
-    );
-  }
-}
-
-class _CardAnimatedRotation extends StatelessWidget {
-  const _CardAnimatedRotation({required this.manager});
-
-  final GameManager manager;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedRotation(
-      // 0.0 is default (Clockwise)
-      // -0.5 flips it 180 degrees (Counter-Clockwise)
-      turns: manager.isClockwise ? 0.0 : -0.5,
-      duration: const Duration(seconds: 1),
-      curve: Curves.easeInOutBack,
-      child: Icon(
-        Icons.sync,
-        size: 280,
-        color: Colors.grey.withValues(alpha: 0.2),
-      ),
     );
   }
 }

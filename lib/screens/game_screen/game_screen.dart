@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:ishi/core/network_messages.dart';
 import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/screens/game_screen/turn_timeline.dart';
 import 'package:ishi/services/network_service.dart';
 import 'package:ishi/models/relic.dart';
 import 'package:ishi/models/uno_card.dart';
@@ -200,7 +201,7 @@ class GameScreenState extends State<GameScreen> {
       // Center: Game Board
       Center(child: playPileAndDeck),
 
-      // Center Text: Turn Indicator
+      // Center: Large Turn Indicator
       Positioned(
         top: 0,
         left: 0,
@@ -211,6 +212,14 @@ class GameScreenState extends State<GameScreen> {
 
       // Bottom: Local Hand
       Align(alignment: .bottomCenter, child: lowerPanel),
+
+      // Center: Turn Direction Indicator
+      Positioned(
+        left: 0,
+        right: 0,
+        bottom: 32,
+        child: TurnTimeline(manager: _manager, net: _net),
+      ),
 
       // Overlays
       Positioned(
