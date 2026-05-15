@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ishi/core/data_types.dart';
 import 'package:ishi/models/relic.dart';
 import 'package:ishi/models/uno_card.dart';
@@ -21,6 +23,8 @@ class _BoardKeys {
   static const String playerRelics = 'playerRelics';
   static const String winnerIndex = 'winnerIndex';
 }
+
+enum GameManagerEvent { gameOver }
 
 class GameManager {
   // --- CORE STATES ---
@@ -55,7 +59,7 @@ class GameManager {
   bool hasDrawnCard = false;
   bool hasDeflected = false;
 
-  // --- LAN STATES ---
+  // --- NETWORK STATES ---
 
   /// The Host is always 0. Clients will update this!
   int localPlayerIndex = 0;
@@ -66,7 +70,15 @@ class GameManager {
   // --- VISUAL STATES ---
   DeckSortType handSortType = .unsorted;
 
+  // --- EVENTS ---
+  final _eventController = StreamController<GameManagerEvent>.broadcast();
+  Stream<GameManagerEvent> get eventStream => _eventController.stream;
+
   GameManager({required this.playerCount, required this.startingHandSize});
+
+  void dispose() {
+    _eventController.close();
+  }
 
   /// HOST ONLY: Generates a strictly personalized JSON package for a specific player.
   StringDynamicMap generateGameStateJson(int targetPlayerIndex) {
@@ -191,6 +203,14 @@ class GameManager {
     hasPlayedCard = json[_BoardKeys.hasPlayedCard] as bool? ?? false;
     hasDrawnCard = json[_BoardKeys.hasDrawnCard] as bool? ?? false;
     winnerIndex = json[_BoardKeys.winnerIndex] as int?;
+
+    int? incomingWinner = json[_BoardKeys.winnerIndex] as int?;
+    if (winnerIndex == null && incomingWinner != null) {
+      winnerIndex = incomingWinner;
+      _eventController.add(.gameOver);
+    } else {
+      winnerIndex = incomingWinner;
+    }
   }
 
   int getCardIndexByPlayerIndex(IshiCard card) =>
@@ -300,14 +320,14 @@ class GameManager {
   void resolvePendingAttack() {
     int playerIndex = currentPlayer - 1;
     for (int i = 0; i < pendingDrawCount; i++) {
-      if (deck.isNotEmpty) {
-        playerHands[playerIndex].insert(0, deck.removeLast());
-      }
+      if (deck.isEmpty) continue;
+      playerHands[playerIndex].insert(0, deck.removeLast());
     }
     pendingDrawCount = 0;
     actionPoints[playerIndex] = 0; // Force their turn to end
     cardDraws[playerIndex] = 0; // Prevent them from digging for answers
     hasDrawnCard = true;
+    if (playerIndex == localPlayerIndex) sortHand(playerIndex, handSortType);
   }
 
   /// ACTION: Play a card and apply its effects
@@ -323,7 +343,10 @@ class GameManager {
     hasPlayedCard = true;
     declaredColor = null;
     if (wasUnderAttack) hasDeflected = true;
-    if (playerHands[playerIndex].isEmpty) winnerIndex = playerIndex;
+    if (playerHands[playerIndex].isEmpty) {
+      winnerIndex = playerIndex;
+      _eventController.add(.gameOver);
+    }
   }
 
   void setDeclaredColor(CardColor color) => declaredColor = color;
@@ -334,6 +357,7 @@ class GameManager {
     IshiCard drawn = deck.removeLast();
     playerHands[playerIndex].insert(0, drawn);
     hasDrawnCard = true;
+    if (playerIndex == localPlayerIndex) sortHand(playerIndex, handSortType);
     return drawn;
   }
 
@@ -374,6 +398,9 @@ class GameManager {
       if (deck.isEmpty) break;
       IshiCard drawn = deck.removeLast();
       playerHands[targetPlayerIndex].insert(0, drawn);
+    }
+    if (targetPlayerIndex == localPlayerIndex) {
+      sortHand(targetPlayerIndex, handSortType);
     }
   }
 

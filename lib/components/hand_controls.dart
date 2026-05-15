@@ -32,7 +32,7 @@ class HandControls extends StatelessWidget {
       PopupMenuButton<DeckSortType>(
         icon: const Icon(Icons.sort),
         tooltip: "Sort Hand by ...",
-        initialValue: .unsorted,
+        initialValue: manager.handSortType,
         iconColor: Colors.white,
         onSelected: onSortHand,
         itemBuilder: (_) => const [

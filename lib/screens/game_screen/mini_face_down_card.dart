@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 class MiniFaceDownCard extends StatelessWidget {
-  const MiniFaceDownCard({super.key});
+  const MiniFaceDownCard({super.key, this.widthFactor = 0.6});
+
+  final double? widthFactor;
 
   @override
   Widget build(BuildContext context) {
     return Align(
-      widthFactor: 0.6,
+      widthFactor: widthFactor,
       alignment: .centerLeft,
       child: Container(
         width: 30,
@@ -15,13 +17,6 @@ class MiniFaceDownCard extends StatelessWidget {
           color: Colors.black,
           borderRadius: .circular(6),
           border: .all(color: Colors.grey.shade900, width: 1.5),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black45,
-              blurRadius: 3,
-              offset: Offset(-2, 2),
-            ),
-          ],
         ),
         alignment: .center,
         child: Text(

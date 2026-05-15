@@ -33,6 +33,7 @@ extension GameScreenActions on GameScreenState {
           duration: const Duration(milliseconds: 400),
         );
       });
+      _triggerAutoSortIfNeeded();
       broadcastGameState();
     } else {
       _net.sendIntent(
@@ -72,6 +73,7 @@ extension GameScreenActions on GameScreenState {
           );
         }
       });
+      _triggerAutoSortIfNeeded();
       broadcastGameState();
     } else {
       _net.sendIntent(
@@ -115,6 +117,9 @@ extension GameScreenActions on GameScreenState {
             getCurrentState?.insertItem(0);
           }
           _manager.playerRelics[playerIndex].remove(chosenRelic);
+          if (playerIndex == _manager.localPlayerIndex) {
+            _triggerAutoSortIfNeeded();
+          }
         }
       }
 
@@ -264,7 +269,7 @@ extension GameScreenActions on GameScreenState {
     int winner = _manager.winnerIndex!;
     String winnerName = "Player ${winner + 1}";
     if (winner == _manager.localPlayerIndex) {
-      winnerName = "YOU";
+      winnerName = "You";
     } else if (winner < _net.playersList.length) {
       winnerName = _net.playersList[winner].playerName;
     }
@@ -275,66 +280,13 @@ extension GameScreenActions on GameScreenState {
       builder: (_) => GameOverDialog(winnerName: winnerName, network: _net),
     );
   }
-}
 
-class GameOverDialog extends StatelessWidget {
-  const GameOverDialog({
-    super.key,
-    required this.winnerName,
-    required this.network,
-  });
+  void _triggerAutoSortIfNeeded() {
+    if (_manager.handSortType == .unsorted) return;
 
-  final String winnerName;
-  final NetworkService network;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: Colors.grey.shade900,
-      shape: RoundedRectangleBorder(borderRadius: .circular(16)),
-      title: const Text(
-        "GAME OVER",
-        textAlign: .center,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: .bold,
-          letterSpacing: 2,
-        ),
-      ),
-      content: Column(
-        mainAxisSize: .min,
-        children: [
-          const Icon(Icons.emoji_events, color: Colors.amber, size: 80),
-          const SizedBox(height: 16),
-          Text(
-            "$winnerName WON THE MATCH!",
-            textAlign: .center,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 18,
-              fontWeight: .bold,
-            ),
-          ),
-        ],
-      ),
-      actionsAlignment: .center,
-      actions: [
-        ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue.shade700,
-            foregroundColor: Colors.white,
-          ),
-          icon: const Icon(Icons.exit_to_app),
-          label: const Text("RETURN TO MENU"),
-          onPressed: () async {
-            // Disconnect from WebRTC/LAN and pop back to the Root Menu
-            await network.disconnect();
-            if (!context.mounted) return;
-            Navigator.of(context).popUntil((route) => route.isFirst);
-          },
-        ),
-      ],
-    );
+    // Wait for the AnimatedList's insertItem(0) animation to finish (400ms)
+    Future.delayed(const Duration(milliseconds: 450), () {
+      if (mounted) animatedSort(_manager.handSortType);
+    });
   }
 }
