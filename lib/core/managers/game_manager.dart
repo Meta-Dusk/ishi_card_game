@@ -69,6 +69,7 @@ class GameManager {
 
   // --- VISUAL STATES ---
   DeckSortType handSortType = .unsorted;
+  bool isAutoSortEnabled = false;
 
   // --- EVENTS ---
   final _eventController = StreamController<GameManagerEvent>.broadcast();

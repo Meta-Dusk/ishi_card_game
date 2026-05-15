@@ -43,6 +43,8 @@ class GameScreenState extends State<GameScreen> {
   List<IshiCard> get currentHand =>
       _manager.playerHands[_manager.localPlayerIndex];
 
+  IshiCard? _selectedCard;
+
   void updateUI(VoidCallback fn) {
     if (mounted) setState(fn);
   }
@@ -92,9 +94,17 @@ class GameScreenState extends State<GameScreen> {
             onFlipAllCard: flipAllCardsAction,
             onSortHand: animatedSort,
             onTakePenalty: takePenaltyAction,
+            onToggleAutoSort: () => updateUI(
+              () => _manager.isAutoSortEnabled = !_manager.isAutoSortEnabled,
+            ),
             manager: _manager,
             isMyTurn: isMyTurn,
           ),
+        ),
+        AnimatedPlayButton(
+          selectedCard: _selectedCard,
+          isMyTurn: isMyTurn,
+          onPlay: () => playCardAction(_selectedCard!),
         ),
         Container(
           height: 280,
@@ -109,8 +119,16 @@ class GameScreenState extends State<GameScreen> {
             child: AnimatedCardList(
               animatedListKey: listKeys[localUIIndex],
               currentHand: currentHand,
-              onTapCard: (card) =>
-                  setState(() => card.isFaceUp = !card.isFaceUp),
+              onTapCard: (card) {
+                if (!isMyTurn) return;
+                updateUI(() {
+                  if (_selectedCard == card) {
+                    _selectedCard = null; // Deselect if tapped again
+                  } else {
+                    _selectedCard = card; // Select the new card
+                  }
+                });
+              },
               scrollController: scrollControllers[localUIIndex],
               isMyTurn: isMyTurn,
             ),
@@ -216,6 +234,41 @@ class GameScreenState extends State<GameScreen> {
     context: context,
     builder: (_) => LeaveGameDialog(network: _net),
   );
+}
+
+class AnimatedPlayButton extends StatelessWidget {
+  const AnimatedPlayButton({
+    super.key,
+    required this.selectedCard,
+    required this.isMyTurn,
+    required this.onPlay,
+  });
+
+  final IshiCard? selectedCard;
+  final bool isMyTurn;
+  final VoidCallback onPlay;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      height: (selectedCard != null && isMyTurn) ? 48 : 0,
+      curve: Curves.easeOutCubic,
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.orangeAccent,
+          foregroundColor: Colors.black,
+          padding: const .symmetric(horizontal: 32, vertical: 12),
+        ),
+        icon: const Icon(Icons.arrow_upward_rounded, size: 24),
+        label: const Text(
+          "PLAY SELECTED CARD",
+          style: TextStyle(fontWeight: .bold, fontSize: 16),
+        ),
+        onPressed: onPlay,
+      ),
+    );
+  }
 }
 
 class LeaveGameDialog extends StatelessWidget {

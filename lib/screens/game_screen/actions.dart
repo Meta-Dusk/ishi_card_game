@@ -155,6 +155,23 @@ extension GameScreenActions on GameScreenState {
   Future<void> playCardAction(IshiCard card) async {
     if (!isMyTurn) return;
 
+    if (!_manager.canPlay(card, _manager.localPlayerIndex)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("You cannot play this card right now!"),
+          backgroundColor: Colors.redAccent,
+          duration: Duration(seconds: 2),
+          behavior: .floating,
+        ),
+      );
+
+      // Clear the invalid selection so the button hides
+      if (_selectedCard != null) updateUI(() => _selectedCard = null);
+      return;
+    }
+
+    if (_selectedCard != null) updateUI(() => _selectedCard = null);
+
     final int playerIndex = _manager.localPlayerIndex;
     final int cardIndex = _manager.playerHands[playerIndex].indexOf(card);
     if (cardIndex == -1) return;
@@ -282,7 +299,9 @@ extension GameScreenActions on GameScreenState {
   }
 
   void _triggerAutoSortIfNeeded() {
-    if (_manager.handSortType == .unsorted) return;
+    if (_manager.handSortType == .unsorted || !_manager.isAutoSortEnabled) {
+      return;
+    }
 
     // Wait for the AnimatedList's insertItem(0) animation to finish (400ms)
     Future.delayed(const Duration(milliseconds: 450), () {
