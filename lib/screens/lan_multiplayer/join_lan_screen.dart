@@ -67,7 +67,7 @@ class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
       context: context,
       builder: (context) => _ManualEntryDialog(
         ipController: ipTextController,
-        onJoin: () => _joinLanLobby(ipTextController.text.trim()),
+        onJoin: (_) => _joinLanLobby(ipTextController.text.trim()),
       ),
     );
   }
@@ -94,6 +94,14 @@ class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
       if (_isConnecting) _loadingView(),
       if (!isPcPlatform()) _scanHostQrLabel(),
       _ManulEntryButton(onShowManualEntry: _showManualEntry),
+      Positioned(
+        top: 40,
+        left: 16,
+        child: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
+        ),
+      ),
     ];
     return Scaffold(
       backgroundColor: Colors.black,
@@ -197,7 +205,7 @@ class _ManualEntryDialog extends StatelessWidget {
   const _ManualEntryDialog({required this.ipController, required this.onJoin});
 
   final TextEditingController ipController;
-  final VoidCallback onJoin;
+  final void Function(String?) onJoin;
 
   @override
   Widget build(BuildContext context) {
@@ -215,13 +223,14 @@ class _ManualEntryDialog extends StatelessWidget {
           hintStyle: TextStyle(color: Colors.white54),
         ),
         autofocus: true,
+        onSubmitted: onJoin,
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text("CANCEL"),
         ),
-        ElevatedButton(onPressed: onJoin, child: const Text("JOIN")),
+        ElevatedButton(onPressed: () => onJoin, child: const Text("JOIN")),
       ],
     );
   }

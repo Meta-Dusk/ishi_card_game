@@ -46,6 +46,26 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     if (!mounted) return;
 
     switch (message) {
+      case KickedMessage(:final reason):
+        _net.disconnect();
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => _OnKickedDialog(reason: reason),
+        );
+        break;
+
+      case SystemNotificationMessage(:final text):
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(text, style: const TextStyle(fontWeight: .bold)),
+            backgroundColor: Colors.blueGrey.shade800,
+            duration: const Duration(seconds: 3),
+            behavior: .floating,
+          ),
+        );
+        break;
+
       // Any message that changes the player count updates the UI
       case PlayerJoinedMessage(:final totalPlayers):
       case LobbySyncResponseMessage(:final totalPlayers):
@@ -128,7 +148,10 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
         ),
       ),
       const SizedBox(height: 16),
-      VerbosePlayerList(players: players),
+      VerbosePlayerList(
+        players: players,
+        onKick: _net.isHost ? (index) => _net.kickPlayer(index) : null,
+      ),
       const SizedBox(height: 20),
       Center(
         child: _net.isHost
@@ -143,6 +166,13 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: BackButton(
+          color: Colors.white,
+          onPressed: () async {
+            await _net.disconnect();
+            if (context.mounted) Navigator.pop(context);
+          },
+        ),
         title: const Text(
           "LOBBY",
           style: TextStyle(
@@ -152,11 +182,43 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          if (_net.isHost)
+            IconButton(
+              icon: const Icon(
+                Icons.cleaning_services_rounded,
+                color: Colors.orangeAccent,
+              ),
+              tooltip: "Purge Invalid Players",
+              onPressed: () => _net.purgeInvalidPlayers(),
+            ),
+        ],
       ),
       body: Padding(
         padding: const .all(16.0),
         child: Column(crossAxisAlignment: .start, children: mainContent),
       ),
+    );
+  }
+}
+
+class _OnKickedDialog extends StatelessWidget {
+  const _OnKickedDialog({required this.reason});
+
+  final String reason;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: Colors.grey.shade900,
+      title: const Text("Kicked", style: TextStyle(color: Colors.redAccent)),
+      content: Text(reason, style: const TextStyle(color: Colors.white)),
+      actions: [
+        ElevatedButton(
+          onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
+          child: const Text("OK", style: TextStyle(color: Colors.black)),
+        ),
+      ],
     );
   }
 }

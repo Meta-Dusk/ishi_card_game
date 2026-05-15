@@ -14,5 +14,7 @@ abstract class NetworkService {
   void sendToClient(int clientIndex, NetMessage message);
   void broadcast(NetMessage message);
   void sendIntent(NetMessage message);
+  void kickPlayer(int playerIndex);
+  void purgeInvalidPlayers();
   Future<void> disconnect();
 }

@@ -324,6 +324,12 @@ class WebRTCService implements NetworkService {
     if (isHost) {
       int index = _clientIds.indexOf(peerId);
       if (index == -1) return;
+
+      String leftName = "A player";
+      if (index + 1 < listOfPlayers.length) {
+        leftName = listOfPlayers[index + 1].playerName;
+      }
+
       _clientIds.removeAt(index);
       _peerConnections[peerId]?.close();
       _peerConnections.remove(peerId);
@@ -332,6 +338,8 @@ class WebRTCService implements NetworkService {
       if (index + 1 < listOfPlayers.length) listOfPlayers.removeAt(index + 1);
       currentPlayer = _clientIds.length + 1;
 
+      // Broadcast the departure!
+      broadcast(SystemNotificationMessage("$leftName disconnected."));
       broadcast(PlayerJoinedMessage(currentPlayer));
       broadcast(LobbyStateMessage(listOfPlayers));
     } else {
@@ -378,6 +386,57 @@ class WebRTCService implements NetworkService {
     return String.fromCharCodes(
       Iterable.generate(5, (_) => chars.codeUnitAt(rnd.nextInt(chars.length))),
     );
+  }
+
+  @override
+  void kickPlayer(int playerIndex) {
+    if (!isHost || playerIndex <= 0 || playerIndex > _clientIds.length) return;
+
+    // CAPTURE the exact peer ID
+    final String targetPeerId = _clientIds[playerIndex - 1];
+
+    sendToClient(playerIndex - 1, const KickedMessage());
+
+    // Give the WebRTC data channel time to transmit
+    Future.delayed(
+      const Duration(milliseconds: 500),
+      () => _handleDisconnect(targetPeerId),
+    );
+  }
+
+  @override
+  void purgeInvalidPlayers() {
+    if (!isHost) return;
+    int purged = 0;
+
+    for (int i = _clientIds.length - 1; i >= 0; i--) {
+      final p = listOfPlayers[i + 1];
+
+      if (p.playerName == "Player" || p.playerName == "Connecting...") {
+        // Capture the peer ID
+        final String targetPeerId = _clientIds[i];
+
+        sendToClient(
+          i,
+          const KickedMessage("Purged by host due to invalid connection."),
+        );
+
+        Future.delayed(
+          const Duration(milliseconds: 500),
+          () => _handleDisconnect(targetPeerId),
+        );
+        purged++;
+      }
+    }
+
+    if (purged > 0) {
+      Future.delayed(
+        const Duration(milliseconds: 600),
+        () => broadcast(
+          SystemNotificationMessage("Purged $purged ghost connection(s)."),
+        ),
+      );
+    }
   }
 
   @override

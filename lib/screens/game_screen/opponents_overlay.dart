@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ishi/core/managers/game_manager.dart';
-import 'package:ishi/screens/game_screen/mini_face_down_card.dart';
+import 'package:ishi/components/cards/mini_face_down_card.dart';
 import 'package:ishi/services/network_service.dart';
 
 class OpponentsOverlay extends StatelessWidget {
@@ -184,17 +184,19 @@ class _AnimatedCardFan extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 45,
-      width: 130, // Max width, will overlap if they have too many!
+      width: 130,
       alignment: .centerLeft,
       child: AnimatedList(
         key: listKeys[index + 1],
         scrollDirection: .horizontal,
         initialItemCount: handSize,
-        itemBuilder: (_, _, animation) => SizeTransition(
+        itemBuilder: (_, index, animation) => SizeTransition(
           sizeFactor: animation,
           axis: .horizontal,
           axisAlignment: -1.0,
-          child: MiniFaceDownCard(),
+          child: index + 1 == handSize
+              ? MiniFaceDownCard(widthFactor: 1.0)
+              : const MiniFaceDownCard(),
         ),
       ),
     );

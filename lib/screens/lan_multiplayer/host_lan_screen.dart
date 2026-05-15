@@ -56,6 +56,17 @@ class _HostLANLobbyScreenState extends State<HostLANLobbyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: BackButton(
+          color: Colors.white,
+          onPressed: () async {
+            await SocketService().disconnect();
+            if (context.mounted) Navigator.pop(context);
+          },
+        ),
+      ),
       backgroundColor: Colors.grey.shade900,
       body: Center(
         child: _webSocketUrl == null

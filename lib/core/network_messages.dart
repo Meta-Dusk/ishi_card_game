@@ -12,6 +12,8 @@ enum NetType {
   gameStateUpdate,
   playIntent,
   setProfile,
+  kicked,
+  systemNotification,
 }
 
 enum IntentAction { drawCard, endTurn, takePenalty, playCard }
@@ -47,6 +49,10 @@ sealed class NetMessage {
         return PlayIntentMessage.fromJson(json);
       case .setProfile:
         return SetProfileMessage.fromJson(json);
+      case .kicked:
+        return KickedMessage.fromJson(json);
+      case .systemNotification:
+        return SystemNotificationMessage.fromJson(json);
     }
   }
 }
@@ -219,6 +225,34 @@ class PlayIntentMessage extends NetMessage {
       relicId: json[_NetKey.relicId] as String?,
     );
   }
+}
+
+// --- SYSTEM NOTIFICATIONS ---
+class KickedMessage extends NetMessage {
+  final String reason;
+
+  const KickedMessage([this.reason = "You were kicked by the host."]);
+
+  @override
+  StringDynamicMap toJson() => {'type': NetType.kicked.name, 'reason': reason};
+
+  factory KickedMessage.fromJson(StringDynamicMap json) =>
+      KickedMessage(json['reason'] as String);
+}
+
+class SystemNotificationMessage extends NetMessage {
+  final String text;
+
+  const SystemNotificationMessage(this.text);
+
+  @override
+  StringDynamicMap toJson() => {
+    'type': NetType.systemNotification.name,
+    'text': text,
+  };
+
+  factory SystemNotificationMessage.fromJson(StringDynamicMap json) =>
+      SystemNotificationMessage(json['text'] as String);
 }
 
 class LobbyPlayer {

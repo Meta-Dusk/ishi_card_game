@@ -8,6 +8,7 @@ class HandControls extends StatelessWidget {
     required this.onFlipAllCard,
     required this.onSortHand,
     required this.onTakePenalty,
+    required this.onToggleAutoSort,
     required this.manager,
     required this.isMyTurn,
   });
@@ -16,6 +17,7 @@ class HandControls extends StatelessWidget {
   final VoidCallback onEndTurn;
   final void Function(DeckSortType) onSortHand;
   final VoidCallback onTakePenalty;
+  final VoidCallback onToggleAutoSort;
   final GameManager manager;
   final bool isMyTurn;
 
@@ -29,17 +31,34 @@ class HandControls extends StatelessWidget {
         manager.actionPoints[playerIndex] > 0;
 
     final mainContent = [
-      PopupMenuButton<DeckSortType>(
-        icon: const Icon(Icons.sort),
-        tooltip: "Sort Hand by ...",
-        initialValue: .unsorted,
-        iconColor: Colors.white,
-        onSelected: onSortHand,
-        itemBuilder: (_) => const [
-          PopupMenuItem(value: .byColor, child: Text("Sort by Color")),
-          PopupMenuItem(value: .byType, child: Text("Sort by Type")),
-          PopupMenuItem(value: .byValue, child: Text("Sort by Value")),
-          PopupMenuItem(value: .unsorted, child: Text("Unsorted")),
+      Row(
+        mainAxisSize: .min,
+        children: [
+          PopupMenuButton<DeckSortType>(
+            icon: const Icon(Icons.sort),
+            tooltip: "Sort Hand by ...",
+            initialValue: manager.handSortType,
+            iconColor: Colors.white,
+            onSelected: onSortHand,
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: .byColor, child: Text("Sort by Color")),
+              PopupMenuItem(value: .byType, child: Text("Sort by Type")),
+              PopupMenuItem(value: .byValue, child: Text("Sort by Value")),
+              PopupMenuItem(value: .unsorted, child: Text("Unsorted")),
+            ],
+          ),
+          IconButton(
+            onPressed: onToggleAutoSort,
+            icon: Icon(
+              manager.isAutoSortEnabled ? Icons.sync : Icons.sync_disabled,
+              color: manager.isAutoSortEnabled
+                  ? Colors.greenAccent
+                  : Colors.grey,
+            ),
+            tooltip: manager.isAutoSortEnabled
+                ? "Auto-Sort: ON"
+                : "Auto-Sort: OFF",
+          ),
         ],
       ),
       TextButton.icon(

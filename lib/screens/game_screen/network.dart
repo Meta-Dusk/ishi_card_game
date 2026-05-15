@@ -22,7 +22,12 @@ extension GameScreenNetwork on GameScreenState {
 
       // Apply Master State
       _manager.applyGameStateJson(message.payload);
-      _manager.sortHand(_manager.localPlayerIndex, _manager.handSortType);
+
+      int newLocalSize = currentHand.length;
+
+      if (newLocalSize <= oldLocalSize) {
+        _manager.sortHand(_manager.localPlayerIndex, _manager.handSortType);
+      }
 
       if (_manager.winnerIndex != null) {
         _showGameOverDialog();
@@ -30,7 +35,6 @@ extension GameScreenNetwork on GameScreenState {
       }
 
       // Animate Local Player (Insertions only)
-      int newLocalSize = currentHand.length;
       if (newLocalSize > oldLocalSize) {
         int diff = newLocalSize - oldLocalSize;
         for (int i = 0; i < diff; i++) {
@@ -39,72 +43,52 @@ extension GameScreenNetwork on GameScreenState {
             duration: const Duration(milliseconds: 400),
           );
         }
+        _triggerAutoSortIfNeeded();
       }
 
-      // Animate EVERY Opponent's insertions AND removals!
-      for (int i = 0; i < _manager.playerCount; i++) {
-        if (i == _manager.localPlayerIndex) continue; // Skip local player
-
-        int newOppSize = _getHandSize(i);
-        int oldOppSize = oldOpponentSizes[i];
-        int diff = newOppSize - oldOppSize;
-
-        if (diff > 0) {
-          // Opponent Drew Cards
-          for (int j = 0; j < diff; j++) {
-            listKeys[i + 1]?.currentState?.insertItem(
-              0,
-              duration: const Duration(milliseconds: 300),
-            );
-          }
-        } else if (diff < 0) {
-          playPileKey.currentState?.animateOpponentDrop();
-
-          // Opponent Played Cards
-          for (int j = 0; j < -diff; j++) {
-            listKeys[i + 1]?.currentState?.removeItem(
-              0, // Remove the top card visually
-              (context, animation) => SizeTransition(
-                sizeFactor: animation,
-                axis: .horizontal,
-                axisAlignment: -1.0,
-                child: MiniFaceDownCard(),
-              ),
-              duration: const Duration(milliseconds: 300),
-            );
-          }
-        }
-      }
+      // _triggerAutoSortIfNeeded();
+      _animateOpponentHands(oldOpponentSizes);
     });
   }
 
   void initializeNetworkSync() {
-    _netSubscription = _net.messages.listen((message) {
+    _manager.eventStream.listen((event) {
       if (!mounted) return;
-
-      switch (message) {
-        case GameStateMessage():
-          _onGameStateUpdate(message);
-          break;
-
-        case PlayIntentMessage():
-          if (_net.isHost) processClientIntent(message);
-          break;
-
-        case RequestLobbyStateMessage(:final playerIndex):
-          if (_net.isHost) {
-            // Send the specific client their missing cards!
-            _net.sendToClient(
-              playerIndex - 1,
-              GameStateMessage(_manager.generateGameStateJson(playerIndex)),
-            );
-          }
-          break;
-
-        default:
+      switch (event) {
+        case .gameOver:
+          _showGameOverDialog();
           break;
       }
     });
+
+    _netSubscription = _net.messages.listen(
+      (message) => _processNetworkMessage(message),
+    );
+  }
+
+  void _processNetworkMessage(NetMessage message) {
+    if (!mounted) return;
+    switch (message) {
+      case GameStateMessage():
+        _onGameStateUpdate(message);
+        break;
+
+      case PlayIntentMessage():
+        if (_net.isHost) _processClientIntent(message);
+        break;
+
+      case RequestLobbyStateMessage(:final playerIndex):
+        if (!_net.isHost) break;
+        // Send the specific client their missing cards!
+        _net.sendToClient(
+          playerIndex - 1,
+          GameStateMessage(_manager.generateGameStateJson(playerIndex)),
+        );
+        break;
+
+      default:
+        break;
+    }
   }
 
   void broadcastGameState() {
@@ -117,7 +101,12 @@ extension GameScreenNetwork on GameScreenState {
     }
   }
 
-  void processClientIntent(PlayIntentMessage message) {
+  void _processClientIntent(PlayIntentMessage message) {
+    List<int> oldOpponentSizes = List.generate(
+      _manager.playerCount,
+      (i) => _getHandSize(i),
+    );
+
     updateUI(() {
       int pIndex = message.playerIndex;
 
@@ -136,6 +125,13 @@ extension GameScreenNetwork on GameScreenState {
           break;
       }
     });
+
+    _animateOpponentHands(oldOpponentSizes);
+
+    if (_manager.winnerIndex != null) {
+      _showGameOverDialog();
+    }
+
     broadcastGameState();
   }
 
@@ -175,5 +171,41 @@ extension GameScreenNetwork on GameScreenState {
     }
 
     if (_manager.winnerIndex != null) _showGameOverDialog();
+  }
+
+  void _animateOpponentHands(List<int> oldOpponentSizes) {
+    for (int i = 0; i < _manager.playerCount; i++) {
+      if (i == _manager.localPlayerIndex) continue; // Skip local player
+
+      int newOppSize = _getHandSize(i);
+      int oldOppSize = oldOpponentSizes[i];
+      int diff = newOppSize - oldOppSize;
+
+      if (diff > 0) {
+        // Opponent Drew Cards
+        for (int j = 0; j < diff; j++) {
+          listKeys[i + 1]?.currentState?.insertItem(
+            0,
+            duration: const Duration(milliseconds: 300),
+          );
+        }
+      } else if (diff < 0) {
+        playPileKey.currentState?.animateOpponentDrop();
+
+        // Opponent Played Cards
+        for (int j = 0; j < -diff; j++) {
+          listKeys[i + 1]?.currentState?.removeItem(
+            0,
+            (_, animation) => SizeTransition(
+              sizeFactor: animation,
+              axis: .horizontal,
+              axisAlignment: -1.0,
+              child: MiniFaceDownCard(),
+            ),
+            duration: const Duration(milliseconds: 300),
+          );
+        }
+      }
+    }
   }
 }
