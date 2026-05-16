@@ -16,8 +16,10 @@ class _JoinOnlineScreenState extends State<JoinOnlineScreen> {
   final TextEditingController _codeController = TextEditingController();
   bool _isConnecting = false;
 
-  Future<void> _connect() async {
-    final code = _codeController.text.trim().toUpperCase();
+  Future<void> _connect(String? input) async {
+    final code = input == null
+        ? _codeController.text.trim().toUpperCase()
+        : input.trim().toUpperCase();
     if (code.length != 5) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -121,7 +123,7 @@ class _JoinOnlineLobbyContent extends StatelessWidget {
 
   final TextEditingController codeController;
   final bool isConnecting;
-  final VoidCallback onConnect;
+  final void Function(String?) onConnect;
 
   @override
   Widget build(BuildContext context) {
@@ -143,6 +145,8 @@ class _JoinOnlineLobbyContent extends StatelessWidget {
         maxLength: 5,
         textCapitalization: .characters,
         textAlign: .center,
+        onSubmitted: onConnect,
+        autofocus: true,
         style: const TextStyle(
           fontSize: 40,
           fontWeight: .bold,
@@ -174,7 +178,7 @@ class _JoinOnlineLobbyContent extends StatelessWidget {
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: .circular(12)),
           ),
-          onPressed: isConnecting ? null : onConnect,
+          onPressed: isConnecting ? null : () => onConnect(null),
           icon: const Icon(Icons.login),
           label: const Text(
             "CONNECT TO LOBBY",

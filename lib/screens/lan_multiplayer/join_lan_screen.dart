@@ -232,7 +232,10 @@ class _ManualEntryDialog extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
           child: const Text("CANCEL"),
         ),
-        ElevatedButton(onPressed: () => onJoin, child: const Text("JOIN")),
+        ElevatedButton(
+          onPressed: () => onJoin(ipController.text.trim()),
+          child: const Text("JOIN"),
+        ),
       ],
     );
   }
