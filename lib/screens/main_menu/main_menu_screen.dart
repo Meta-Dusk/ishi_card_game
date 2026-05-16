@@ -243,12 +243,14 @@ class _ActiveMenu extends StatelessWidget {
       case .lanSetup:
         return LanSetupMenu(
           key: const ValueKey('lanSetup'),
-          onBack: () => onChangeMenu(.playMode),
+          onPrimaryBack: () => onChangeMenu(.playMode),
+          onSecondaryBack: (context) => Navigator.pop(context),
         );
       case .onlineSetup:
         return OnlineSetupMenu(
           key: const ValueKey('onlineSetup'),
-          onBack: () => onChangeMenu(.playMode),
+          onPrimaryBack: () => onChangeMenu(.playMode),
+          onSecondaryBack: (context) => Navigator.pop(context),
         );
       case .profile:
         return ProfileMenu(

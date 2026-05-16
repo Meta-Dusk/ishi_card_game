@@ -4,7 +4,9 @@ import '../lobby/lobby_waiting_screen.dart';
 import 'package:ishi/services/webrtc_service.dart';
 
 class JoinOnlineScreen extends StatefulWidget {
-  const JoinOnlineScreen({super.key});
+  final void Function(BuildContext) onBack;
+
+  const JoinOnlineScreen({super.key, required this.onBack});
 
   @override
   State<JoinOnlineScreen> createState() => _JoinOnlineScreenState();
@@ -92,7 +94,10 @@ class _JoinOnlineScreenState extends State<JoinOnlineScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        leading: BackButton(
+          color: Colors.white,
+          onPressed: () => widget.onBack(context),
+        ),
         title: const Text(
           "JOIN ONLINE",
           style: TextStyle(

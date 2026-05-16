@@ -3,7 +3,9 @@ import '../lobby/lobby_waiting_screen.dart';
 import 'package:ishi/services/webrtc_service.dart';
 
 class HostOnlineScreen extends StatefulWidget {
-  const HostOnlineScreen({super.key});
+  const HostOnlineScreen({super.key, required this.onBack});
+
+  final void Function(BuildContext) onBack;
 
   @override
   State<HostOnlineScreen> createState() => _HostOnlineScreenState();
@@ -44,40 +46,36 @@ class _HostOnlineScreenState extends State<HostOnlineScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final mainContent = Column(
+      mainAxisAlignment: .center,
+      children: [
+        if (!_hasError)
+          const CircularProgressIndicator(color: Colors.blueAccent),
+        if (_hasError)
+          const Icon(Icons.error_outline, color: Colors.redAccent, size: 60),
+        const SizedBox(height: 24),
+        Text(
+          _status,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 16,
+            fontWeight: .bold,
+            letterSpacing: 1,
+          ),
+        ),
+        if (_hasError) ...[
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () => widget.onBack(context),
+            child: const Text("GO BACK"),
+          ),
+        ],
+      ],
+    );
+
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (!_hasError)
-              const CircularProgressIndicator(color: Colors.blueAccent),
-            if (_hasError)
-              const Icon(
-                Icons.error_outline,
-                color: Colors.redAccent,
-                size: 60,
-              ),
-            const SizedBox(height: 24),
-            Text(
-              _status,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
-              ),
-            ),
-            if (_hasError) ...[
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("GO BACK"),
-              ),
-            ],
-          ],
-        ),
-      ),
+      body: Center(child: mainContent),
     );
   }
 }

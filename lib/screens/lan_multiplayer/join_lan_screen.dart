@@ -5,7 +5,9 @@ import '../lobby/lobby_waiting_screen.dart';
 import 'package:ishi/services/socket_service.dart';
 
 class JoinLANGameScreen extends StatefulWidget {
-  const JoinLANGameScreen({super.key});
+  const JoinLANGameScreen({super.key, required this.onBack});
+
+  final void Function(BuildContext) onBack;
 
   @override
   State<JoinLANGameScreen> createState() => _JoinLANGameScreenState();
@@ -98,7 +100,7 @@ class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
         top: 40,
         left: 16,
         child: IconButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => widget.onBack(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
         ),
       ),
