@@ -77,9 +77,9 @@ class GameManager {
 
   GameManager({required this.playerCount, required this.startingHandSize});
 
-  void dispose() {
-    _eventController.close();
-  }
+  void addEvent(GameManagerEvent eventType) => _eventController.add(eventType);
+
+  void dispose() => _eventController.close();
 
   /// HOST ONLY: Generates a strictly personalized JSON package for a specific player.
   StringDynamicMap generateGameStateJson(int targetPlayerIndex) {
@@ -208,7 +208,7 @@ class GameManager {
     int? incomingWinner = json[_BoardKeys.winnerIndex] as int?;
     if (winnerIndex == null && incomingWinner != null) {
       winnerIndex = incomingWinner;
-      _eventController.add(.gameOver);
+      addEvent(.gameOver);
     } else {
       winnerIndex = incomingWinner;
     }
@@ -346,7 +346,7 @@ class GameManager {
     if (wasUnderAttack) hasDeflected = true;
     if (playerHands[playerIndex].isEmpty) {
       winnerIndex = playerIndex;
-      _eventController.add(.gameOver);
+      addEvent(.gameOver);
     }
   }
 

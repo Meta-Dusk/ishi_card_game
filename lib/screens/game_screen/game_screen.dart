@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:ishi/components/overlays/dev_console/dev_console_overlay.dart';
 import 'package:ishi/core/audio.dart';
 import 'package:ishi/core/managers/audio_manager.dart';
+import 'package:ishi/core/managers/dev_console.dart';
 import 'package:ishi/core/network_messages.dart';
 import 'package:ishi/core/managers/game_manager.dart';
 import 'package:ishi/components/dialogs/leave_game_dialog.dart';
@@ -49,6 +51,7 @@ class GameScreenState extends State<GameScreen> {
       _manager.playerHands[_manager.localPlayerIndex];
 
   IshiCard? _selectedCard;
+  bool _showDevConsole = false;
 
   void updateUI(VoidCallback fn) {
     if (mounted) setState(fn);
@@ -73,6 +76,8 @@ class GameScreenState extends State<GameScreen> {
         updateUI(() {});
       }
     });
+
+    DevConsole().initialize(_manager, _net);
 
     AudioManager().playMusic(Audio.music.gameLoop1);
   }
@@ -180,32 +185,7 @@ class GameScreenState extends State<GameScreen> {
       ),
 
       // Top Right Settings
-      Positioned(
-        top: 16,
-        right: 16,
-        child: Row(
-          mainAxisSize: .min,
-          children: [
-            IconButton(
-              onPressed: () => showDialog(
-                context: context,
-                builder: (_) => const SettingsDialog(),
-              ),
-              icon: const Icon(Icons.settings, color: Colors.white70, size: 30),
-              tooltip: "Show Settings",
-            ),
-            IconButton(
-              onPressed: _promptLeaveGame,
-              icon: const Icon(
-                Icons.exit_to_app,
-                color: Colors.redAccent,
-                size: 30,
-              ),
-              tooltip: "Exit game?",
-            ),
-          ],
-        ),
-      ),
+      Positioned(top: 16, right: 16, child: _topRightButtonRow(context)),
 
       // Opponent Hands Overlay
       Positioned(
@@ -254,12 +234,46 @@ class GameScreenState extends State<GameScreen> {
       ),
       if (_showPingOverlay)
         Positioned(top: 64, left: 16, child: LivePingPanel(network: _net)),
+      if (_showDevConsole)
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: DevConsoleOverlay(
+            onClose: () => updateUI(() => _showDevConsole = false),
+          ),
+        ),
     ];
 
     return Scaffold(
       backgroundColor: Colors.grey.shade900,
       body: SafeArea(child: Stack(children: stackedContent)),
     );
+  }
+
+  Row _topRightButtonRow(BuildContext context) {
+    final buttons = [
+      IconButton(
+        onPressed: () => showDialog(
+          context: context,
+          builder: (_) => const SettingsDialog(),
+        ),
+        icon: const Icon(Icons.settings, color: Colors.white70, size: 30),
+        tooltip: "Show Settings",
+      ),
+      IconButton(
+        onPressed: () => updateUI(() => _showDevConsole = !_showDevConsole),
+        icon: const Icon(Icons.terminal, color: Colors.greenAccent),
+        tooltip: "Show Developer Console",
+      ),
+      IconButton(
+        onPressed: _promptLeaveGame,
+        icon: const Icon(Icons.exit_to_app, color: Colors.redAccent, size: 30),
+        tooltip: "Exit Match",
+      ),
+    ];
+
+    return Row(mainAxisSize: .min, children: buttons);
   }
 
   void _promptLeaveGame() => showDialog(
