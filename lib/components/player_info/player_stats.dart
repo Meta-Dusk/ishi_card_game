@@ -58,34 +58,48 @@ class _PlayerResourceBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final actionPointsDp = [
-      const Icon(Icons.bolt, color: Colors.amber, size: 20),
-      const SizedBox(width: 4),
-      Text(
-        "$actionPoints",
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 16,
-          fontWeight: .bold,
-        ),
+    final actionPointsDp = Tooltip(
+      message: "Your remaining Action Points",
+      triggerMode: .tap,
+      preferBelow: true,
+      child: Row(
+        children: [
+          const Icon(Icons.bolt, color: Colors.amber, size: 20),
+          const SizedBox(width: 4),
+          Text(
+            "$actionPoints",
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 16,
+              fontWeight: .bold,
+            ),
+          ),
+        ],
       ),
-    ];
+    );
 
-    final cardDrawsDp = [
-      const Icon(Icons.style, color: Colors.blueAccent, size: 20),
-      const SizedBox(width: 4),
-      Text(
-        "$cardDraws",
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 16,
-          fontWeight: .bold,
-        ),
+    final cardDrawsDp = Tooltip(
+      message: "Your remaining Card Draws",
+      triggerMode: .tap,
+      preferBelow: true,
+      child: Row(
+        children: [
+          const Icon(Icons.style, color: Colors.blueAccent, size: 20),
+          const SizedBox(width: 4),
+          Text(
+            "$cardDraws",
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 16,
+              fontWeight: .bold,
+            ),
+          ),
+        ],
       ),
-    ];
+    );
 
     return Row(
-      children: [...actionPointsDp, const SizedBox(width: 16), ...cardDrawsDp],
+      children: [actionPointsDp, const SizedBox(width: 16), cardDrawsDp],
     );
   }
 }

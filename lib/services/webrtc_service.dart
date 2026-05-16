@@ -389,13 +389,16 @@ class WebRTCService implements NetworkService {
   }
 
   @override
-  void kickPlayer(int playerIndex) {
+  void kickPlayer(int playerIndex, {String? reason}) {
     if (!isHost || playerIndex <= 0 || playerIndex > _clientIds.length) return;
 
     // CAPTURE the exact peer ID
     final String targetPeerId = _clientIds[playerIndex - 1];
 
-    sendToClient(playerIndex - 1, const KickedMessage());
+    sendToClient(
+      playerIndex - 1,
+      reason == null ? const KickedMessage() : KickedMessage(reason),
+    );
 
     // Give the WebRTC data channel time to transmit
     Future.delayed(

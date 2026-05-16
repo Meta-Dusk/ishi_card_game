@@ -118,7 +118,7 @@ class _TakePenaltyButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.redAccent,
+        backgroundColor: Colors.redAccent.shade700,
         foregroundColor: Colors.white,
         padding: const .symmetric(horizontal: 24, vertical: 12),
       ),

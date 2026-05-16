@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:ishi/components/dialogs/on_kicked_dialog.dart';
+import 'package:ishi/screens/lobby/settings/lobby_settings.dart';
 import 'package:ishi/services/webrtc_service.dart';
 import 'package:ishi/services/network_service.dart';
 import 'package:ishi/core/managers/game_manager.dart';
@@ -8,6 +10,7 @@ import '../game_screen/game_screen.dart';
 import 'verbose_player_list.dart';
 import 'client_view.dart';
 import 'room_code_view.dart';
+import 'start_game_button.dart';
 
 class LobbyWaitingScreen extends StatefulWidget {
   final NetworkService network;
@@ -26,6 +29,9 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
   String? get roomCode => _net.currentRoomCode;
 
   int get getConnectedPlayerCount => _net.currentPlayer;
+
+  int _startingHandSize = 7;
+  int _maxPlayers = 10;
 
   @override
   void initState() {
@@ -46,12 +52,19 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     if (!mounted) return;
 
     switch (message) {
+      case LobbySettingsMessage(:final startingHandSize, :final maxPlayers):
+        setState(() {
+          _startingHandSize = startingHandSize;
+          _maxPlayers = maxPlayers;
+        });
+        break;
+
       case KickedMessage(:final reason):
         _net.disconnect();
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (_) => _OnKickedDialog(reason: reason),
+          builder: (_) => OnKickedDialog(reason: reason),
         );
         break;
 
@@ -70,6 +83,17 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
       case PlayerJoinedMessage(:final totalPlayers):
       case LobbySyncResponseMessage(:final totalPlayers):
         setState(() => _connectedPlayers = totalPlayers);
+
+        if (!_net.isHost) break;
+        if (totalPlayers > _maxPlayers) {
+          _net.kickPlayer(
+            totalPlayers - 1,
+            reason:
+                "Lobby is full! Current capacity: $totalPlayers/$_maxPlayers",
+          );
+        } else {
+          _net.broadcast(LobbySettingsMessage(_startingHandSize, _maxPlayers));
+        }
         break;
 
       case LobbyStateMessage():
@@ -81,7 +105,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
       case GameStateMessage(:final payload):
         final localManager = GameManager(
           playerCount: _net.currentPlayer,
-          startingHandSize: 7,
+          startingHandSize: _startingHandSize,
         );
         // Pass the unpacked payload directly to the engine
         localManager.applyGameStateJson(payload);
@@ -109,7 +133,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     // Host builds and initializes the master engine
     final masterManager = GameManager(
       playerCount: getConnectedPlayerCount,
-      startingHandSize: 7,
+      startingHandSize: _startingHandSize,
     );
     masterManager.initializeGame();
 
@@ -139,7 +163,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
         const SizedBox(height: 24),
       ],
       Text(
-        "PLAYERS CONNECTED: $_connectedPlayers/10",
+        "PLAYERS CONNECTED: $_connectedPlayers/$_maxPlayers",
         style: const TextStyle(
           color: Colors.white70,
           fontSize: 16,
@@ -150,12 +174,26 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
       const SizedBox(height: 16),
       VerbosePlayerList(
         players: players,
-        onKick: _net.isHost ? (index) => _net.kickPlayer(index) : null,
+        onKick: _net.isHost
+            ? (index, {reason}) => _net.kickPlayer(index, reason: reason)
+            : null,
       ),
+      LobbySettings(
+        network: _net,
+        startingHandSize: _startingHandSize,
+        maxPlayers: _maxPlayers,
+        connectedPlayers: _connectedPlayers,
+        onHandSizeChanged: (val) => setState(() => _startingHandSize = val),
+        onMaxPlayersChanged: (val) => setState(() => _maxPlayers = val),
+        onSettingsChangeEnd: () => _net.broadcast(
+          LobbySettingsMessage(_startingHandSize, _maxPlayers),
+        ), // Blast the network packet ONLY when the slider drag ends!
+      ),
+      const SizedBox(height: 16),
       const SizedBox(height: 20),
       Center(
         child: _net.isHost
-            ? _StartGameButton(onStartGame: _onStartGame)
+            ? StartGameButton(onStartGame: _onStartGame)
             : ClientView(),
       ),
       const SizedBox(height: 20),
@@ -197,50 +235,6 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
       body: Padding(
         padding: const .all(16.0),
         child: Column(crossAxisAlignment: .start, children: mainContent),
-      ),
-    );
-  }
-}
-
-class _OnKickedDialog extends StatelessWidget {
-  const _OnKickedDialog({required this.reason});
-
-  final String reason;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: Colors.grey.shade900,
-      title: const Text("Kicked", style: TextStyle(color: Colors.redAccent)),
-      content: Text(reason, style: const TextStyle(color: Colors.white)),
-      actions: [
-        ElevatedButton(
-          onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
-          child: const Text("OK", style: TextStyle(color: Colors.black)),
-        ),
-      ],
-    );
-  }
-}
-
-class _StartGameButton extends StatelessWidget {
-  const _StartGameButton({required this.onStartGame});
-
-  final VoidCallback onStartGame;
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(
-        padding: const .symmetric(horizontal: 40, vertical: 16),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-      ),
-      onPressed: onStartGame,
-      icon: const Icon(Icons.play_arrow),
-      label: const Text(
-        "START MATCH",
-        style: TextStyle(fontSize: 18, fontWeight: .bold),
       ),
     );
   }
