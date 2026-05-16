@@ -2,7 +2,6 @@
 
 - [ ] Add more relics
 - [ ] Add more special roguelike cards
-- [ ] Add sound effects and music
 - [ ] Make game popup dialogs minimizable (such as color selection for wild cards)
 
 ## Gameplay Ideas

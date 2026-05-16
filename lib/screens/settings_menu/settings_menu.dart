@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:ishi/components/dialogs/settings_dialog.dart';
+import 'package:ishi/core/audio.dart';
+import 'package:ishi/core/managers/audio_manager.dart';
 import 'package:ishi/core/managers/profile_manager.dart';
 import 'package:ishi/screens/main_menu/buttons.dart';
+import 'package:ishi/screens/settings_menu/audio_settings_button.dart';
+import 'package:ishi/screens/settings_menu/settings_header.dart';
 
 class SettingsMenu extends StatelessWidget {
   final VoidCallback onBack;
   const SettingsMenu({super.key, required this.onBack});
 
   Future<void> _resetPreferences(BuildContext context) async {
-    // Show a confirmation dialog to prevent accidental wipes
     bool? confirm = await showDialog<bool>(
       context: context,
       builder: (_) => _ConfirmationDialog(),
     );
 
-    // If they clicked "RESET", wipe the database
     if (confirm != true) return;
     await ProfileManager().resetToDefaults();
     if (!context.mounted) return;
@@ -31,9 +34,21 @@ class SettingsMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mainContent = [
-      const _SettingsHeader(),
+      const SettingsHeader(),
       const SizedBox(height: 24),
-      _ResetButton(onReset: () => _resetPreferences(context)),
+      AudioSettingsButton(
+        onShow: () => showDialog(
+          context: context,
+          builder: (_) => const SettingsDialog(),
+        ),
+      ),
+      const SizedBox(height: 24),
+      _ResetButton(
+        onReset: () {
+          AudioManager().playSFX(Audio.sfx.itemSelect);
+          _resetPreferences(context);
+        },
+      ),
       const SizedBox(height: 40),
       backButton(onPressed: onBack),
     ];
@@ -59,7 +74,10 @@ class _ConfirmationDialog extends StatelessWidget {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context, false),
+          onPressed: () {
+            AudioManager().playSFX(Audio.sfx.itemSelect);
+            Navigator.pop(context, false);
+          },
           child: const Text("CANCEL", style: TextStyle(color: Colors.grey)),
         ),
         ElevatedButton(
@@ -67,7 +85,10 @@ class _ConfirmationDialog extends StatelessWidget {
             backgroundColor: Colors.redAccent,
             foregroundColor: Colors.white,
           ),
-          onPressed: () => Navigator.pop(context, true),
+          onPressed: () {
+            AudioManager().playSFX(Audio.sfx.itemSelect);
+            Navigator.pop(context, true);
+          },
           child: const Text("RESET"),
         ),
       ],
@@ -87,8 +108,8 @@ class _ResetButton extends StatelessWidget {
       height: 60,
       child: OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.redAccent,
-          side: const BorderSide(color: Colors.redAccent, width: 2),
+          foregroundColor: Colors.redAccent.shade700,
+          side: BorderSide(color: Colors.redAccent.shade700, width: 2),
           shape: RoundedRectangleBorder(borderRadius: .circular(12)),
         ),
         icon: const Icon(Icons.delete_forever),
@@ -99,30 +120,5 @@ class _ResetButton extends StatelessWidget {
         onPressed: onReset,
       ),
     );
-  }
-}
-
-class _SettingsHeader extends StatelessWidget {
-  const _SettingsHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    final mainContent = [
-      Expanded(child: Divider(color: Colors.grey.shade400, thickness: 1.5)),
-      Padding(
-        padding: const .symmetric(horizontal: 12.0),
-        child: Text(
-          "SETTINGS",
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: .bold,
-            color: Colors.grey.shade600,
-            letterSpacing: 1.5,
-          ),
-        ),
-      ),
-      Expanded(child: Divider(color: Colors.grey.shade400, thickness: 1.5)),
-    ];
-    return Row(children: mainContent);
   }
 }

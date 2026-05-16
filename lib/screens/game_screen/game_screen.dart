@@ -1,8 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:ishi/components/overlays/dev_console/dev_console_overlay.dart';
+import 'package:ishi/core/audio.dart';
+import 'package:ishi/core/managers/audio_manager.dart';
+import 'package:ishi/core/managers/dev_console.dart';
 import 'package:ishi/core/network_messages.dart';
 import 'package:ishi/core/managers/game_manager.dart';
-import 'package:ishi/screens/game_screen/turn_timeline.dart';
+import 'package:ishi/components/dialogs/leave_game_dialog.dart';
+import 'package:ishi/components/dialogs/settings_dialog.dart';
+import 'package:ishi/components/gameplay/animated_play_button.dart';
 import 'package:ishi/services/network_service.dart';
 import 'package:ishi/models/relic.dart';
 import 'package:ishi/models/uno_card.dart';
@@ -45,6 +51,7 @@ class GameScreenState extends State<GameScreen> {
       _manager.playerHands[_manager.localPlayerIndex];
 
   IshiCard? _selectedCard;
+  bool _showDevConsole = false;
 
   void updateUI(VoidCallback fn) {
     if (mounted) setState(fn);
@@ -69,6 +76,10 @@ class GameScreenState extends State<GameScreen> {
         updateUI(() {});
       }
     });
+
+    DevConsole().initialize(_manager, _net);
+
+    AudioManager().playMusic(Audio.music.gameLoop1);
   }
 
   @override
@@ -79,6 +90,7 @@ class GameScreenState extends State<GameScreen> {
       controller.dispose();
     }
     super.dispose();
+    AudioManager().playMusic(Audio.music.menuLoop1);
   }
 
   @override
@@ -172,20 +184,8 @@ class GameScreenState extends State<GameScreen> {
         ),
       ),
 
-      // Leave Button
-      Positioned(
-        top: 16,
-        right: 16,
-        child: IconButton(
-          onPressed: _promptLeaveGame,
-          icon: const Icon(
-            Icons.exit_to_app,
-            color: Colors.redAccent,
-            size: 30,
-          ),
-          tooltip: "Exit game?",
-        ),
-      ),
+      // Top Right Settings
+      Positioned(top: 16, right: 16, child: _topRightButtonRow(context)),
 
       // Opponent Hands Overlay
       Positioned(
@@ -234,6 +234,15 @@ class GameScreenState extends State<GameScreen> {
       ),
       if (_showPingOverlay)
         Positioned(top: 64, left: 16, child: LivePingPanel(network: _net)),
+      if (_showDevConsole)
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: DevConsoleOverlay(
+            onClose: () => updateUI(() => _showDevConsole = false),
+          ),
+        ),
     ];
 
     return Scaffold(
@@ -242,78 +251,33 @@ class GameScreenState extends State<GameScreen> {
     );
   }
 
+  Row _topRightButtonRow(BuildContext context) {
+    final buttons = [
+      IconButton(
+        onPressed: () => showDialog(
+          context: context,
+          builder: (_) => const SettingsDialog(),
+        ),
+        icon: const Icon(Icons.settings, color: Colors.white70, size: 30),
+        tooltip: "Show Settings",
+      ),
+      IconButton(
+        onPressed: () => updateUI(() => _showDevConsole = !_showDevConsole),
+        icon: const Icon(Icons.terminal, color: Colors.greenAccent),
+        tooltip: "Show Developer Console",
+      ),
+      IconButton(
+        onPressed: _promptLeaveGame,
+        icon: const Icon(Icons.exit_to_app, color: Colors.redAccent, size: 30),
+        tooltip: "Exit Match",
+      ),
+    ];
+
+    return Row(mainAxisSize: .min, children: buttons);
+  }
+
   void _promptLeaveGame() => showDialog(
     context: context,
     builder: (_) => LeaveGameDialog(network: _net),
   );
-}
-
-class AnimatedPlayButton extends StatelessWidget {
-  const AnimatedPlayButton({
-    super.key,
-    required this.selectedCard,
-    required this.isMyTurn,
-    required this.onPlay,
-  });
-
-  final IshiCard? selectedCard;
-  final bool isMyTurn;
-  final VoidCallback onPlay;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      height: (selectedCard != null && isMyTurn) ? 48 : 0,
-      curve: Curves.easeOutCubic,
-      child: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.orangeAccent,
-          foregroundColor: Colors.black,
-          padding: const .symmetric(horizontal: 32, vertical: 12),
-        ),
-        icon: const Icon(Icons.arrow_upward_rounded, size: 24),
-        label: const Text(
-          "PLAY SELECTED CARD",
-          style: TextStyle(fontWeight: .bold, fontSize: 16),
-        ),
-        onPressed: onPlay,
-      ),
-    );
-  }
-}
-
-class LeaveGameDialog extends StatelessWidget {
-  const LeaveGameDialog({super.key, required this.network});
-
-  final NetworkService network;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: Colors.grey.shade900,
-      title: const Text("Leave Game", style: TextStyle(color: Colors.white)),
-      content: const Text(
-        "Are you sure you want to leave the match?",
-        style: TextStyle(color: Colors.white70),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("CANCEL", style: TextStyle(color: Colors.white38)),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-          onPressed: () async {
-            Navigator.pop(context); // Close dialog
-            await network.disconnect(); // Alert peers
-            if (!context.mounted) return;
-            // Back to Main Menu
-            Navigator.of(context).popUntil((route) => route.isFirst);
-          },
-          child: const Text("LEAVE", style: TextStyle(color: Colors.white)),
-        ),
-      ],
-    );
-  }
 }

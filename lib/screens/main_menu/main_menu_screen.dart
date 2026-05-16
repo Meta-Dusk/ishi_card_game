@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:ishi/screens/settings_menu.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:ishi/core/audio.dart';
+import 'package:ishi/core/managers/audio_manager.dart';
+import '../settings_menu/settings_menu.dart';
 import '../online_multiplayer/online_setup_menu.dart';
 import '../profile_menu/profile_menu.dart';
 import '../lan_multiplayer/lan_setup_menu.dart';
@@ -43,23 +45,25 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     setState(() => _appVersion = 'v${info.version}+${info.buildNumber}');
   }
 
-  void _changeMenu(MenuState newState) =>
-      setState(() => _currentMenu = newState);
+  Future<void> _changeMenu(MenuState newState) async {
+    await AudioManager().playSFX(Audio.sfx.itemSelect);
+    setState(() => _currentMenu = newState);
+  }
 
   /// Android Hardware Back Button Handler
-  void _onPopInvoked(bool didPop) {
+  Future<void> _onPopInvoked(bool didPop) async {
     if (didPop) return;
     switch (_currentMenu) {
       case .playMode:
       case .profile:
       case .settings:
-        _changeMenu(.root);
+        await _changeMenu(.root);
         break;
 
       case .localSetup:
       case .lanSetup:
       case .onlineSetup:
-        _changeMenu(.playMode);
+        await _changeMenu(.playMode);
 
       default:
         break;
@@ -224,6 +228,7 @@ class _ActiveMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (currentMenu) {
       case .root:
+        AudioManager().playMusic(Audio.music.menuLoop1);
         return RootMenu(
           key: const ValueKey('root'),
           onPlay: () => onChangeMenu(.playMode),

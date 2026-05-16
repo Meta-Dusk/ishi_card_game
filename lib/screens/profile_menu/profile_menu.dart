@@ -80,14 +80,14 @@ class _ProfileMenuState extends State<ProfileMenu> {
       // --- BUTTONS ---
       SaveProfileButton(onSaveProfile: _saveAndExit),
       const SizedBox(height: 16),
-      _CancelButton(onBack: widget.onBack),
+      _BackButton(onBack: widget.onBack),
     ];
     return Column(children: mainContent);
   }
 }
 
-class _CancelButton extends StatelessWidget {
-  const _CancelButton({required this.onBack});
+class _BackButton extends StatelessWidget {
+  const _BackButton({required this.onBack});
 
   final VoidCallback onBack;
 
@@ -97,7 +97,7 @@ class _CancelButton extends StatelessWidget {
       style: TextButton.styleFrom(foregroundColor: Colors.grey.shade600),
       icon: const Icon(Icons.arrow_back),
       label: const Text(
-        "CANCEL",
+        "BACK",
         style: TextStyle(fontWeight: .bold, letterSpacing: 1),
       ),
       onPressed: onBack,

@@ -14,6 +14,7 @@ enum NetType {
   setProfile,
   kicked,
   systemNotification,
+  lobbySettings,
 }
 
 enum IntentAction { drawCard, endTurn, takePenalty, playCard }
@@ -53,6 +54,8 @@ sealed class NetMessage {
         return KickedMessage.fromJson(json);
       case .systemNotification:
         return SystemNotificationMessage.fromJson(json);
+      case .lobbySettings:
+        return LobbySettingsMessage.fromJson(json);
     }
   }
 }
@@ -253,6 +256,26 @@ class SystemNotificationMessage extends NetMessage {
 
   factory SystemNotificationMessage.fromJson(StringDynamicMap json) =>
       SystemNotificationMessage(json['text'] as String);
+}
+
+class LobbySettingsMessage extends NetMessage {
+  final int startingHandSize;
+  final int maxPlayers;
+
+  const LobbySettingsMessage(this.startingHandSize, this.maxPlayers);
+
+  @override
+  StringDynamicMap toJson() => {
+    'type': NetType.lobbySettings.name,
+    'startingHandSize': startingHandSize,
+    'maxPlayers': maxPlayers,
+  };
+
+  factory LobbySettingsMessage.fromJson(StringDynamicMap json) =>
+      LobbySettingsMessage(
+        json['startingHandSize'] as int,
+        json['maxPlayers'] as int,
+      );
 }
 
 class LobbyPlayer {

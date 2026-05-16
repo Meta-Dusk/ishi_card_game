@@ -59,7 +59,7 @@ class OfflineNetworkService implements NetworkService {
   }
 
   @override
-  void kickPlayer(int playerIndex) {
+  void kickPlayer(int playerIndex, {String? reason}) {
     playersList.remove(playersList[playerIndex]);
   }
 

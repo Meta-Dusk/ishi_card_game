@@ -219,14 +219,17 @@ class SocketService implements NetworkService {
   }
 
   @override
-  void kickPlayer(int playerIndex) {
+  void kickPlayer(int playerIndex, {String? reason}) {
     if (!isHost || playerIndex <= 0 || playerIndex > _clients.length) return;
 
     // CAPTURE the exact socket so we don't close the wrong one if the array shifts
     final targetSocket = _clients[playerIndex - 1];
 
     // Send the kick message to the target client
-    sendToClient(playerIndex - 1, const KickedMessage());
+    sendToClient(
+      playerIndex - 1,
+      reason == null ? const KickedMessage() : KickedMessage(reason),
+    );
 
     // Give the network stack 500ms to actually flush and deliver the packet
     Future.delayed(
