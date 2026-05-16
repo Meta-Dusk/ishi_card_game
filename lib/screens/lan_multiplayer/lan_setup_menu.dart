@@ -6,8 +6,14 @@ import '../main_menu/menu_button.dart';
 import '../main_menu/section_header.dart';
 
 class LanSetupMenu extends StatelessWidget {
-  final VoidCallback onBack;
-  const LanSetupMenu({super.key, required this.onBack});
+  final VoidCallback onPrimaryBack;
+  final void Function(BuildContext) onSecondaryBack;
+
+  const LanSetupMenu({
+    super.key,
+    required this.onPrimaryBack,
+    required this.onSecondaryBack,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +27,9 @@ class LanSetupMenu extends StatelessWidget {
           color: Colors.green.shade700,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const HostLANLobbyScreen()),
+            MaterialPageRoute(
+              builder: (_) => HostLANLobbyScreen(onBack: onSecondaryBack),
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -31,11 +39,13 @@ class LanSetupMenu extends StatelessWidget {
           color: Colors.orange.shade700,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const JoinLANGameScreen()),
+            MaterialPageRoute(
+              builder: (_) => JoinLANGameScreen(onBack: onSecondaryBack),
+            ),
           ),
         ),
         const SizedBox(height: 32),
-        backButton(onPressed: onBack),
+        backButton(onPressed: onPrimaryBack),
       ],
     );
   }

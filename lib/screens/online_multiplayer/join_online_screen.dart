@@ -4,7 +4,9 @@ import '../lobby/lobby_waiting_screen.dart';
 import 'package:ishi/services/webrtc_service.dart';
 
 class JoinOnlineScreen extends StatefulWidget {
-  const JoinOnlineScreen({super.key});
+  final void Function(BuildContext) onBack;
+
+  const JoinOnlineScreen({super.key, required this.onBack});
 
   @override
   State<JoinOnlineScreen> createState() => _JoinOnlineScreenState();
@@ -14,8 +16,10 @@ class _JoinOnlineScreenState extends State<JoinOnlineScreen> {
   final TextEditingController _codeController = TextEditingController();
   bool _isConnecting = false;
 
-  Future<void> _connect() async {
-    final code = _codeController.text.trim().toUpperCase();
+  Future<void> _connect(String? input) async {
+    final code = input == null
+        ? _codeController.text.trim().toUpperCase()
+        : input.trim().toUpperCase();
     if (code.length != 5) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -92,7 +96,10 @@ class _JoinOnlineScreenState extends State<JoinOnlineScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        leading: BackButton(
+          color: Colors.white,
+          onPressed: () => widget.onBack(context),
+        ),
         title: const Text(
           "JOIN ONLINE",
           style: TextStyle(
@@ -116,7 +123,7 @@ class _JoinOnlineLobbyContent extends StatelessWidget {
 
   final TextEditingController codeController;
   final bool isConnecting;
-  final VoidCallback onConnect;
+  final void Function(String?) onConnect;
 
   @override
   Widget build(BuildContext context) {
@@ -138,6 +145,8 @@ class _JoinOnlineLobbyContent extends StatelessWidget {
         maxLength: 5,
         textCapitalization: .characters,
         textAlign: .center,
+        onSubmitted: onConnect,
+        autofocus: true,
         style: const TextStyle(
           fontSize: 40,
           fontWeight: .bold,
@@ -169,7 +178,7 @@ class _JoinOnlineLobbyContent extends StatelessWidget {
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: .circular(12)),
           ),
-          onPressed: isConnecting ? null : onConnect,
+          onPressed: isConnecting ? null : () => onConnect(null),
           icon: const Icon(Icons.login),
           label: const Text(
             "CONNECT TO LOBBY",

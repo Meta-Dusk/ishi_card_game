@@ -9,8 +9,8 @@ class RelicBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int playerIndex = manager.currentPlayer - 1;
-    final List<Relic> currentRelics = manager.playerRelics[playerIndex];
+    final int localIndex = manager.localPlayerIndex;
+    final List<Relic> currentRelics = manager.playerRelics[localIndex];
 
     final mainContent = [
       if (currentRelics.isNotEmpty)

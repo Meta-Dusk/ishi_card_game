@@ -5,7 +5,9 @@ import 'package:ishi/services/socket_service.dart';
 import '../lobby/lobby_waiting_screen.dart';
 
 class HostLANLobbyScreen extends StatefulWidget {
-  const HostLANLobbyScreen({super.key});
+  const HostLANLobbyScreen({super.key, required this.onBack});
+
+  final void Function(BuildContext) onBack;
 
   @override
   State<HostLANLobbyScreen> createState() => _HostLANLobbyScreenState();
@@ -63,7 +65,7 @@ class _HostLANLobbyScreenState extends State<HostLANLobbyScreen> {
           color: Colors.white,
           onPressed: () async {
             await SocketService().disconnect();
-            if (context.mounted) Navigator.pop(context);
+            if (context.mounted) widget.onBack(context);
           },
         ),
       ),

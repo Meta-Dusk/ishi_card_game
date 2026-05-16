@@ -20,8 +20,8 @@ class MiniFaceDownCard extends StatelessWidget {
         ),
         alignment: .center,
         child: Text(
-          "IS",
-          style: TextStyle(color: Colors.white, letterSpacing: 2),
+          "ISHI",
+          style: TextStyle(color: Colors.white, letterSpacing: 2, fontSize: 8),
         ),
       ),
     );

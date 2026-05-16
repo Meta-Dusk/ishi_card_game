@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'color_ring.dart';
 import 'card_designs.dart';
 import 'minimalist_card.dart';
-import '../../models/uno_card.dart';
+import 'package:ishi/models/uno_card.dart';
 
 class CardFront extends StatelessWidget {
   const CardFront({
@@ -160,64 +161,19 @@ class CardFront extends StatelessWidget {
   }
 }
 
-class ColorRing extends StatelessWidget {
-  /// Creates the 4-color ring for Wild cards
-  const ColorRing({super.key, required this.size});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-        shape: .circle,
-        // Use hard stops to create discrete color blocks instead of a blend
-        gradient: SweepGradient(
-          colors: [
-            Colors.red,
-            Colors.red,
-            Colors.blue,
-            Colors.blue,
-            Colors.amber,
-            Colors.amber,
-            Colors.green,
-            Colors.green,
-          ],
-          stops: [
-            0.0, 0.25, // Red quadrant
-            0.25, 0.5, // Blue quadrant
-            0.5, 0.75, // Amber quadrant
-            0.75, 1.0, // Green quadrant
-          ],
-        ),
-      ),
-      // The inner black circle makes it look like a hollow ring
-      child: Padding(
-        padding: .all(size * 0.15),
-        child: Container(
-          decoration: const BoxDecoration(
-            shape: .circle,
-            color: Colors.black, // Matches the wild card background
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class CardBack extends StatelessWidget {
   const CardBack({
     super.key,
     this.width = 120,
     this.height = 180,
     this.fontSize = 20,
+    this.decoration,
   });
 
   final double width;
   final double height;
   final double fontSize;
+  final BoxDecoration? decoration;
 
   @override
   Widget build(BuildContext context) {
@@ -228,33 +184,43 @@ class CardBack extends StatelessWidget {
         color: Colors.black,
         borderRadius: .circular(12),
       ),
-      child: Center(child: _title(fontSize: fontSize)),
+      alignment: .center,
+      child: Center(child: CardBackTitle(fontSize: fontSize)),
     );
   }
+}
 
-  Widget _title({double fontSize = 20}) => Stack(
-    children: [
-      Text(
-        "ISHI",
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: .w900,
-          letterSpacing: 16,
-          foreground: Paint()
-            ..style = .stroke
-            ..strokeWidth = 1
-            ..color = Colors.white,
+class CardBackTitle extends StatelessWidget {
+  const CardBackTitle({super.key, this.fontSize = 20});
+
+  final double fontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Text(
+          "ISHI",
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: .w900,
+            letterSpacing: 16,
+            foreground: Paint()
+              ..style = .stroke
+              ..strokeWidth = 1
+              ..color = Colors.white,
+          ),
         ),
-      ),
-      Text(
-        "ISHI",
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: .w900,
-          letterSpacing: 16,
-          color: Colors.black,
+        Text(
+          "ISHI",
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: .w900,
+            letterSpacing: 16,
+            color: Colors.black,
+          ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }
