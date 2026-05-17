@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'game_screen/game_screen.dart';
 import 'main_menu/buttons.dart';
 import 'main_menu/menu_button.dart';
@@ -65,7 +66,12 @@ class LocalSetupMenu extends StatelessWidget {
       backButton(onPressed: onBack),
     ];
 
-    return Column(children: mainContent);
+    return Column(
+      children: mainContent
+          .animate(interval: 100.ms)
+          .fadeIn(duration: 400.ms)
+          .slideY(delay: 100.ms, begin: -0.5, curve: Curves.easeOutCubic),
+    );
   }
 
   void _onStart(BuildContext context) {

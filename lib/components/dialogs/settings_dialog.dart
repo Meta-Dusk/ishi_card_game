@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ishi/core/managers/audio_manager.dart';
 
 class SettingsDialog extends StatefulWidget {
@@ -44,9 +45,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
     );
   }
 
-  Column _settingsSliders() => Column(
-    mainAxisSize: .min,
-    children: [
+  Column _settingsSliders() {
+    final mainContent = [
       _VolumeSlider(
         label: "Master Volume",
         icon: Icons.volume_up,
@@ -74,8 +74,16 @@ class _SettingsDialogState extends State<SettingsDialog> {
           AudioManager().setSfxVolume(val);
         },
       ),
-    ],
-  );
+    ];
+
+    return Column(
+      mainAxisSize: .min,
+      children: mainContent
+          .animate(interval: 100.ms)
+          .fadeIn(duration: 400.ms)
+          .slideY(delay: 100.ms, begin: 0.5, curve: Curves.easeOutCubic),
+    );
+  }
 }
 
 class _VolumeSlider extends StatelessWidget {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../lobby/lobby_waiting_screen.dart';
 import 'package:ishi/services/webrtc_service.dart';
 
@@ -46,36 +47,40 @@ class _HostOnlineScreenState extends State<HostOnlineScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final mainContent = Column(
-      mainAxisAlignment: .center,
-      children: [
-        if (!_hasError)
-          const CircularProgressIndicator(color: Colors.blueAccent),
-        if (_hasError)
-          const Icon(Icons.error_outline, color: Colors.redAccent, size: 60),
-        const SizedBox(height: 24),
-        Text(
-          _status,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 16,
-            fontWeight: .bold,
-            letterSpacing: 1,
-          ),
+    final mainContent = [
+      if (!_hasError) const CircularProgressIndicator(color: Colors.blueAccent),
+      if (_hasError)
+        const Icon(Icons.error_outline, color: Colors.redAccent, size: 60),
+      const SizedBox(height: 24),
+      Text(
+        _status,
+        style: const TextStyle(
+          color: Colors.white70,
+          fontSize: 16,
+          fontWeight: .bold,
+          letterSpacing: 1,
         ),
-        if (_hasError) ...[
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () => widget.onBack(context),
-            child: const Text("GO BACK"),
-          ),
-        ],
+      ),
+      if (_hasError) ...[
+        const SizedBox(height: 24),
+        ElevatedButton(
+          onPressed: () => widget.onBack(context),
+          child: const Text("GO BACK"),
+        ),
       ],
-    );
+    ];
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Center(child: mainContent),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: .center,
+          children: mainContent
+              .animate(interval: 100.ms)
+              .fadeIn(duration: 400.ms)
+              .slideY(delay: 100.ms, begin: 0.5, curve: Curves.easeOutCubic),
+        ),
+      ),
     );
   }
 }

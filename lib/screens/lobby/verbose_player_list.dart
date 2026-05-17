@@ -10,14 +10,11 @@ class VerbosePlayerList extends StatelessWidget {
   final void Function(int, {String? reason})? onKick;
 
   @override
-  Widget build(BuildContext context) {
-    final listView = ListView.builder(
-      itemCount: players.length,
-      itemBuilder: (_, index) =>
-          _PlayerListEntry(index: index, players: players, onKick: onKick),
-    );
-    return Expanded(child: listView);
-  }
+  Widget build(BuildContext context) => ListView.builder(
+    itemCount: players.length,
+    itemBuilder: (_, index) =>
+        _PlayerListEntry(index: index, players: players, onKick: onKick),
+  );
 }
 
 class _PlayerListEntry extends StatelessWidget {

@@ -1,7 +1,8 @@
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter/material.dart';
 import 'buttons.dart';
 import 'menu_button.dart';
 import 'section_header.dart';
-import 'package:flutter/material.dart';
 
 class GameModeMenu extends StatelessWidget {
   final VoidCallback onLocalTap;
@@ -19,33 +20,38 @@ class GameModeMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mainContent = [
+      const SectionHeader(title: "SELECT GAME MODE"),
+      _buttonSpacer(),
+      MenuButton(
+        title: "LOCAL DEVICE CO-OP",
+        icon: Icons.devices,
+        color: Colors.deepPurple,
+        onTap: onLocalTap,
+      ),
+      _buttonSpacer(),
+      MenuButton(
+        title: "LAN MULTIPLAYER",
+        icon: Icons.wifi,
+        color: Colors.green.shade700,
+        onTap: onLanTap,
+      ),
+      _buttonSpacer(),
+      MenuButton(
+        title: "ONLINE MULTIPLAYER",
+        icon: Icons.public,
+        color: Colors.blueAccent,
+        onTap: onOnlineTap,
+      ),
+      const SizedBox(height: 32),
+      backButton(onPressed: onBack),
+    ];
+
     return Column(
-      children: [
-        const SectionHeader(title: "SELECT GAME MODE"),
-        _buttonSpacer(),
-        MenuButton(
-          title: "LOCAL DEVICE CO-OP",
-          icon: Icons.devices,
-          color: Colors.blue.shade700,
-          onTap: onLocalTap,
-        ),
-        _buttonSpacer(),
-        MenuButton(
-          title: "LAN MULTIPLAYER",
-          icon: Icons.wifi,
-          color: Colors.green.shade700,
-          onTap: onLanTap,
-        ),
-        _buttonSpacer(),
-        MenuButton(
-          title: "ONLINE MULTIPLAYER",
-          icon: Icons.public,
-          color: Colors.blueAccent,
-          onTap: onOnlineTap,
-        ),
-        const SizedBox(height: 32),
-        backButton(onPressed: onBack),
-      ],
+      children: mainContent
+          .animate(interval: 100.ms)
+          .fadeIn(duration: 400.ms)
+          .slideX(begin: 0.2, curve: Curves.easeOutCubic),
     );
   }
 

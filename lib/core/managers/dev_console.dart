@@ -259,7 +259,7 @@ class DevConsole {
 
     _commands.add(
       DevCommand(
-        name: "clear",
+        name: "cls",
         description: "Clears the console log",
         onExecute: (_) {
           logs.clear();

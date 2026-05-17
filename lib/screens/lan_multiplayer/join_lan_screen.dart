@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:ishi/core/data_types.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../lobby/lobby_waiting_screen.dart';
+import 'package:ishi/core/data_types.dart';
 import 'package:ishi/services/socket_service.dart';
+import '../lobby/lobby_waiting_screen.dart';
 
 class JoinLANGameScreen extends StatefulWidget {
   const JoinLANGameScreen({super.key, required this.onBack});
@@ -67,10 +68,16 @@ class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => _ManualEntryDialog(
-        ipController: ipTextController,
-        onJoin: (_) => _joinLanLobby(ipTextController.text.trim()),
-      ),
+      builder: (context) {
+        final dialog = _ManualEntryDialog(
+          ipController: ipTextController,
+          onJoin: (_) => _joinLanLobby(ipTextController.text.trim()),
+        );
+        return dialog
+            .animate()
+            .fadeIn(duration: 200.ms)
+            .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack);
+      },
     );
   }
 
@@ -91,7 +98,7 @@ class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final mainContent = [
+    final stackedContent = [
       if (!isPcPlatform()) _mobileScanner() else const _WindowsFallbackUI(),
       if (_isConnecting) _loadingView(),
       if (!isPcPlatform()) _scanHostQrLabel(),
@@ -107,7 +114,7 @@ class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
     ];
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(alignment: .center, children: mainContent),
+      body: Stack(alignment: .center, children: stackedContent),
     );
   }
 
@@ -168,7 +175,13 @@ class _WindowsFallbackUI extends StatelessWidget {
       ),
     ];
     return Center(
-      child: Column(mainAxisAlignment: .center, children: mainContent),
+      child: Column(
+        mainAxisAlignment: .center,
+        children: mainContent
+            .animate(interval: 100.ms)
+            .fadeIn(duration: 400.ms)
+            .slideY(delay: 100.ms, begin: 0.5, curve: Curves.easeOutCubic),
+      ),
     );
   }
 }
@@ -210,33 +223,35 @@ class _ManualEntryDialog extends StatelessWidget {
   final void Function(String?) onJoin;
 
   @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: Colors.grey.shade900,
-      title: const Text(
-        "Manual Connect",
-        style: TextStyle(color: Colors.white),
+  Widget build(BuildContext context) => AlertDialog(
+    backgroundColor: Colors.grey.shade900,
+    title: const Text("Manual Connect", style: TextStyle(color: Colors.white)),
+    content: TextField(
+      controller: ipController,
+      style: const TextStyle(color: Colors.white),
+      decoration: const InputDecoration(
+        hintText: "192.168.x.x",
+        hintStyle: TextStyle(color: Colors.white54),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.grey),
+        ),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.white),
+        ),
       ),
-      content: TextField(
-        controller: ipController,
-        style: const TextStyle(color: Colors.white),
-        decoration: const InputDecoration(
-          hintText: "192.168.x.x",
-          hintStyle: TextStyle(color: Colors.white54),
-        ),
-        autofocus: true,
-        onSubmitted: onJoin,
+      cursorColor: Colors.white,
+      autofocus: true,
+      onSubmitted: onJoin,
+    ).animate().fadeIn(duration: 200.ms).slideY(begin: -0.5),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text("CANCEL", style: TextStyle(color: Colors.white)),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("CANCEL"),
-        ),
-        ElevatedButton(
-          onPressed: () => onJoin(ipController.text.trim()),
-          child: const Text("JOIN"),
-        ),
-      ],
-    );
-  }
+      ElevatedButton(
+        onPressed: () => onJoin(ipController.text.trim()),
+        child: const Text("JOIN", style: TextStyle(color: Colors.black)),
+      ),
+    ],
+  );
 }

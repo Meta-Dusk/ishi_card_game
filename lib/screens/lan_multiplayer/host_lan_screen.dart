@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:ishi/services/socket_service.dart';
 import '../lobby/lobby_waiting_screen.dart';
@@ -45,13 +46,17 @@ class _HostLANLobbyScreenState extends State<HostLANLobbyScreen> {
       if (localIp != null) break;
     }
 
-    if (localIp == null) return;
-    setState(() => _webSocketUrl = 'ws://$localIp:8080');
+    if (localIp == null) {
+      setState(() => _webSocketUrl = 'error');
+      return;
+    }
 
     try {
       await SocketService().startServer(localIp, 8080);
+      setState(() => _webSocketUrl = 'ws://$localIp:8080');
     } catch (e) {
       debugPrint("Server failed to start: $e");
+      setState(() => _webSocketUrl = 'error');
     }
   }
 
@@ -71,16 +76,70 @@ class _HostLANLobbyScreenState extends State<HostLANLobbyScreen> {
       ),
       backgroundColor: Colors.grey.shade900,
       body: Center(
-        child: _webSocketUrl == null
-            ? const CircularProgressIndicator()
-            : _JoinView(webSocketUrl: _webSocketUrl),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          switchInCurve: Curves.easeOutBack,
+          switchOutCurve: Curves.easeIn,
+          transitionBuilder: (child, animation) => FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: animation.drive(Tween<double>(begin: 0.9, end: 1.0)),
+              child: child,
+            ),
+          ),
+          child: _webSocketUrl == null
+              ? const CircularProgressIndicator(
+                  key: ValueKey("loadingWebSocket"),
+                ).animate().fadeIn(delay: 600.ms)
+              : _webSocketUrl == 'error'
+              ? ErrorView(
+                  key: const ValueKey("errorView"),
+                  hostLanLobbyScreen: widget,
+                )
+              : JoinView(
+                  key: const ValueKey("joinView"),
+                  webSocketUrl: _webSocketUrl,
+                ),
+        ),
       ),
     );
   }
 }
 
-class _JoinView extends StatelessWidget {
-  const _JoinView({required this.webSocketUrl});
+class ErrorView extends StatelessWidget {
+  const ErrorView({super.key, required this.hostLanLobbyScreen});
+
+  final HostLANLobbyScreen hostLanLobbyScreen;
+
+  @override
+  Widget build(BuildContext context) {
+    var mainContent = [
+      const Icon(Icons.error_outline, color: Colors.redAccent, size: 64),
+      const SizedBox(height: 16),
+      const Text(
+        "Failed to start LAN server.",
+        style: TextStyle(color: Colors.white),
+      ),
+      const SizedBox(height: 16),
+      ElevatedButton(
+        onPressed: () => hostLanLobbyScreen.onBack(context),
+        child: const Text("GO BACK"),
+      ),
+    ];
+
+    return Column(
+      key: const ValueKey("errorView"),
+      mainAxisAlignment: .center,
+      children: mainContent
+          .animate(interval: 100.ms)
+          .fadeIn(duration: 400.ms)
+          .slideX(begin: 0.2, curve: Curves.easeOutCubic),
+    );
+  }
+}
+
+class JoinView extends StatelessWidget {
+  const JoinView({super.key, required this.webSocketUrl});
 
   final String? webSocketUrl;
 
@@ -122,6 +181,13 @@ class _JoinView extends StatelessWidget {
         child: const Text("ENTER LOBBY", style: TextStyle(fontWeight: .bold)),
       ),
     ];
-    return Column(mainAxisAlignment: .center, children: mainContent);
+
+    return Column(
+      mainAxisAlignment: .center,
+      children: mainContent
+          .animate(interval: 100.ms)
+          .fadeIn(duration: 400.ms)
+          .slideX(begin: 0.2, curve: Curves.easeOutCubic),
+    );
   }
 }
