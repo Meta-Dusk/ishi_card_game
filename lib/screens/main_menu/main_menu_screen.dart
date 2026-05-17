@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:ishi/components/text/app_version.dart';
+import 'package:ishi/components/text/game_subtitle.dart';
+import 'package:ishi/components/text/game_title.dart';
 import 'package:ishi/core/audio.dart';
 import 'package:ishi/core/managers/audio_manager.dart';
 import '../settings_menu/settings_menu.dart';
@@ -64,6 +68,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       case .lanSetup:
       case .onlineSetup:
         await _changeMenu(.playMode);
+        break;
 
       default:
         break;
@@ -73,19 +78,31 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   @override
   Widget build(BuildContext context) {
     final mainContent = [
-      const _GameTitle(),
-      const _GameSubtitle(),
+      const GameTitle()
+          .animate(onPlay: (controller) => controller.repeat(reverse: true))
+          .moveY(
+            begin: -5,
+            end: 5,
+            duration: 2.seconds,
+            curve: Curves.easeInOut,
+          )
+          .tint(color: Colors.orangeAccent, end: 0.2),
+
+      const GameSubtitle(),
 
       if (_appVersion.isNotEmpty) ...[
         const SizedBox(height: 16),
-        _AppVersion(appVersion: _appVersion),
+        AppVersion(appVersion: _appVersion)
+            .animate()
+            .fadeIn(delay: 600.ms)
+            .slideY(begin: 1.0, curve: Curves.easeOut),
       ],
 
       const SizedBox(height: 40),
 
       // THE GAME MENU ANIMATION ENGINE
       AnimatedSize(
-        duration: const Duration(milliseconds: 300),
+        duration: 1.seconds,
         curve: Curves.easeOutCubic,
         alignment: .topCenter,
         child: _AnimatedMenuSwitcher(
@@ -108,76 +125,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       mainContent: mainContent,
       onPopInvoked: _onPopInvoked,
     );
-  }
-}
-
-class _AppVersion extends StatelessWidget {
-  const _AppVersion({required this.appVersion});
-
-  final String appVersion;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      appVersion,
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: .w300,
-        color: Colors.grey.shade500,
-        letterSpacing: 4,
-      ),
-    );
-  }
-}
-
-class _GameSubtitle extends StatelessWidget {
-  const _GameSubtitle();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Text(
-      "The Unolike rogulike\ncard game.",
-      textAlign: .center,
-      style: TextStyle(
-        fontSize: 22,
-        fontWeight: .w400,
-        letterSpacing: 2.5,
-        color: Colors.black,
-        height: 1.4,
-      ),
-    );
-  }
-}
-
-class _GameTitle extends StatelessWidget {
-  const _GameTitle();
-
-  @override
-  Widget build(BuildContext context) {
-    final innerText = const Text(
-      "ISHI",
-      style: TextStyle(
-        fontSize: 80,
-        fontWeight: .w900,
-        letterSpacing: 16,
-        color: Colors.white,
-      ),
-    );
-
-    final outerText = Text(
-      "ISHI",
-      style: TextStyle(
-        fontSize: 80,
-        fontWeight: .w900,
-        letterSpacing: 16,
-        foreground: Paint()
-          ..style = .stroke
-          ..strokeWidth = 8.0
-          ..color = Colors.black,
-      ),
-    );
-
-    return Stack(children: [outerText, innerText]);
   }
 }
 
@@ -288,15 +235,13 @@ class _AnimatedMenuSwitcher extends StatelessWidget {
       duration: const Duration(milliseconds: 250),
       switchInCurve: Curves.easeOutBack,
       switchOutCurve: Curves.easeIn,
-      transitionBuilder: (child, animation) {
-        return FadeTransition(
-          opacity: animation,
-          child: ScaleTransition(
-            scale: animation.drive(Tween<double>(begin: 0.9, end: 1.0)),
-            child: child,
-          ),
-        );
-      },
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(
+          scale: animation.drive(Tween<double>(begin: 0.9, end: 1.0)),
+          child: child,
+        ),
+      ),
       child: _ActiveMenu(
         currentMenu: currentMenu,
         onChangeMenu: onChangeMenu,

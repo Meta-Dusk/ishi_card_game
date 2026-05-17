@@ -5,10 +5,12 @@ class PingToggleButton extends StatelessWidget {
     super.key,
     required this.showPingOverlay,
     required this.onToggle,
+    required this.onLongPress,
   });
 
   final bool showPingOverlay;
   final VoidCallback onToggle;
+  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +18,7 @@ class PingToggleButton extends StatelessWidget {
       icon: Icon(showPingOverlay ? Icons.close : Icons.network_ping),
       color: Colors.grey.shade600,
       onPressed: onToggle,
+      onLongPress: onLongPress,
     );
   }
 }

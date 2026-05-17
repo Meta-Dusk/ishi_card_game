@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class ClientView extends StatelessWidget {
   const ClientView({
@@ -29,7 +30,13 @@ class ClientView extends StatelessWidget {
         color: Colors.black45,
         borderRadius: .circular(12),
       ),
-      child: Row(mainAxisAlignment: .spaceAround, children: mainContent),
+      child: Row(
+        mainAxisAlignment: .spaceAround,
+        children: mainContent
+            .animate(interval: 100.ms)
+            .fadeIn(duration: 300.ms)
+            .slideY(delay: 100.ms, begin: -0.5, curve: Curves.easeOutCubic),
+      ),
     );
   }
 }

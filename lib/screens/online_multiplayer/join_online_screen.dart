@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../lobby/lobby_waiting_screen.dart';
 import 'package:ishi/services/webrtc_service.dart';
 
@@ -69,7 +70,7 @@ class _JoinOnlineScreenState extends State<JoinOnlineScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final mainContent = [
+    final stackedContent = [
       Center(
         child: Padding(
           padding: const .all(32.0),
@@ -109,7 +110,7 @@ class _JoinOnlineScreenState extends State<JoinOnlineScreen> {
           ),
         ),
       ),
-      body: Stack(children: mainContent),
+      body: Stack(children: stackedContent),
     );
   }
 }
@@ -188,6 +189,12 @@ class _JoinOnlineLobbyContent extends StatelessWidget {
       ),
     ];
 
-    return Column(mainAxisAlignment: .center, children: mainContent);
+    return Column(
+      mainAxisAlignment: .center,
+      children: mainContent
+          .animate(interval: 100.ms)
+          .fadeIn(duration: 400.ms)
+          .slideY(delay: 100.ms, begin: 0.5, curve: Curves.easeOutCubic),
+    );
   }
 }

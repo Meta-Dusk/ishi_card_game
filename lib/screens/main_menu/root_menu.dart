@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ishi/screens/main_menu/menu_button.dart';
 
 class RootMenu extends StatelessWidget {
@@ -15,30 +16,35 @@ class RootMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mainContent = [
+      MenuButton(
+        title: "PLAY",
+        icon: Icons.play_arrow_rounded,
+        color: Colors.black87,
+        isPrimary: true,
+        onTap: onPlay,
+      ),
+      const SizedBox(height: 16),
+      MenuButton(
+        title: "SETTINGS",
+        icon: Icons.settings,
+        color: Colors.grey.shade800,
+        onTap: onSettings,
+      ),
+      const SizedBox(height: 8),
+      MenuButton(
+        title: "EDIT PROFILE",
+        icon: Icons.person,
+        color: Colors.grey.shade800,
+        onTap: onProfile,
+      ),
+    ];
+
     return Column(
-      children: [
-        MenuButton(
-          title: "PLAY",
-          icon: Icons.play_arrow_rounded,
-          color: Colors.black87,
-          isPrimary: true,
-          onTap: onPlay,
-        ),
-        const SizedBox(height: 16),
-        MenuButton(
-          title: "SETTINGS",
-          icon: Icons.settings,
-          color: Colors.grey.shade800,
-          onTap: onSettings,
-        ),
-        const SizedBox(height: 8),
-        MenuButton(
-          title: "EDIT PROFILE",
-          icon: Icons.person,
-          color: Colors.grey.shade800,
-          onTap: onProfile,
-        ),
-      ],
+      children: mainContent
+          .animate(interval: 100.ms)
+          .fadeIn(duration: 400.ms)
+          .slideY(delay: 100.ms, begin: 0.5, curve: Curves.easeOutCubic),
     );
   }
 }

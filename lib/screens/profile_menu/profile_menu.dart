@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ishi/core/managers/profile_manager.dart';
 import 'color_selection.dart';
 import 'edit_profile_header.dart';
@@ -57,7 +58,7 @@ class _ProfileMenuState extends State<ProfileMenu> {
           hintText: "Enter Name",
           border: OutlineInputBorder(
             borderRadius: .circular(12),
-            borderSide: .none,
+            borderSide: BorderSide(color: Colors.grey.shade300),
           ),
           contentPadding: const .symmetric(vertical: 20),
         ),
@@ -65,14 +66,19 @@ class _ProfileMenuState extends State<ProfileMenu> {
       const SizedBox(height: 24),
 
       // --- COLOR PICKER ---
-      const Text(
-        "AVATAR COLOR",
-        style: TextStyle(fontWeight: .bold, letterSpacing: 1.2),
-      ),
-      const SizedBox(height: 12),
-      _ColorSelections(
-        onSelect: (entry) => setState(() => _selectedColorName = entry.key),
-        selectedColorName: _selectedColorName,
+      Column(
+        mainAxisSize: .min,
+        children: [
+          const Text(
+            "AVATAR COLOR",
+            style: TextStyle(fontWeight: .bold, letterSpacing: 1.2),
+          ),
+          const SizedBox(height: 12),
+          _ColorSelections(
+            onSelect: (entry) => setState(() => _selectedColorName = entry.key),
+            selectedColorName: _selectedColorName,
+          ),
+        ],
       ),
 
       const SizedBox(height: 40),
@@ -82,7 +88,12 @@ class _ProfileMenuState extends State<ProfileMenu> {
       const SizedBox(height: 16),
       _BackButton(onBack: widget.onBack),
     ];
-    return Column(children: mainContent);
+    return Column(
+      children: mainContent
+          .animate(interval: 100.ms)
+          .fadeIn(duration: 400.ms)
+          .slideY(delay: 100.ms, begin: -0.5, curve: Curves.easeOutCubic),
+    );
   }
 }
 

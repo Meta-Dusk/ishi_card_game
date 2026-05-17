@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ishi/components/dialogs/on_kicked_dialog.dart';
 import 'package:ishi/screens/lobby/settings/lobby_settings.dart';
 import 'package:ishi/services/webrtc_service.dart';
@@ -32,6 +33,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
 
   int _startingHandSize = 7;
   int _maxPlayers = 10;
+  bool _isStartingGame = false;
 
   @override
   void initState() {
@@ -48,7 +50,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     });
   }
 
-  void _processNetMessage(NetMessage message) {
+  void _processNetMessage(NetMessage message) async {
     if (!mounted) return;
 
     switch (message) {
@@ -103,6 +105,9 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
         break;
 
       case GameStateMessage(:final payload):
+        setState(() => _isStartingGame = true);
+        await Future.delayed(150.ms);
+
         final localManager = GameManager(
           playerCount: _net.currentPlayer,
           startingHandSize: _startingHandSize,
@@ -110,6 +115,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
         // Pass the unpacked payload directly to the engine
         localManager.applyGameStateJson(payload);
 
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -129,7 +135,10 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     super.dispose();
   }
 
-  void _onStartGame() {
+  void _onStartGame() async {
+    setState(() => _isStartingGame = true);
+    await Future.delayed(150.ms);
+
     // Host builds and initializes the master engine
     final masterManager = GameManager(
       playerCount: getConnectedPlayerCount,
@@ -145,6 +154,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
 
     if (_net is WebRTCService) (_net as WebRTCService).lockLobby();
 
+    if (!mounted) return;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -157,27 +167,43 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
   Widget build(BuildContext context) {
     final players = _net.playersList;
 
+    final verbosePlayerList = VerbosePlayerList(
+      players: players,
+      onKick: _net.isHost
+          ? (index, {reason}) => _net.kickPlayer(index, reason: reason)
+          : null,
+    );
+
+    final playerCountLabel = Text(
+      "PLAYERS CONNECTED: $_connectedPlayers/$_maxPlayers",
+      style: const TextStyle(
+        color: Colors.white70,
+        fontSize: 16,
+        fontWeight: .bold,
+        letterSpacing: 1.5,
+      ),
+    );
+
     final mainContent = [
       if (roomCode != null) ...[
-        RoomCodeView(roomCode: roomCode),
+        RoomCodeView(roomCode: roomCode)
+            .animate()
+            .fadeIn(duration: 100.ms)
+            .slideY(delay: 100.ms, begin: -0.5, curve: Curves.easeOutCubic),
         const SizedBox(height: 24),
       ],
-      Text(
-        "PLAYERS CONNECTED: $_connectedPlayers/$_maxPlayers",
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 16,
-          fontWeight: .bold,
-          letterSpacing: 1.5,
-        ),
+      playerCountLabel
+          .animate()
+          .fadeIn(duration: 200.ms)
+          .slideY(delay: 100.ms, begin: -0.5, curve: Curves.easeOutCubic),
+      const SizedBox(height: 16),
+      Expanded(
+        child: verbosePlayerList
+            .animate()
+            .fadeIn(duration: 300.ms)
+            .slideY(delay: 100.ms, begin: -0.5, curve: Curves.easeOutCubic),
       ),
       const SizedBox(height: 16),
-      VerbosePlayerList(
-        players: players,
-        onKick: _net.isHost
-            ? (index, {reason}) => _net.kickPlayer(index, reason: reason)
-            : null,
-      ),
       LobbySettings(
         network: _net,
         startingHandSize: _startingHandSize,
@@ -189,7 +215,6 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
           LobbySettingsMessage(_startingHandSize, _maxPlayers),
         ), // Blast the network packet ONLY when the slider drag ends!
       ),
-      const SizedBox(height: 16),
       const SizedBox(height: 20),
       Center(
         child: _net.isHost
@@ -232,9 +257,53 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
             ),
         ],
       ),
-      body: Padding(
-        padding: const .all(16.0),
-        child: Column(crossAxisAlignment: .start, children: mainContent),
+      body: Stack(
+        children: [
+          Padding(
+            padding: const .all(16.0),
+            child: Column(crossAxisAlignment: .start, children: mainContent)
+                .animate()
+                .fadeIn(duration: 400.ms)
+                .slideY(begin: 0.1, curve: Curves.easeOutCubic),
+          ),
+          if (_isStartingGame)
+            LoadingScreen().animate().fadeIn(duration: 200.ms),
+        ],
+      ),
+    );
+  }
+}
+
+class LoadingScreen extends StatelessWidget {
+  const LoadingScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final mainContent = [
+      CircularProgressIndicator(color: Colors.orangeAccent, strokeWidth: 6),
+      SizedBox(height: 24),
+      Text(
+        "SHUFFLING DECK...",
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: .bold,
+          fontSize: 18,
+          letterSpacing: 2.0,
+        ),
+      ),
+    ];
+
+    return Container(
+      color: Colors.black87,
+      width: double.infinity,
+      height: double.infinity,
+      child: Center(
+        child: Column(
+          mainAxisSize: .min,
+          children: mainContent
+              .animate(interval: 100.ms)
+              .slideY(delay: 100.ms, begin: 0.5, curve: Curves.easeOutCubic),
+        ),
       ),
     );
   }

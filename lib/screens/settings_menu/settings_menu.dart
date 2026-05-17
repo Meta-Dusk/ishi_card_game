@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ishi/components/dialogs/settings_dialog.dart';
 import 'package:ishi/core/audio.dart';
 import 'package:ishi/core/managers/audio_manager.dart';
@@ -39,7 +40,10 @@ class SettingsMenu extends StatelessWidget {
       AudioSettingsButton(
         onShow: () => showDialog(
           context: context,
-          builder: (_) => const SettingsDialog(),
+          builder: (_) => const SettingsDialog()
+              .animate()
+              .fadeIn(duration: 200.ms)
+              .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
         ),
       ),
       const SizedBox(height: 24),
@@ -52,7 +56,12 @@ class SettingsMenu extends StatelessWidget {
       const SizedBox(height: 40),
       backButton(onPressed: onBack),
     ];
-    return Column(children: mainContent);
+    return Column(
+      children: mainContent
+          .animate(interval: 100.ms)
+          .fadeIn(duration: 400.ms)
+          .slideY(delay: 100.ms, begin: -0.5, curve: Curves.easeOutCubic),
+    );
   }
 }
 

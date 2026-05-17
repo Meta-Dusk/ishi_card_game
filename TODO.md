@@ -3,6 +3,7 @@
 - [ ] Add more relics
 - [ ] Add more special roguelike cards
 - [ ] Make game popup dialogs minimizable (such as color selection for wild cards)
+- [ ] Add optional "automatic end turn upon exhausting the AP"
 
 ## Gameplay Ideas
 

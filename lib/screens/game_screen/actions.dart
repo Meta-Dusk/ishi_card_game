@@ -294,7 +294,10 @@ extension GameScreenActions on GameScreenState {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => GameOverDialog(winnerName: winnerName, network: _net),
+      builder: (_) => GameOverDialog(winnerName: winnerName, network: _net)
+          .animate()
+          .fadeIn(duration: 200.ms)
+          .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
     );
   }
 

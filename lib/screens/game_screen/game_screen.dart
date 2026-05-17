@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/components/dialogs/dev_console_toggle_dialog.dart';
 import 'package:ishi/components/overlays/dev_console/dev_console_overlay.dart';
 import 'package:ishi/core/audio.dart';
 import 'package:ishi/core/managers/audio_manager.dart';
@@ -52,6 +54,7 @@ class GameScreenState extends State<GameScreen> {
 
   IshiCard? _selectedCard;
   bool _showDevConsole = false;
+  bool _showDevConsoleToggle = false;
 
   void updateUI(VoidCallback fn) {
     if (mounted) setState(fn);
@@ -73,12 +76,11 @@ class GameScreenState extends State<GameScreen> {
 
     _pingSubscription = _net.messages.listen((message) {
       if (message is LobbyStateMessage && _showPingOverlay) {
-        updateUI(() {});
+        setState(() {});
       }
     });
 
     DevConsole().initialize(_manager, _net);
-
     AudioManager().playMusic(Audio.music.gameLoop1);
   }
 
@@ -107,7 +109,7 @@ class GameScreenState extends State<GameScreen> {
             onFlipAllCard: flipAllCardsAction,
             onSortHand: animatedSort,
             onTakePenalty: takePenaltyAction,
-            onToggleAutoSort: () => updateUI(
+            onToggleAutoSort: () => setState(
               () => _manager.isAutoSortEnabled = !_manager.isAutoSortEnabled,
             ),
             manager: _manager,
@@ -134,7 +136,7 @@ class GameScreenState extends State<GameScreen> {
               currentHand: currentHand,
               onTapCard: (card) {
                 if (!isMyTurn) return;
-                updateUI(() {
+                setState(() {
                   if (_selectedCard == card) {
                     _selectedCard = null; // Deselect if tapped again
                   } else {
@@ -180,7 +182,14 @@ class GameScreenState extends State<GameScreen> {
         left: 16,
         child: PingToggleButton(
           showPingOverlay: _showPingOverlay,
-          onToggle: () => updateUI(() => _showPingOverlay = !_showPingOverlay),
+          onToggle: () => setState(() => _showPingOverlay = !_showPingOverlay),
+          onLongPress: () => showDialog(
+            context: context,
+            builder: (_) => DevConsoleToggleDialog(
+              showDevConsole: _showDevConsoleToggle,
+              onChanged: (val) => setState(() => _showDevConsoleToggle = val),
+            ),
+          ),
         ),
       ),
 
@@ -240,7 +249,7 @@ class GameScreenState extends State<GameScreen> {
           left: 0,
           right: 0,
           child: DevConsoleOverlay(
-            onClose: () => updateUI(() => _showDevConsole = false),
+            onClose: () => setState(() => _showDevConsole = false),
           ),
         ),
     ];
@@ -256,16 +265,20 @@ class GameScreenState extends State<GameScreen> {
       IconButton(
         onPressed: () => showDialog(
           context: context,
-          builder: (_) => const SettingsDialog(),
+          builder: (_) => const SettingsDialog()
+              .animate()
+              .fadeIn(duration: 200.ms)
+              .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
         ),
         icon: const Icon(Icons.settings, color: Colors.white70, size: 30),
         tooltip: "Show Settings",
       ),
-      IconButton(
-        onPressed: () => updateUI(() => _showDevConsole = !_showDevConsole),
-        icon: const Icon(Icons.terminal, color: Colors.greenAccent),
-        tooltip: "Show Developer Console",
-      ),
+      if (_showDevConsoleToggle)
+        IconButton(
+          onPressed: () => setState(() => _showDevConsole = !_showDevConsole),
+          icon: const Icon(Icons.terminal, color: Colors.greenAccent),
+          tooltip: "Show Developer Console",
+        ),
       IconButton(
         onPressed: _promptLeaveGame,
         icon: const Icon(Icons.exit_to_app, color: Colors.redAccent, size: 30),
@@ -278,6 +291,9 @@ class GameScreenState extends State<GameScreen> {
 
   void _promptLeaveGame() => showDialog(
     context: context,
-    builder: (_) => LeaveGameDialog(network: _net),
+    builder: (_) => LeaveGameDialog(network: _net)
+        .animate()
+        .fadeIn(duration: 200.ms)
+        .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
   );
 }

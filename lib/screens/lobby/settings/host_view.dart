@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class HostView extends StatelessWidget {
   const HostView({
@@ -37,7 +38,13 @@ class HostView extends StatelessWidget {
         borderRadius: .circular(16),
         border: .all(color: Colors.white12),
       ),
-      child: Column(crossAxisAlignment: .start, children: mainContent),
+      child: Column(
+        crossAxisAlignment: .start,
+        children: mainContent
+            .animate(interval: 100.ms)
+            .fadeIn(duration: 300.ms)
+            .slideY(delay: 100.ms, begin: -0.5, curve: Curves.easeOutCubic),
+      ),
     );
   }
 
