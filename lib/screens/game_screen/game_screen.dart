@@ -33,7 +33,8 @@ class GameScreenState extends State<GameScreen> {
   late GameManager _manager;
 
   NetworkService get _net => widget.network;
-  StreamSubscription? _netSubscription;
+  late StreamSubscription? _netSubscription;
+  late StreamSubscription? _gameEventSubscription;
 
   String? attackMessage;
   Key attackKey = UniqueKey();
@@ -42,7 +43,7 @@ class GameScreenState extends State<GameScreen> {
   late Map<int, ScrollController> scrollControllers;
 
   bool _showPingOverlay = false;
-  StreamSubscription? _pingSubscription;
+  late StreamSubscription? _pingSubscription;
   final playPileKey = GlobalKey<PlayCardsPileState>();
 
   int get localUIIndex => _manager.localPlayerIndex + 1;
@@ -60,6 +61,24 @@ class GameScreenState extends State<GameScreen> {
 
   void updateUI(VoidCallback fn) {
     if (mounted) setState(fn);
+  }
+
+  Future<void> _startOpeningSequence() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // 1st Broadcast: Host sends the starting state.
+    // Clients receive their cards and instantly start staggering!
+    if (_net.isHost) broadcastGameState();
+
+    // Host staggers their own intercepted hand back into the UI
+    if (_initialHandBuffer.isNotEmpty) {
+      await _staggerDrawCards(_initialHandBuffer);
+      _triggerAutoSortIfNeeded();
+    }
+
+    // 2nd Broadcast: Tell clients the Host finished dealing.
+    // This causes the face-down cards to instantly pop into the opponent overlay!
+    if (_net.isHost) broadcastGameState();
   }
 
   @override
@@ -83,13 +102,17 @@ class GameScreenState extends State<GameScreen> {
 
     initializeNetworkSync();
 
-    _pingSubscription = _net.messages.listen((message) {
-      if (message is LobbyStateMessage && _showPingOverlay) {
-        setState(() {});
-      }
-    });
-
     DevConsole().initialize(_manager, _net);
+    DevConsole().onStateForceSynced = () {
+      if (!mounted) return;
+      setState(() {
+        for (int i = 0; i < listKeys.length; i++) {
+          listKeys[i] = GlobalKey<AnimatedListState>();
+        }
+      });
+      if (_net.isHost) broadcastGameState();
+    };
+
     AudioManager().playMusic(Audio.music.gameLoop1);
 
     WidgetsBinding.instance.addPostFrameCallback(
@@ -97,28 +120,11 @@ class GameScreenState extends State<GameScreen> {
     );
   }
 
-  Future<void> _startOpeningSequence() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    // 1st Broadcast: Host sends the starting state.
-    // Clients receive their 7 cards and instantly start staggering!
-    if (_net.isHost) broadcastGameState();
-
-    // Host staggers their own intercepted hand back into the UI
-    if (_initialHandBuffer.isNotEmpty) {
-      await _staggerDrawCards(_initialHandBuffer);
-      _triggerAutoSortIfNeeded();
-    }
-
-    // 2nd Broadcast: Tell clients the Host finished dealing.
-    // This causes 7 face-down cards to instantly pop into the opponent overlay!
-    if (_net.isHost) broadcastGameState();
-  }
-
   @override
   void dispose() {
     _netSubscription?.cancel();
     _pingSubscription?.cancel();
+    _gameEventSubscription?.cancel();
     for (ScrollController controller in scrollControllers.values) {
       controller.dispose();
     }
@@ -128,85 +134,6 @@ class GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // --- LOCAL PLAYER DASHBOARD (Bottom) ---
-    final lowerPanel = Column(
-      mainAxisSize: .min,
-      children: [
-        CardCounter(currentHandLength: currentHand.length),
-        Opacity(
-          opacity: isMyTurn ? 1.0 : 0.5,
-          child: HandControls(
-            onEndTurn: endTurnAction,
-            onFlipAllCard: flipAllCardsAction,
-            onSortHand: animatedSort,
-            onTakePenalty: takePenaltyAction,
-            onToggleAutoSort: () => setState(
-              () => _manager.isAutoSortEnabled = !_manager.isAutoSortEnabled,
-            ),
-            manager: _manager,
-            isMyTurn: isMyTurn,
-          ),
-        ),
-        AnimatedPlayButton(
-          selectedCard: _selectedCard,
-          isMyTurn: isMyTurn,
-          onPlay: () => playCardAction(_selectedCard!),
-        ),
-        Container(
-          height: 280,
-          padding: const .symmetric(horizontal: 8, vertical: 12),
-          child: RawScrollbar(
-            key: ValueKey(scrollControllers[localUIIndex]),
-            controller: scrollControllers[localUIIndex],
-            thumbVisibility: true,
-            thumbColor: Colors.black26,
-            radius: const .circular(8),
-            thickness: 6,
-            child: AnimatedCardList(
-              animatedListKey: listKeys[localUIIndex],
-              currentHand: currentHand,
-              selectedCard: _selectedCard,
-              onTapCard: (card) {
-                if (!isMyTurn) return;
-                setState(() {
-                  if (_selectedCard == card) {
-                    _selectedCard = null; // Deselect if tapped again
-                  } else {
-                    _selectedCard = card; // Select the new card
-                  }
-                });
-              },
-              scrollController: scrollControllers[localUIIndex],
-              isMyTurn: isMyTurn,
-            ),
-          ),
-        ),
-      ],
-    );
-
-    // --- THE PLAY PILE (Center) ---
-    final playPileAndDeck = Stack(
-      alignment: .center,
-      clipBehavior: .none,
-      children: [
-        PlayAndPileDeck(
-          manager: _manager,
-          onDrawCard: drawCardAction,
-          onPlayCard: playCardAction,
-          playPileKey: playPileKey,
-        ),
-        if (_manager.pendingDrawCount > 0)
-          Positioned(
-            top: -20,
-            child: FloatingCombatText(
-              key: ValueKey(_manager.pendingDrawCount),
-              text: "STACK: +${_manager.pendingDrawCount}!",
-            ),
-          ),
-      ],
-    );
-
-    // --- THE MASTER LAYOUT ---
     final stackedContent = [
       // Local Player Info & Ping
       Positioned(
@@ -244,7 +171,7 @@ class GameScreenState extends State<GameScreen> {
         top: (MediaQuery.of(context).size.height / 2) - 128,
         left: 0,
         right: 0,
-        child: playPileAndDeck,
+        child: _playPileAndDeck(),
       ),
 
       // Turn Indicator
@@ -256,7 +183,7 @@ class GameScreenState extends State<GameScreen> {
       ),
 
       // Local Hand
-      Align(alignment: .bottomCenter, child: lowerPanel),
+      Align(alignment: .bottomCenter, child: _lowerPanel()),
 
       // Turn Timeline
       Positioned(
@@ -292,6 +219,88 @@ class GameScreenState extends State<GameScreen> {
     );
   }
 
+  // THE PLAY PILE (Center)
+  Stack _playPileAndDeck() => Stack(
+    alignment: .center,
+    clipBehavior: .none,
+    children: [
+      PlayAndPileDeck(
+        manager: _manager,
+        onDrawCard: drawCardAction,
+        onPlayCard: playCardAction,
+        playPileKey: playPileKey,
+      ),
+      if (_manager.pendingDrawCount > 0)
+        Positioned(
+          top: -20,
+          child: FloatingCombatText(
+            key: ValueKey(_manager.pendingDrawCount),
+            text: "STACK: +${_manager.pendingDrawCount}!",
+          ),
+        ),
+    ],
+  );
+
+  /// LOCAL PLAYER DASHBOARD (Bottom)
+  Column _lowerPanel() {
+    final animatedCardList = AnimatedCardList(
+      animatedListKey: listKeys[localUIIndex],
+      currentHand: currentHand,
+      selectedCard: _selectedCard,
+      onTapCard: (card) {
+        if (!isMyTurn) return;
+        setState(() {
+          if (_selectedCard == card) {
+            _selectedCard = null; // Deselect if tapped again
+          } else {
+            _selectedCard = card; // Select the new card
+          }
+        });
+      },
+      scrollController: scrollControllers[localUIIndex],
+      isMyTurn: isMyTurn,
+    );
+
+    return Column(
+      mainAxisSize: .min,
+      children: [
+        CardCounter(currentHandLength: currentHand.length),
+        Opacity(
+          opacity: isMyTurn ? 1.0 : 0.5,
+          child: HandControls(
+            onEndTurn: endTurnAction,
+            onFlipAllCard: flipAllCardsAction,
+            onSortHand: animatedSort,
+            onTakePenalty: takePenaltyAction,
+            onToggleAutoSort: () => setState(
+              () => _manager.isAutoSortEnabled = !_manager.isAutoSortEnabled,
+            ),
+            manager: _manager,
+            isMyTurn: isMyTurn,
+          ),
+        ),
+        AnimatedPlayButton(
+          selectedCard: _selectedCard,
+          isMyTurn: isMyTurn,
+          onPlay: () => playCardAction(_selectedCard!),
+        ),
+        Container(
+          height: 280,
+          padding: const .symmetric(horizontal: 8, vertical: 12),
+          child: RawScrollbar(
+            key: ValueKey(scrollControllers[localUIIndex]),
+            controller: scrollControllers[localUIIndex],
+            thumbVisibility: true,
+            thumbColor: Colors.black26,
+            radius: const .circular(8),
+            thickness: 6,
+            child: animatedCardList,
+          ),
+        ),
+      ],
+    );
+  }
+
   Row _topRightButtonRow(BuildContext context) {
     final buttons = [
       IconButton(
@@ -317,7 +326,6 @@ class GameScreenState extends State<GameScreen> {
         tooltip: "Exit Match",
       ),
     ];
-
     return Row(mainAxisSize: .min, children: buttons);
   }
 

@@ -294,9 +294,11 @@ extension GameScreenActions on GameScreenState {
 
   void _showGameOverDialog() {
     // Determine the winner's display name
-    int winner = _manager.winnerIndex!;
+    final int winner = _manager.winnerIndex!;
     String winnerName = "Player ${winner + 1}";
-    if (winner == _manager.localPlayerIndex) {
+    final bool isWinner = winner == _manager.localPlayerIndex;
+
+    if (isWinner) {
       winnerName = "You";
     } else if (winner < _net.playersList.length) {
       winnerName = _net.playersList[winner].playerName;
@@ -305,10 +307,22 @@ extension GameScreenActions on GameScreenState {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => GameOverDialog(winnerName: winnerName, network: _net)
-          .animate()
-          .fadeIn(duration: 200.ms)
-          .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
+      builder: (context) {
+        final dialog = GameOverDialog(
+          winnerName: winnerName,
+          isWinner: isWinner,
+          onExit: () async {
+            // Disconnect from WebRTC/LAN and pop back to the Root Menu
+            await _net.disconnect();
+            if (!context.mounted) return;
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          },
+        );
+        return dialog
+            .animate()
+            .fadeIn(duration: 200.ms)
+            .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack);
+      },
     );
   }
 

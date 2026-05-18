@@ -28,11 +28,6 @@ extension GameScreenNetwork on GameScreenState {
       // Apply Master State
       newlyDealtCards = _manager.applyGameStateJson(message.payload);
 
-      if (_manager.winnerIndex != null) {
-        _showGameOverDialog();
-        return;
-      }
-
       int newLocalSize = currentHand.length;
       if (newLocalSize <= oldLocalSize) {
         _manager.sortHand(_manager.localPlayerIndex, _manager.handSortType);
@@ -48,18 +43,22 @@ extension GameScreenNetwork on GameScreenState {
   }
 
   void initializeNetworkSync() {
-    _manager.eventStream.listen((event) {
-      if (!mounted) return;
-      switch (event) {
-        case .gameOver:
-          _showGameOverDialog();
-          break;
+    _gameEventSubscription = _manager.events.listen(_processGameEvents);
+    _netSubscription = _net.messages.listen(_processNetworkMessage);
+    _pingSubscription = _net.messages.listen((message) {
+      if (message is LobbyStateMessage && _showPingOverlay) {
+        updateUI(() {});
       }
     });
+  }
 
-    _netSubscription = _net.messages.listen(
-      (message) => _processNetworkMessage(message),
-    );
+  void _processGameEvents(GameManagerEvent event) {
+    if (!mounted) return;
+    switch (event) {
+      case .gameOver:
+        _showGameOverDialog();
+        break;
+    }
   }
 
   void _processNetworkMessage(NetMessage message) {
@@ -123,11 +122,6 @@ extension GameScreenNetwork on GameScreenState {
     });
 
     _animateOpponentHands(oldOpponentSizes);
-
-    if (_manager.winnerIndex != null) {
-      _showGameOverDialog();
-    }
-
     broadcastGameState();
   }
 
@@ -165,8 +159,6 @@ extension GameScreenNetwork on GameScreenState {
       _manager.forceDraw(playerIndex, count: 3);
       _manager.playerRelics[playerIndex].remove(relic);
     }
-
-    if (_manager.winnerIndex != null) _showGameOverDialog();
   }
 
   void _animateOpponentHands(List<int> oldOpponentSizes) {

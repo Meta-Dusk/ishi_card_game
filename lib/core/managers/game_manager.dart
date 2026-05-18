@@ -73,7 +73,7 @@ class GameManager {
 
   // --- EVENTS ---
   final _eventController = StreamController<GameManagerEvent>.broadcast();
-  Stream<GameManagerEvent> get eventStream => _eventController.stream;
+  Stream<GameManagerEvent> get events => _eventController.stream;
 
   GameManager({required this.playerCount, required this.startingHandSize});
 
@@ -207,7 +207,6 @@ class GameManager {
 
     hasPlayedCard = json[_BoardKeys.hasPlayedCard] as bool? ?? false;
     hasDrawnCard = json[_BoardKeys.hasDrawnCard] as bool? ?? false;
-    winnerIndex = json[_BoardKeys.winnerIndex] as int?;
 
     int? incomingWinner = json[_BoardKeys.winnerIndex] as int?;
     if (winnerIndex == null && incomingWinner != null) {
