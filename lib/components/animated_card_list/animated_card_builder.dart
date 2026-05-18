@@ -1,9 +1,10 @@
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter/material.dart';
 import 'animated_card_list.dart';
 import 'draggable_card.dart';
 import 'package:ishi/components/cards/card_display.dart';
 import 'package:ishi/components/cards/flip_card.dart';
 import 'package:ishi/models/uno_card.dart';
-import 'package:flutter/material.dart';
 
 class AnimatedCardBuilder extends StatelessWidget {
   const AnimatedCardBuilder({
@@ -14,6 +15,7 @@ class AnimatedCardBuilder extends StatelessWidget {
     required this.card,
     required this.onTapCard,
     required this.isMyTurn,
+    required this.isSelected,
   });
 
   final ScrollController scrollController;
@@ -22,6 +24,7 @@ class AnimatedCardBuilder extends StatelessWidget {
   final IshiCard card;
   final void Function(IshiCard) onTapCard;
   final bool isMyTurn;
+  final bool isSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -30,15 +33,11 @@ class AnimatedCardBuilder extends StatelessWidget {
       tween: Tween<double>(end: index.toDouble()),
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
-      builder: _tweenAnimationBuilder,
+      builder: (_, value, _) => _animatedCardBuilder(animatedIndex: value),
     );
   }
 
-  Widget _tweenAnimationBuilder(
-    BuildContext _,
-    double animatedIndex,
-    Widget? _,
-  ) {
+  Widget _animatedCardBuilder({required double animatedIndex}) {
     double offset = 0.0;
     if (scrollController.hasClients && scrollController.positions.length == 1) {
       offset = scrollController.offset;
@@ -83,7 +82,7 @@ class AnimatedCardBuilder extends StatelessWidget {
       back: const CardBack(),
     );
 
-    final gestureDetector = GestureDetector(
+    final interactableCard = GestureDetector(
       onTap: () {
         scrollController.animateTo(
           index * itemWidth,
@@ -97,9 +96,15 @@ class AnimatedCardBuilder extends StatelessWidget {
       ),
     );
 
-    final cardView = isCenter
-        ? DraggableCard(card: card, cardUI: cardUI, isMyTurn: isMyTurn)
-        : gestureDetector;
+    final draggableCard = DraggableCard(
+      card: card,
+      cardUI: cardUI,
+      isMyTurn: isMyTurn,
+    );
+
+    Widget cardView = isCenter ? draggableCard : interactableCard;
+
+    if (isSelected) cardView = _applySelectionEffect(draggableCard);
 
     return Transform.translate(
       offset: Offset(offsetX, offsetY),
@@ -109,4 +114,21 @@ class AnimatedCardBuilder extends StatelessWidget {
       ),
     );
   }
+
+  Animate _applySelectionEffect(Widget child) => child
+      .animate(onPlay: (controller) => controller.repeat(reverse: true))
+      .shimmer(duration: 1200.ms, color: Colors.white.withValues(alpha: 0.4))
+      .boxShadow(
+        begin: const BoxShadow(color: Colors.transparent),
+        end: BoxShadow(
+          color: Colors.amberAccent.withValues(alpha: 0.4),
+          blurRadius: 16,
+          spreadRadius: 4,
+        ),
+      )
+      .scale(
+        begin: const Offset(1.0, 1.0),
+        end: const Offset(1.05, 1.05),
+        curve: Curves.easeInOut,
+      );
 }

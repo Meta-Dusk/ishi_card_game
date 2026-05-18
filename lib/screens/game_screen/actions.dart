@@ -1,7 +1,7 @@
 part of 'game_screen.dart';
 
 extension GameScreenActions on GameScreenState {
-  void drawCardAction() {
+  Future<void> drawCardAction() async {
     if (!isMyTurn) return;
 
     if (_manager.pendingDrawCount > 0) {
@@ -26,23 +26,24 @@ extension GameScreenActions on GameScreenState {
         _triggerDeckRestockEvent();
         return;
       }
-      updateUI(() {
-        _manager.drawCard(_manager.localPlayerIndex);
-        getCurrentState?.insertItem(
-          0,
-          duration: const Duration(milliseconds: 400),
-        );
-      });
+
+      IshiCard drawnCard = _manager.drawCard(
+        _manager.localPlayerIndex,
+        skipHandInsertion: true,
+      );
+
+      await _staggerDrawCards([drawnCard]);
       _triggerAutoSortIfNeeded();
       broadcastGameState();
-    } else {
-      _net.sendIntent(
-        PlayIntentMessage(
-          action: .drawCard,
-          playerIndex: _manager.localPlayerIndex,
-        ),
-      );
+      return;
     }
+
+    _net.sendIntent(
+      PlayIntentMessage(
+        action: .drawCard,
+        playerIndex: _manager.localPlayerIndex,
+      ),
+    );
   }
 
   void endTurnAction() {
@@ -60,29 +61,25 @@ extension GameScreenActions on GameScreenState {
     }
   }
 
-  void takePenaltyAction() {
+  Future<void> takePenaltyAction() async {
     if (!isMyTurn) return;
+
     if (_net.isHost) {
-      updateUI(() {
-        int cardsToDraw = _manager.pendingDrawCount;
-        _manager.resolvePendingAttack();
-        for (int i = 0; i < cardsToDraw; i++) {
-          getCurrentState?.insertItem(
-            0,
-            duration: const Duration(milliseconds: 400),
-          );
-        }
-      });
+      List<IshiCard> newlyDrawnCards = _manager.resolvePendingAttack(
+        skipHandInsertion: true,
+      );
+      await _staggerDrawCards(newlyDrawnCards);
       _triggerAutoSortIfNeeded();
       broadcastGameState();
-    } else {
-      _net.sendIntent(
-        PlayIntentMessage(
-          action: .takePenalty,
-          playerIndex: _manager.localPlayerIndex,
-        ),
-      );
+      return;
     }
+
+    _net.sendIntent(
+      PlayIntentMessage(
+        action: .takePenalty,
+        playerIndex: _manager.localPlayerIndex,
+      ),
+    );
   }
 
   void _removeCard(int cardIndex, IshiCard removedCard) {
@@ -94,13 +91,15 @@ extension GameScreenActions on GameScreenState {
     );
   }
 
-  void _onPlayCardUpdateHost({
+  Future<void> _onPlayCardUpdateHost({
     required int playerIndex,
     required int cardIndex,
     required int? declaredColorIndex,
     required Relic? chosenRelic,
     required IshiCard card,
-  }) {
+  }) async {
+    List<IshiCard> drawnCards = [];
+
     updateUI(() {
       final removedCard = _manager.getCardOfCurrentPlayer(card);
       _manager.playCard(playerIndex, cardIndex);
@@ -112,19 +111,23 @@ extension GameScreenActions on GameScreenState {
       if (chosenRelic != null) {
         _manager.playerRelics[playerIndex].add(chosenRelic);
         if (chosenRelic.effect == .immediateDraw3) {
-          for (int i = 0; i < 3; i++) {
-            _manager.drawCard(playerIndex);
-            getCurrentState?.insertItem(0);
-          }
+          drawnCards = _manager.forceDraw(
+            playerIndex,
+            count: 3,
+            skipHandInsertion: true,
+          );
           _manager.playerRelics[playerIndex].remove(chosenRelic);
-          if (playerIndex == _manager.localPlayerIndex) {
-            _triggerAutoSortIfNeeded();
-          }
         }
       }
 
       if (removedCard != null) _removeCard(cardIndex, removedCard);
     });
+
+    if (drawnCards.isNotEmpty) {
+      await _staggerDrawCards(drawnCards);
+      if (playerIndex == _manager.localPlayerIndex) _triggerAutoSortIfNeeded();
+    }
+
     broadcastGameState();
   }
 
@@ -179,41 +182,49 @@ extension GameScreenActions on GameScreenState {
     int? declaredColorIndex;
     Relic? chosenRelic;
 
-    if (card.type == .wild || card.type == .wildDraw4) {
-      final CardColor? chosenColor = await showDialog<CardColor>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const ColorPickerDialog(),
-      );
-      if (chosenColor == null) return;
-      declaredColorIndex = chosenColor.index;
-    } else if (card.type == .chest) {
-      chosenRelic = await showDialog<Relic>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const ChestDialog(),
-      );
-      if (chosenRelic == null) return;
+    switch (card.type) {
+      case .wild:
+      case .wildDraw4:
+        final CardColor? chosenColor = await showDialog<CardColor>(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const ColorPickerDialog(),
+        );
+        if (chosenColor == null) return;
+        declaredColorIndex = chosenColor.index;
+        break;
+
+      case .chest:
+        chosenRelic = await showDialog<Relic>(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const ChestDialog(),
+        );
+        if (chosenRelic == null) return;
+
+      default:
+        break;
     }
 
     if (_net.isHost) {
-      _onPlayCardUpdateHost(
+      await _onPlayCardUpdateHost(
         playerIndex: playerIndex,
         cardIndex: cardIndex,
         declaredColorIndex: declaredColorIndex,
         chosenRelic: chosenRelic,
         card: card,
       );
-    } else {
-      // CLIENT PREDICTION: Instantly remove the card locally for a smooth UI!
-      _onPlayCardNonHost(
-        playerIndex: playerIndex,
-        cardIndex: cardIndex,
-        declaredColorIndex: declaredColorIndex,
-        chosenRelic: chosenRelic,
-        card: card,
-      );
+      return;
     }
+
+    // CLIENT PREDICTION: Instantly remove the card locally for a smooth UI!
+    _onPlayCardNonHost(
+      playerIndex: playerIndex,
+      cardIndex: cardIndex,
+      declaredColorIndex: declaredColorIndex,
+      chosenRelic: chosenRelic,
+      card: card,
+    );
   }
 
   void _triggerDeckRestockEvent() {
@@ -310,5 +321,40 @@ extension GameScreenActions on GameScreenState {
     Future.delayed(const Duration(milliseconds: 450), () {
       if (mounted) animatedSort(_manager.handSortType);
     });
+  }
+
+  Future<void> _staggerDrawCards(List<IshiCard> incomingCards) async {
+    final controller = scrollControllers[localUIIndex];
+
+    for (IshiCard card in incomingCards) {
+      final currentPlayer = _manager.playerHands[_manager.localPlayerIndex];
+
+      updateUI(() => currentPlayer.add(card));
+
+      final newIndex = currentPlayer.length - 1;
+
+      // Fetch the list state DYNAMICALLY inside the loop!
+      final listState = listKeys[localUIIndex]?.currentState;
+
+      // Only animate if the list has successfully mounted
+      if (listState != null) {
+        listState.insertItem(
+          newIndex,
+          duration: const Duration(milliseconds: 300),
+        );
+      }
+
+      if (controller != null && controller.hasClients) {
+        final targetOffset = newIndex * itemWidth;
+
+        controller.animateTo(
+          targetOffset,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        );
+      }
+
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
   }
 }

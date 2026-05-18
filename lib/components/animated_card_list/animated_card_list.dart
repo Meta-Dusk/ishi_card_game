@@ -12,6 +12,7 @@ class AnimatedCardList extends StatelessWidget {
     required this.onTapCard,
     required this.scrollController,
     required this.isMyTurn,
+    this.selectedCard,
   });
 
   final void Function(IshiCard) onTapCard;
@@ -19,6 +20,7 @@ class AnimatedCardList extends StatelessWidget {
   final ScrollController? scrollController;
   final List<IshiCard> currentHand;
   final bool isMyTurn;
+  final IshiCard? selectedCard;
 
   bool _onScrollNotification(ScrollNotification notification) {
     if (notification is ScrollEndNotification) {
@@ -56,7 +58,6 @@ class AnimatedCardList extends StatelessWidget {
         initialItemCount: currentHand.length,
         itemBuilder: (_, index, animation) {
           if (index >= currentHand.length) return const SizedBox.shrink();
-
           final card = currentHand[index];
           return CurvedCard(
             key: ValueKey(card.id),
@@ -67,6 +68,7 @@ class AnimatedCardList extends StatelessWidget {
             scrollController: scrollController,
             onTapCard: onTapCard,
             isMyTurn: isMyTurn,
+            isSelected: card == selectedCard,
           );
         },
       ),

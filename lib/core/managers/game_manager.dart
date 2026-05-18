@@ -122,7 +122,7 @@ class GameManager {
   }
 
   /// CLIENT ONLY: Takes the JSON from the Host and forces the local UI to match it.
-  void applyGameStateJson(StringDynamicMap json) {
+  List<IshiCard> applyGameStateJson(StringDynamicMap json) {
     localPlayerIndex = json[_BoardKeys.myPlayerIndex] as int;
     currentPlayer = json[_BoardKeys.currentPlayer] as int;
     isClockwise = json[_BoardKeys.direction] as bool;
@@ -153,29 +153,33 @@ class GameManager {
       discardPile = [IshiCard.fromJson(json[_BoardKeys.topCard])];
     }
 
+    List<IshiCard> newlyDealtCards = [];
+
     if (json[_BoardKeys.myHand] != null) {
       final List<dynamic> handData = json[_BoardKeys.myHand];
       List<IshiCard> incomingHand = handData
           .map((c) => IshiCard.fromJson(c as StringDynamicMap))
           .toList();
 
-      List<IshiCard> mergedHand = [];
-      for (IshiCard newCard in incomingHand) {
-        // Check if we already hold this exact card ID in our local hand
-        int existingIdx = playerHands[localPlayerIndex].indexWhere(
-          (card) => card.id == newCard.id,
-        );
-
-        if (existingIdx != -1) {
-          // If we do, keep the exact local object! This perfectly preserves
-          // the face-up status and any ongoing animations.
-          mergedHand.add(playerHands[localPlayerIndex][existingIdx]);
-        } else {
-          // If we don't, it's a freshly drawn card. Add the new one!
-          mergedHand.add(newCard);
+      // Preserve LOCAL sorted order for existing cards
+      List<IshiCard> preservedLocalHand = [];
+      for (IshiCard localCard in playerHands[localPlayerIndex]) {
+        if (incomingHand.any((c) => c.id == localCard.id)) {
+          preservedLocalHand.add(localCard);
         }
       }
-      playerHands[localPlayerIndex] = mergedHand;
+
+      // Find the brand new cards the Host gave us
+      for (IshiCard incomingCard in incomingHand) {
+        if (!preservedLocalHand.any((c) => c.id == incomingCard.id)) {
+          newlyDealtCards.add(
+            incomingCard,
+          ); // Intercept! Do not add to hand yet.
+        }
+      }
+
+      // Update the local hand with ONLY the preserved cards (maintaining their sort)
+      playerHands[localPlayerIndex] = preservedLocalHand;
     }
 
     if (json[_BoardKeys.playerRelics] != null) {
@@ -212,6 +216,8 @@ class GameManager {
     } else {
       winnerIndex = incomingWinner;
     }
+
+    return newlyDealtCards;
   }
 
   int getCardIndexByPlayerIndex(IshiCard card) =>
@@ -318,17 +324,33 @@ class GameManager {
     return false;
   }
 
-  void resolvePendingAttack() {
+  List<IshiCard> resolvePendingAttack({bool skipHandInsertion = false}) {
     int playerIndex = currentPlayer - 1;
+    List<IshiCard> drawnCards = [];
+
     for (int i = 0; i < pendingDrawCount; i++) {
       if (deck.isEmpty) continue;
-      playerHands[playerIndex].insert(0, deck.removeLast());
+
+      IshiCard card = deck.removeLast();
+      drawnCards.add(card);
+
+      // Only insert instantly if the UI isn't handling it
+      if (!skipHandInsertion) {
+        playerHands[playerIndex].insert(0, card);
+      }
     }
+
     pendingDrawCount = 0;
     actionPoints[playerIndex] = 0; // Force their turn to end
     cardDraws[playerIndex] = 0; // Prevent them from digging for answers
     hasDrawnCard = true;
-    if (playerIndex == localPlayerIndex) sortHand(playerIndex, handSortType);
+
+    // Only sort if we instantly inserted the cards
+    if (!skipHandInsertion && playerIndex == localPlayerIndex) {
+      sortHand(playerIndex, handSortType);
+    }
+
+    return drawnCards;
   }
 
   /// ACTION: Play a card and apply its effects
@@ -353,12 +375,22 @@ class GameManager {
   void setDeclaredColor(CardColor color) => declaredColor = color;
 
   /// ACTION: Draw a card
-  IshiCard drawCard(int playerIndex) {
+  IshiCard drawCard(int playerIndex, {bool skipHandInsertion = false}) {
     cardDraws[playerIndex]--;
     IshiCard drawn = deck.removeLast();
-    playerHands[playerIndex].insert(0, drawn);
+
+    // Only insert instantly if the UI isn't handling it
+    if (!skipHandInsertion) {
+      playerHands[playerIndex].insert(0, drawn);
+    }
+
     hasDrawnCard = true;
-    if (playerIndex == localPlayerIndex) sortHand(playerIndex, handSortType);
+
+    // Only auto-sort instantly if we inserted the card instantly
+    if (!skipHandInsertion && playerIndex == localPlayerIndex) {
+      sortHand(playerIndex, handSortType);
+    }
+
     return drawn;
   }
 
@@ -394,15 +426,30 @@ class GameManager {
   }
 
   /// Forces a player to draw cards without consuming their CD points
-  void forceDraw(int targetPlayerIndex, {int count = 1}) {
+  List<IshiCard> forceDraw(
+    int targetPlayerIndex, {
+    int count = 1,
+    bool skipHandInsertion = false,
+  }) {
+    List<IshiCard> drawnCards = [];
+
     for (int i = 0; i < count; i++) {
       if (deck.isEmpty) break;
       IshiCard drawn = deck.removeLast();
-      playerHands[targetPlayerIndex].insert(0, drawn);
+      drawnCards.add(drawn);
+
+      // Only insert instantly if the UI isn't handling it
+      if (!skipHandInsertion) {
+        playerHands[targetPlayerIndex].insert(0, drawn);
+      }
     }
-    if (targetPlayerIndex == localPlayerIndex) {
+
+    // Only sort instantly if we inserted the cards instantly
+    if (!skipHandInsertion && targetPlayerIndex == localPlayerIndex) {
       sortHand(targetPlayerIndex, handSortType);
     }
+
+    return drawnCards;
   }
 
   /// TURN CALCULATION

@@ -10,45 +10,41 @@ extension GameScreenNetwork on GameScreenState {
     return 0;
   }
 
-  void _onGameStateUpdate(GameStateMessage message) {
+  Future<void> _onGameStateUpdate(GameStateMessage message) async {
+    if (_net.isHost) return;
+
+    List<int> oldOpponentSizes = [];
+    List<IshiCard> newlyDealtCards = [];
+
     updateUI(() {
       int oldLocalSize = currentHand.length;
 
       // Snapshot EVERY opponent's hand size before applying the new state
-      List<int> oldOpponentSizes = List.generate(
+      oldOpponentSizes = List.generate(
         _manager.playerCount,
         (i) => _getHandSize(i),
       );
 
       // Apply Master State
-      _manager.applyGameStateJson(message.payload);
-
-      int newLocalSize = currentHand.length;
-
-      if (newLocalSize <= oldLocalSize) {
-        _manager.sortHand(_manager.localPlayerIndex, _manager.handSortType);
-      }
+      newlyDealtCards = _manager.applyGameStateJson(message.payload);
 
       if (_manager.winnerIndex != null) {
         _showGameOverDialog();
         return;
       }
 
-      // Animate Local Player (Insertions only)
-      if (newLocalSize > oldLocalSize) {
-        int diff = newLocalSize - oldLocalSize;
-        for (int i = 0; i < diff; i++) {
-          getCurrentState?.insertItem(
-            0,
-            duration: const Duration(milliseconds: 400),
-          );
-        }
-        _triggerAutoSortIfNeeded();
+      int newLocalSize = currentHand.length;
+      if (newLocalSize <= oldLocalSize) {
+        _manager.sortHand(_manager.localPlayerIndex, _manager.handSortType);
       }
 
-      // _triggerAutoSortIfNeeded();
       _animateOpponentHands(oldOpponentSizes);
     });
+
+    if (newlyDealtCards.isNotEmpty) {
+      await _staggerDrawCards(newlyDealtCards);
+      _triggerAutoSortIfNeeded();
+    }
   }
 
   void initializeNetworkSync() {

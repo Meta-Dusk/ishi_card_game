@@ -56,6 +56,8 @@ class GameScreenState extends State<GameScreen> {
   bool _showDevConsole = false;
   bool _showDevConsoleToggle = false;
 
+  List<IshiCard> _initialHandBuffer = [];
+
   void updateUI(VoidCallback fn) {
     if (mounted) setState(fn);
   }
@@ -72,6 +74,13 @@ class GameScreenState extends State<GameScreen> {
       scrollControllers[i] = ScrollController();
     }
 
+    if (_net.isHost && _manager.playerHands.isNotEmpty) {
+      _initialHandBuffer = List.from(
+        _manager.playerHands[_manager.localPlayerIndex],
+      );
+      _manager.playerHands[_manager.localPlayerIndex].clear();
+    }
+
     initializeNetworkSync();
 
     _pingSubscription = _net.messages.listen((message) {
@@ -82,6 +91,28 @@ class GameScreenState extends State<GameScreen> {
 
     DevConsole().initialize(_manager, _net);
     AudioManager().playMusic(Audio.music.gameLoop1);
+
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _startOpeningSequence(),
+    );
+  }
+
+  Future<void> _startOpeningSequence() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // 1st Broadcast: Host sends the starting state.
+    // Clients receive their 7 cards and instantly start staggering!
+    if (_net.isHost) broadcastGameState();
+
+    // Host staggers their own intercepted hand back into the UI
+    if (_initialHandBuffer.isNotEmpty) {
+      await _staggerDrawCards(_initialHandBuffer);
+      _triggerAutoSortIfNeeded();
+    }
+
+    // 2nd Broadcast: Tell clients the Host finished dealing.
+    // This causes 7 face-down cards to instantly pop into the opponent overlay!
+    if (_net.isHost) broadcastGameState();
   }
 
   @override
@@ -134,6 +165,7 @@ class GameScreenState extends State<GameScreen> {
             child: AnimatedCardList(
               animatedListKey: listKeys[localUIIndex],
               currentHand: currentHand,
+              selectedCard: _selectedCard,
               onTapCard: (card) {
                 if (!isMyTurn) return;
                 setState(() {
