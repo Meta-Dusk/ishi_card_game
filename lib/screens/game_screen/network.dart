@@ -17,8 +17,6 @@ extension GameScreenNetwork on GameScreenState {
     List<IshiCard> newlyDealtCards = [];
 
     updateUI(() {
-      int oldLocalSize = currentHand.length;
-
       // Snapshot EVERY opponent's hand size before applying the new state
       oldOpponentSizes = List.generate(
         _manager.playerCount,
@@ -27,11 +25,6 @@ extension GameScreenNetwork on GameScreenState {
 
       // Apply Master State
       newlyDealtCards = _manager.applyGameStateJson(message.payload);
-
-      int newLocalSize = currentHand.length;
-      if (newLocalSize <= oldLocalSize) {
-        _manager.sortHand(_manager.localPlayerIndex, _manager.handSortType);
-      }
 
       _animateOpponentHands(oldOpponentSizes);
     });

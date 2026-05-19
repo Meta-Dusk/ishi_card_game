@@ -35,6 +35,7 @@ extension GameScreenActions on GameScreenState {
       await _staggerDrawCards([drawnCard]);
       _triggerAutoSortIfNeeded();
       broadcastGameState();
+      _evaluateSmartAutoEnd();
       return;
     }
 
@@ -44,6 +45,7 @@ extension GameScreenActions on GameScreenState {
         playerIndex: _manager.localPlayerIndex,
       ),
     );
+    _evaluateSmartAutoEnd();
   }
 
   void endTurnAction() {
@@ -71,6 +73,7 @@ extension GameScreenActions on GameScreenState {
       await _staggerDrawCards(newlyDrawnCards);
       _triggerAutoSortIfNeeded();
       broadcastGameState();
+      _evaluateSmartAutoEnd();
       return;
     }
 
@@ -80,6 +83,7 @@ extension GameScreenActions on GameScreenState {
         playerIndex: _manager.localPlayerIndex,
       ),
     );
+    _evaluateSmartAutoEnd();
   }
 
   void _removeCard(int cardIndex, IshiCard removedCard) {
@@ -214,6 +218,7 @@ extension GameScreenActions on GameScreenState {
         chosenRelic: chosenRelic,
         card: card,
       );
+      _evaluateSmartAutoEnd();
       return;
     }
 
@@ -225,6 +230,7 @@ extension GameScreenActions on GameScreenState {
       chosenRelic: chosenRelic,
       card: card,
     );
+    _evaluateSmartAutoEnd();
   }
 
   void _triggerDeckRestockEvent() {
@@ -337,7 +343,10 @@ extension GameScreenActions on GameScreenState {
     });
   }
 
-  Future<void> _staggerDrawCards(List<IshiCard> incomingCards) async {
+  Future<void> _staggerDrawCards(
+    List<IshiCard> incomingCards, {
+    bool flipAllCardsAfter = true,
+  }) async {
     final controller = scrollControllers[localUIIndex];
 
     for (IshiCard card in incomingCards) {
@@ -369,6 +378,21 @@ extension GameScreenActions on GameScreenState {
       }
 
       await Future.delayed(const Duration(milliseconds: 300));
+    }
+    if (flipAllCardsAfter) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      flipAllCardsAction();
+    }
+  }
+
+  /// Checks if the local player is out of moves, and if so,
+  /// automatically presses "End Turn"
+  void _evaluateSmartAutoEnd() {
+    if (!isMyTurn) return;
+    if (mounted &&
+        isMyTurn &&
+        !_manager.hasValidMoves(_manager.localPlayerIndex)) {
+      endTurnAction();
     }
   }
 }

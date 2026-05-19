@@ -22,6 +22,7 @@ class _BoardKeys {
   static const String hasDrawnCard = 'hasDrawnCard';
   static const String playerRelics = 'playerRelics';
   static const String winnerIndex = 'winnerIndex';
+  static const String turnDeadline = 'turnDeadline';
 }
 
 enum GameManagerEvent { gameOver }
@@ -53,6 +54,11 @@ class GameManager {
 
   /// Stacks if multiple skips are played.
   int _playersToSkip = 0;
+
+  int turnDeadlineEpoch = 0;
+  static const int turnDurationSeconds = 60;
+  int get _getTurnDeadlineEpoch =>
+      DateTime.now().millisecondsSinceEpoch + (turnDurationSeconds * 1000);
 
   // --- ACTION STATES ---
   bool hasPlayedCard = false;
@@ -118,6 +124,7 @@ class GameManager {
       _BoardKeys.hasDrawnCard: hasDrawnCard,
       _BoardKeys.playerRelics: serializedRelics,
       _BoardKeys.winnerIndex: winnerIndex,
+      _BoardKeys.turnDeadline: turnDeadlineEpoch,
     };
   }
 
@@ -207,6 +214,7 @@ class GameManager {
 
     hasPlayedCard = json[_BoardKeys.hasPlayedCard] as bool? ?? false;
     hasDrawnCard = json[_BoardKeys.hasDrawnCard] as bool? ?? false;
+    turnDeadlineEpoch = json[_BoardKeys.turnDeadline] as int? ?? 0;
 
     int? incomingWinner = json[_BoardKeys.winnerIndex] as int?;
     if (winnerIndex == null && incomingWinner != null) {
@@ -244,6 +252,33 @@ class GameManager {
         if (deck.isNotEmpty) playerHands[p].add(deck.removeLast());
       }
     }
+
+    turnDeadlineEpoch = _getTurnDeadlineEpoch;
+  }
+
+  bool hasValidMoves(int playerIndex) {
+    // If they are under attack, they must either deflect or take the penalty
+    if (pendingDrawCount > 0) return true;
+
+    final playerAP = actionPoints[playerIndex];
+    final playerCD = cardDraws[playerIndex];
+
+    // If they have action points, check if ANY card in their hand is playable
+    if (playerAP > 0) {
+      for (IshiCard card in playerHands[playerIndex]) {
+        if (canPlay(card, playerIndex)) return true;
+      }
+    }
+
+    // If they can still draw a card, they have a valid move
+    if (playerCD > 0 && deck.isNotEmpty) return true;
+
+    if (playerAP <= 0 && playerCD <= 0) {
+      return false;
+    }
+
+    // Otherwise, they are completely out of options
+    return false;
   }
 
   void sortHand(int playerIndex, DeckSortType sortType) {
@@ -488,5 +523,6 @@ class GameManager {
     hasPlayedCard = false;
     hasDrawnCard = false;
     hasDeflected = false;
+    turnDeadlineEpoch = _getTurnDeadlineEpoch;
   }
 }

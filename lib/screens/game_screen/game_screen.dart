@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:ishi/components/dialogs/dev_console_toggle_dialog.dart';
-import 'package:ishi/components/overlays/dev_console/dev_console_overlay.dart';
 import 'package:ishi/core/audio.dart';
 import 'package:ishi/core/managers/audio_manager.dart';
 import 'package:ishi/core/managers/dev_console.dart';
 import 'package:ishi/core/network_messages.dart';
 import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/components/dialogs/dev_console_toggle_dialog.dart';
+import 'package:ishi/components/overlays/dev_console/dev_console_overlay.dart';
 import 'package:ishi/components/dialogs/leave_game_dialog.dart';
 import 'package:ishi/components/dialogs/settings_dialog.dart';
 import 'package:ishi/components/gameplay/animated_play_button.dart';
@@ -59,6 +59,8 @@ class GameScreenState extends State<GameScreen> {
 
   List<IshiCard> _initialHandBuffer = [];
 
+  late Timer _hostTurnTimer;
+
   void updateUI(VoidCallback fn) {
     if (mounted) setState(fn);
   }
@@ -102,6 +104,16 @@ class GameScreenState extends State<GameScreen> {
 
     initializeNetworkSync();
 
+    _hostTurnTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!_net.isHost || _manager.winnerIndex != null) return;
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (now >= _manager.turnDeadlineEpoch) {
+        updateUI(() => _manager.endTurn());
+        broadcastGameState();
+      }
+    });
+
     DevConsole().initialize(_manager, _net);
     DevConsole().onStateForceSynced = () {
       if (!mounted) return;
@@ -125,6 +137,7 @@ class GameScreenState extends State<GameScreen> {
     _netSubscription?.cancel();
     _pingSubscription?.cancel();
     _gameEventSubscription?.cancel();
+    _hostTurnTimer.cancel();
     for (ScrollController controller in scrollControllers.values) {
       controller.dispose();
     }
@@ -179,7 +192,10 @@ class GameScreenState extends State<GameScreen> {
         top: 194,
         left: 0,
         right: 0,
-        child: TurnIndicator(isMyTurn: isMyTurn),
+        child: TurnIndicator(
+          isMyTurn: isMyTurn,
+          turnDeadlineEpoch: _manager.turnDeadlineEpoch,
+        ),
       ),
 
       // Local Hand
