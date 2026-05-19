@@ -158,21 +158,21 @@ class LobbySyncResponseMessage extends NetMessage {
 
 class SetProfileMessage extends NetMessage {
   final String playerName;
-  final int avatarColor;
+  final String avatarColorName;
 
-  const SetProfileMessage(this.playerName, this.avatarColor);
+  const SetProfileMessage(this.playerName, this.avatarColorName);
 
   @override
   StringDynamicMap toJson() => {
     _NetKey.type: NetType.setProfile.name,
     _NetKey.playerName: playerName,
-    _NetKey.avatarColor: avatarColor,
+    _NetKey.avatarColor: avatarColorName,
   };
 
   factory SetProfileMessage.fromJson(StringDynamicMap json) =>
       SetProfileMessage(
         json[_NetKey.playerName] as String,
-        json[_NetKey.avatarColor] as int,
+        json[_NetKey.avatarColor] as String,
       );
 }
 

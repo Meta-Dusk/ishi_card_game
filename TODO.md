@@ -15,4 +15,3 @@
 ## Bugs
 
 - [ ] Touchscreen priority (laptop issue, where interactivity only works for the touchscreen) [_low prio_]
-- [ ] Avatar colors gets overwritten by the host

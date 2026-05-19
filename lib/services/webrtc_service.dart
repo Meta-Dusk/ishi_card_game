@@ -209,7 +209,7 @@ class WebRTCService implements NetworkService {
       sendIntent(
         SetProfileMessage(
           ProfileManager().playerName,
-          ProfileManager().avatarColor.toARGB32(),
+          ProfileManager().avatarColorName,
         ),
       );
     };
