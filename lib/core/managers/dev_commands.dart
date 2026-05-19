@@ -249,5 +249,21 @@ class DevCommandRegistry {
         console.onStateForceSynced?.call();
       },
     ),
+    DevCommand(
+      name: "settime",
+      description:
+          "Sets the current running turn timer to a value. Usage: settime [seconds]",
+      onExecute: (args) {
+        if (!net.isHost) {
+          return console.log("Error: Only the host can modify the game state!");
+        }
+        if (args.isEmpty) {
+          return console.log("Error: Missing value. Usage: settime [seconds]");
+        }
+        int value = int.tryParse(args[0]) ?? 0;
+        console.log("Setting current running turn timer to: $value");
+        manager.turnDeadlineEpoch = value;
+      },
+    ),
   ];
 }

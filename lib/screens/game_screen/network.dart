@@ -100,7 +100,7 @@ extension GameScreenNetwork on GameScreenState {
 
       switch (message.action) {
         case .drawCard:
-          _clientDrawCard(pIndex);
+          _onClientDrawCard(pIndex);
           break;
         case .endTurn:
           _onIntentEndTurn();
@@ -111,6 +111,9 @@ extension GameScreenNetwork on GameScreenState {
         case .playCard:
           _onIntentPlayCard(pIndex, message);
           break;
+        case .activateRelic:
+          _onActivateRelic(pIndex, message);
+          break;
       }
     });
 
@@ -118,7 +121,7 @@ extension GameScreenNetwork on GameScreenState {
     broadcastGameState();
   }
 
-  void _clientDrawCard(int pIndex) {
+  void _onClientDrawCard(int pIndex) {
     if (_manager.deck.isEmpty) _manager.deck = generateStandardDeck();
     _manager.drawCard(pIndex);
   }
@@ -145,13 +148,43 @@ extension GameScreenNetwork on GameScreenState {
 
     if (message.relicId == null) return;
 
-    final relic = relicPool.firstWhere((relic) => relic.id == message.relicId);
-    _manager.playerRelics[playerIndex].add(relic);
+    final template = relicPool.firstWhere(
+      (relic) => relic.id == message.relicId,
+    );
+    final freshRelic = Relic.fromJson(template.toJson());
 
-    if (relic.effect == .immediateDraw3) {
+    _manager.playerRelics[playerIndex].add(freshRelic);
+
+    if (freshRelic.effect == .immediateDraw3) {
       _manager.forceDraw(playerIndex, count: 3);
-      _manager.playerRelics[playerIndex].remove(relic);
+      _manager.playerRelics[playerIndex].remove(freshRelic);
     }
+  }
+
+  void _onActivateRelic(int playerIndex, PlayIntentMessage message) {
+    final relic = relicPool.firstWhere((r) => r.id == message.relicId);
+
+    // Find the actual physical cards in the Host's master array
+    List<IshiCard> targetCards = [];
+    for (String id in message.targetCardIds ?? []) {
+      final card = _manager.playerHands[playerIndex].firstWhere(
+        (c) => c.id == id,
+      );
+      targetCards.add(card);
+    }
+
+    IshiCard? template = message.polymorphTemplate != null
+        ? IshiCard.fromJson(message.polymorphTemplate!)
+        : null;
+
+    // Apply it on the master state and broadcast!
+    _applyRelicEffectLocally(
+      playerIndex: playerIndex,
+      relic: relic,
+      targets: targetCards,
+      chosenTemplate: template,
+    );
+    broadcastGameState();
   }
 
   void _animateOpponentHands(List<int> oldOpponentSizes) {

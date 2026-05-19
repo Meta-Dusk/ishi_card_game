@@ -1,5 +1,5 @@
 import 'package:ishi/components/cards/card_display.dart';
-import 'package:ishi/models/uno_card.dart';
+import 'package:ishi/models/ishi_card.dart';
 import 'package:flutter/material.dart';
 
 class DraggableCard extends StatelessWidget {

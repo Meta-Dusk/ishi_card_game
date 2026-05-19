@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:ishi/core/data_types.dart';
 import 'package:ishi/models/relic.dart';
-import 'package:ishi/models/uno_card.dart';
+import 'package:ishi/models/ishi_card.dart';
 
 enum DeckSortType { byColor, byType, byValue, unsorted }
 
@@ -23,6 +23,7 @@ class _BoardKeys {
   static const String playerRelics = 'playerRelics';
   static const String winnerIndex = 'winnerIndex';
   static const String turnDeadline = 'turnDeadline';
+  static const String roundCount = 'roundCount';
 }
 
 enum GameManagerEvent { gameOver }
@@ -59,6 +60,8 @@ class GameManager {
   static const int turnDurationSeconds = 60;
   int get _getTurnDeadlineEpoch =>
       DateTime.now().millisecondsSinceEpoch + (turnDurationSeconds * 1000);
+
+  int roundCount = 1;
 
   // --- ACTION STATES ---
   bool hasPlayedCard = false;
@@ -104,8 +107,10 @@ class GameManager {
         .map((card) => card.toJson())
         .toList();
 
-    List<List<String>> serializedRelics = playerRelics.map((playerList) {
-      return playerList.map((relic) => relic.id).toList();
+    List<List<StringDynamicMap>> serializedRelics = playerRelics.map((
+      playerList,
+    ) {
+      return playerList.map((relic) => relic.toJson()).toList();
     }).toList();
 
     return {
@@ -125,6 +130,7 @@ class GameManager {
       _BoardKeys.playerRelics: serializedRelics,
       _BoardKeys.winnerIndex: winnerIndex,
       _BoardKeys.turnDeadline: turnDeadlineEpoch,
+      _BoardKeys.roundCount: roundCount,
     };
   }
 
@@ -192,11 +198,10 @@ class GameManager {
     if (json[_BoardKeys.playerRelics] != null) {
       List<dynamic> incomingRelics = json[_BoardKeys.playerRelics];
       for (int i = 0; i < incomingRelics.length; i++) {
-        List<dynamic> relicIds = incomingRelics[i];
+        List<dynamic> relicData = incomingRelics[i];
 
-        // Convert the string IDs back into actual Relic objects using the pool
-        playerRelics[i] = relicIds
-            .map((id) => relicPool.firstWhere((r) => r.id == id))
+        playerRelics[i] = relicData
+            .map((r) => Relic.fromJson(r as StringDynamicMap))
             .toList();
       }
     }
@@ -215,6 +220,7 @@ class GameManager {
     hasPlayedCard = json[_BoardKeys.hasPlayedCard] as bool? ?? false;
     hasDrawnCard = json[_BoardKeys.hasDrawnCard] as bool? ?? false;
     turnDeadlineEpoch = json[_BoardKeys.turnDeadline] as int? ?? 0;
+    roundCount = json[_BoardKeys.roundCount] as int? ?? 1;
 
     int? incomingWinner = json[_BoardKeys.winnerIndex] as int?;
     if (winnerIndex == null && incomingWinner != null) {
@@ -254,6 +260,7 @@ class GameManager {
     }
 
     turnDeadlineEpoch = _getTurnDeadlineEpoch;
+    roundCount = 1;
   }
 
   bool hasValidMoves(int playerIndex) {
@@ -507,6 +514,8 @@ class GameManager {
   void endTurn() {
     currentPlayer = getNextPlayer();
     _playersToSkip = 0; // Reset skips after they are consumed
+
+    if (currentPlayer == 1) roundCount++;
 
     int playerIndex = currentPlayer - 1;
 

@@ -17,7 +17,7 @@ enum NetType {
   lobbySettings,
 }
 
-enum IntentAction { drawCard, endTurn, takePenalty, playCard }
+enum IntentAction { drawCard, endTurn, takePenalty, playCard, activateRelic }
 
 sealed class NetMessage {
   const NetMessage();
@@ -198,6 +198,8 @@ class PlayIntentMessage extends NetMessage {
   final String? cardId;
   final int? declaredColor;
   final String? relicId;
+  final List<String>? targetCardIds;
+  final StringDynamicMap? polymorphTemplate;
 
   const PlayIntentMessage({
     required this.action,
@@ -205,6 +207,8 @@ class PlayIntentMessage extends NetMessage {
     this.cardId,
     this.declaredColor,
     this.relicId,
+    this.targetCardIds,
+    this.polymorphTemplate,
   });
 
   @override
@@ -215,6 +219,8 @@ class PlayIntentMessage extends NetMessage {
     if (cardId != null) _NetKey.cardId: cardId,
     if (declaredColor != null) _NetKey.declaredColor: declaredColor,
     if (relicId != null) _NetKey.relicId: relicId,
+    if (targetCardIds != null) _NetKey.targetCardIds: targetCardIds,
+    if (polymorphTemplate != null) _NetKey.polymorphTemplate: polymorphTemplate,
   };
 
   factory PlayIntentMessage.fromJson(StringDynamicMap json) {
@@ -226,6 +232,8 @@ class PlayIntentMessage extends NetMessage {
       cardId: json[_NetKey.cardId] as String?,
       declaredColor: json[_NetKey.declaredColor] as int?,
       relicId: json[_NetKey.relicId] as String?,
+      targetCardIds: json[_NetKey.targetCardIds] as List<String>?,
+      polymorphTemplate: json[_NetKey.polymorphTemplate] as StringDynamicMap?,
     );
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ishi/models/uno_card.dart';
+import 'package:ishi/models/ishi_card.dart';
 
 class AnimatedPlayButton extends StatelessWidget {
   const AnimatedPlayButton({
