@@ -1,19 +1,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:ishi/components/dialogs/dev_console_toggle_dialog.dart';
-import 'package:ishi/components/overlays/dev_console/dev_console_overlay.dart';
 import 'package:ishi/core/audio.dart';
 import 'package:ishi/core/managers/audio_manager.dart';
 import 'package:ishi/core/managers/dev_console.dart';
 import 'package:ishi/core/network_messages.dart';
 import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/components/cards/relic_choice_card.dart';
+import 'package:ishi/components/dialogs/polymorph_dialog.dart';
+import 'package:ishi/components/dialogs/dev_console_toggle_dialog.dart';
+import 'package:ishi/components/overlays/dev_console/dev_console_overlay.dart';
 import 'package:ishi/components/dialogs/leave_game_dialog.dart';
 import 'package:ishi/components/dialogs/settings_dialog.dart';
 import 'package:ishi/components/gameplay/animated_play_button.dart';
 import 'package:ishi/services/network_service.dart';
 import 'package:ishi/models/relic.dart';
-import 'package:ishi/models/uno_card.dart';
+import 'package:ishi/models/ishi_card.dart';
 import 'game_components.dart';
 
 part 'actions.dart';
@@ -33,7 +35,8 @@ class GameScreenState extends State<GameScreen> {
   late GameManager _manager;
 
   NetworkService get _net => widget.network;
-  StreamSubscription? _netSubscription;
+  late StreamSubscription? _netSubscription;
+  late StreamSubscription? _gameEventSubscription;
 
   String? attackMessage;
   Key attackKey = UniqueKey();
@@ -42,7 +45,7 @@ class GameScreenState extends State<GameScreen> {
   late Map<int, ScrollController> scrollControllers;
 
   bool _showPingOverlay = false;
-  StreamSubscription? _pingSubscription;
+  late StreamSubscription? _pingSubscription;
   final playPileKey = GlobalKey<PlayCardsPileState>();
 
   int get localUIIndex => _manager.localPlayerIndex + 1;
@@ -55,9 +58,35 @@ class GameScreenState extends State<GameScreen> {
   IshiCard? _selectedCard;
   bool _showDevConsole = false;
   bool _showDevConsoleToggle = false;
+  bool _isViewingRelics = false;
+
+  Relic? _activeTargetingRelic;
+  final List<IshiCard> _relicTargets = [];
+
+  List<IshiCard> _initialHandBuffer = [];
+
+  late Timer _hostTurnTimer;
 
   void updateUI(VoidCallback fn) {
     if (mounted) setState(fn);
+  }
+
+  Future<void> _startOpeningSequence() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // 1st Broadcast: Host sends the starting state.
+    // Clients receive their cards and instantly start staggering!
+    if (_net.isHost) broadcastGameState();
+
+    // Host staggers their own intercepted hand back into the UI
+    if (_initialHandBuffer.isNotEmpty) {
+      await _staggerDrawCards(_initialHandBuffer);
+      _triggerAutoSortIfNeeded();
+    }
+
+    // 2nd Broadcast: Tell clients the Host finished dealing.
+    // This causes the face-down cards to instantly pop into the opponent overlay!
+    if (_net.isHost) broadcastGameState();
   }
 
   @override
@@ -72,22 +101,49 @@ class GameScreenState extends State<GameScreen> {
       scrollControllers[i] = ScrollController();
     }
 
+    if (_net.isHost && _manager.playerHands.isNotEmpty) {
+      _initialHandBuffer = List.from(
+        _manager.playerHands[_manager.localPlayerIndex],
+      );
+      _manager.playerHands[_manager.localPlayerIndex].clear();
+    }
+
     initializeNetworkSync();
 
-    _pingSubscription = _net.messages.listen((message) {
-      if (message is LobbyStateMessage && _showPingOverlay) {
-        setState(() {});
+    _hostTurnTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!_net.isHost || _manager.winnerIndex != null) return;
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (now >= _manager.turnDeadlineEpoch) {
+        updateUI(() => _manager.endTurn());
+        broadcastGameState();
       }
     });
 
     DevConsole().initialize(_manager, _net);
+    DevConsole().onStateForceSynced = () {
+      if (!mounted) return;
+      setState(() {
+        for (int i = 0; i < listKeys.length; i++) {
+          listKeys[i] = GlobalKey<AnimatedListState>();
+        }
+      });
+      if (_net.isHost) broadcastGameState();
+    };
+
     AudioManager().playMusic(Audio.music.gameLoop1);
+
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _startOpeningSequence(),
+    );
   }
 
   @override
   void dispose() {
     _netSubscription?.cancel();
     _pingSubscription?.cancel();
+    _gameEventSubscription?.cancel();
+    _hostTurnTimer.cancel();
     for (ScrollController controller in scrollControllers.values) {
       controller.dispose();
     }
@@ -97,84 +153,6 @@ class GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // --- LOCAL PLAYER DASHBOARD (Bottom) ---
-    final lowerPanel = Column(
-      mainAxisSize: .min,
-      children: [
-        CardCounter(currentHandLength: currentHand.length),
-        Opacity(
-          opacity: isMyTurn ? 1.0 : 0.5,
-          child: HandControls(
-            onEndTurn: endTurnAction,
-            onFlipAllCard: flipAllCardsAction,
-            onSortHand: animatedSort,
-            onTakePenalty: takePenaltyAction,
-            onToggleAutoSort: () => setState(
-              () => _manager.isAutoSortEnabled = !_manager.isAutoSortEnabled,
-            ),
-            manager: _manager,
-            isMyTurn: isMyTurn,
-          ),
-        ),
-        AnimatedPlayButton(
-          selectedCard: _selectedCard,
-          isMyTurn: isMyTurn,
-          onPlay: () => playCardAction(_selectedCard!),
-        ),
-        Container(
-          height: 280,
-          padding: const .symmetric(horizontal: 8, vertical: 12),
-          child: RawScrollbar(
-            key: ValueKey(scrollControllers[localUIIndex]),
-            controller: scrollControllers[localUIIndex],
-            thumbVisibility: true,
-            thumbColor: Colors.black26,
-            radius: const .circular(8),
-            thickness: 6,
-            child: AnimatedCardList(
-              animatedListKey: listKeys[localUIIndex],
-              currentHand: currentHand,
-              onTapCard: (card) {
-                if (!isMyTurn) return;
-                setState(() {
-                  if (_selectedCard == card) {
-                    _selectedCard = null; // Deselect if tapped again
-                  } else {
-                    _selectedCard = card; // Select the new card
-                  }
-                });
-              },
-              scrollController: scrollControllers[localUIIndex],
-              isMyTurn: isMyTurn,
-            ),
-          ),
-        ),
-      ],
-    );
-
-    // --- THE PLAY PILE (Center) ---
-    final playPileAndDeck = Stack(
-      alignment: .center,
-      clipBehavior: .none,
-      children: [
-        PlayAndPileDeck(
-          manager: _manager,
-          onDrawCard: drawCardAction,
-          onPlayCard: playCardAction,
-          playPileKey: playPileKey,
-        ),
-        if (_manager.pendingDrawCount > 0)
-          Positioned(
-            top: -20,
-            child: FloatingCombatText(
-              key: ValueKey(_manager.pendingDrawCount),
-              text: "STACK: +${_manager.pendingDrawCount}!",
-            ),
-          ),
-      ],
-    );
-
-    // --- THE MASTER LAYOUT ---
     final stackedContent = [
       // Local Player Info & Ping
       Positioned(
@@ -188,6 +166,31 @@ class GameScreenState extends State<GameScreen> {
             builder: (_) => DevConsoleToggleDialog(
               showDevConsole: _showDevConsoleToggle,
               onChanged: (val) => setState(() => _showDevConsoleToggle = val),
+            ),
+          ),
+        ),
+      ),
+
+      Positioned(
+        top: 24,
+        left: 0,
+        right: 0,
+        child: Center(
+          child: Container(
+            padding: const .symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.6),
+              borderRadius: .circular(16),
+              border: .all(color: Colors.white24, width: 1),
+            ),
+            child: Text(
+              "ROUND ${_manager.roundCount}",
+              style: const TextStyle(
+                color: Colors.amber,
+                fontWeight: .bold,
+                letterSpacing: 2,
+                fontSize: 16,
+              ),
             ),
           ),
         ),
@@ -212,7 +215,7 @@ class GameScreenState extends State<GameScreen> {
         top: (MediaQuery.of(context).size.height / 2) - 128,
         left: 0,
         right: 0,
-        child: playPileAndDeck,
+        child: _playPileAndDeck(),
       ),
 
       // Turn Indicator
@@ -220,11 +223,14 @@ class GameScreenState extends State<GameScreen> {
         top: 194,
         left: 0,
         right: 0,
-        child: TurnIndicator(isMyTurn: isMyTurn),
+        child: TurnIndicator(
+          isMyTurn: isMyTurn,
+          turnDeadlineEpoch: _manager.turnDeadlineEpoch,
+        ),
       ),
 
       // Local Hand
-      Align(alignment: .bottomCenter, child: lowerPanel),
+      Align(alignment: .bottomCenter, child: _lowerPanel()),
 
       // Turn Timeline
       Positioned(
@@ -260,6 +266,192 @@ class GameScreenState extends State<GameScreen> {
     );
   }
 
+  // THE PLAY PILE (Center)
+  Stack _playPileAndDeck() => Stack(
+    alignment: .center,
+    clipBehavior: .none,
+    children: [
+      PlayAndPileDeck(
+        manager: _manager,
+        onDrawCard: drawCardAction,
+        onPlayCard: playCardAction,
+        playPileKey: playPileKey,
+      ),
+      if (_manager.pendingDrawCount > 0)
+        Positioned(
+          top: -20,
+          child: FloatingCombatText(
+            key: ValueKey(_manager.pendingDrawCount),
+            text: "STACK: +${_manager.pendingDrawCount}!",
+          ),
+        ),
+    ],
+  );
+
+  /// LOCAL PLAYER DASHBOARD (Bottom)
+  Column _lowerPanel() {
+    final animatedCardList = AnimatedCardList(
+      animatedListKey: listKeys[localUIIndex],
+      currentHand: currentHand,
+      selectedCards: _activeTargetingRelic != null
+          ? _relicTargets
+          : (_selectedCard != null ? [_selectedCard!] : []),
+      onTapCard: (card) {
+        if (!isMyTurn) return;
+
+        setState(() {
+          if (_activeTargetingRelic != null) {
+            if (_relicTargets.contains(card)) {
+              _relicTargets.remove(card); // Deselect target
+            } else {
+              // Select target/s
+              int maxTargets = _activeTargetingRelic!.effect == .trashcan
+                  ? 2
+                  : 1;
+              if (_relicTargets.length < maxTargets) {
+                _relicTargets.add(card);
+              }
+            }
+            return;
+          }
+
+          _selectedCard = _selectedCard == card ? null : card;
+        });
+      },
+      scrollController: scrollControllers[localUIIndex],
+      isMyTurn: isMyTurn,
+    );
+
+    final cardViewSwapButton = ElevatedButton.icon(
+      onPressed: () => setState(() => _isViewingRelics = !_isViewingRelics),
+      label: Text(_isViewingRelics ? "VIEW CARDS" : "VIEW RELICS"),
+      icon: Icon(_isViewingRelics ? Icons.style : Icons.auto_awesome),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: _isViewingRelics
+            ? Colors.grey.shade800
+            : Colors.amber.shade700,
+        foregroundColor: Colors.white,
+      ),
+    );
+
+    final cardsDisplay = RawScrollbar(
+      key: ValueKey(scrollControllers[localUIIndex]),
+      controller: scrollControllers[localUIIndex],
+      thumbVisibility: true,
+      thumbColor: Colors.black26,
+      radius: const .circular(8),
+      thickness: 6,
+      child: animatedCardList,
+    );
+
+    final playerRelics = _manager.playerRelics[_manager.localPlayerIndex];
+
+    Widget? targetingBanner;
+    if (_activeTargetingRelic != null) {
+      targetingBanner = _targetingBanner().animate().fadeIn().slideY(
+        begin: 0.5,
+      );
+    }
+
+    return Column(
+      mainAxisSize: .min,
+      children: [
+        Row(
+          mainAxisAlignment: .center,
+          children: [
+            CardCounter(currentHandLength: currentHand.length),
+            if (playerRelics.isNotEmpty) ...[
+              const SizedBox(width: 16),
+              cardViewSwapButton.animate().fadeIn().slideX(),
+            ],
+          ],
+        ),
+        if (_activeTargetingRelic != null) targetingBanner!,
+        if (_activeTargetingRelic == null && !_isViewingRelics) ...[
+          Opacity(
+            opacity: isMyTurn ? 1.0 : 0.5,
+            child: HandControls(
+              onEndTurn: endTurnAction,
+              onFlipAllCard: flipAllCardsAction,
+              onSortHand: animatedSort,
+              onTakePenalty: takePenaltyAction,
+              onToggleAutoSort: () => setState(
+                () => _manager.isAutoSortEnabled = !_manager.isAutoSortEnabled,
+              ),
+              manager: _manager,
+              isMyTurn: isMyTurn,
+            ),
+          ),
+          AnimatedPlayButton(
+            selectedCard: _selectedCard,
+            isMyTurn: isMyTurn,
+            onPlay: () => playCardAction(_selectedCard!),
+          ),
+        ],
+        Container(
+          height: 280,
+          padding: const .symmetric(horizontal: 8, vertical: 12),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 350),
+            switchInCurve: Curves.easeOutBack,
+            switchOutCurve: Curves.easeInCubic,
+            transitionBuilder: (child, animation) => ScaleTransition(
+              scale: animation,
+              child: FadeTransition(opacity: animation, child: child),
+            ),
+            child: _isViewingRelics
+                ? SizedBox(
+                    key: const ValueKey('relics_view'),
+                    child: _buildRelicDisplay(),
+                  )
+                : cardsDisplay,
+          ),
+        ),
+        SizedBox(height: _isViewingRelics ? 32 : 16),
+      ],
+    );
+  }
+
+  Container _targetingBanner() {
+    return Container(
+      margin: const .only(bottom: 16),
+      padding: const .symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.redAccent.withValues(alpha: 0.2),
+        border: .all(color: Colors.redAccent, width: 2),
+        borderRadius: .circular(12),
+      ),
+      child: Row(
+        mainAxisSize: .min,
+        children: [
+          const Icon(Icons.track_changes, color: Colors.white),
+          const SizedBox(width: 12),
+          Text(
+            "TARGETING: ${_activeTargetingRelic!.name.toUpperCase()}",
+            style: const TextStyle(color: Colors.white, fontWeight: .bold),
+          ),
+          const SizedBox(width: 16),
+          if (_relicTargets.isNotEmpty)
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              onPressed: () => _executeActiveRelic(),
+              child: const Text(
+                "CONFIRM",
+                style: TextStyle(color: Colors.white, fontWeight: .bold),
+              ),
+            ),
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white),
+            onPressed: () => setState(() {
+              _activeTargetingRelic = null;
+              _relicTargets.clear();
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
   Row _topRightButtonRow(BuildContext context) {
     final buttons = [
       IconButton(
@@ -285,7 +477,6 @@ class GameScreenState extends State<GameScreen> {
         tooltip: "Exit Match",
       ),
     ];
-
     return Row(mainAxisSize: .min, children: buttons);
   }
 
@@ -296,4 +487,49 @@ class GameScreenState extends State<GameScreen> {
         .fadeIn(duration: 200.ms)
         .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
   );
+
+  Widget _buildRelicDisplay() {
+    final myRelics = _manager.playerRelics[_manager.localPlayerIndex];
+
+    if (myRelics.isEmpty) {
+      return const Center(
+        child: Text(
+          "NO RELICS EQUIPPED",
+          style: TextStyle(
+            color: Colors.white54,
+            letterSpacing: 2,
+            fontWeight: .bold,
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      scrollDirection: .horizontal,
+      physics: const BouncingScrollPhysics(),
+      padding: const .symmetric(horizontal: 40, vertical: 20),
+      itemCount: myRelics.length,
+      itemBuilder: (_, index) {
+        final relic = myRelics[index];
+        final isActiveRelic = relic.types.contains(RelicEffectType.active);
+
+        return RelicChoiceCard(
+          relic: relic,
+          onTap: () {
+            if (!isMyTurn || !isActiveRelic) return;
+            setState(() {
+              if (_activeTargetingRelic == relic) {
+                _activeTargetingRelic = null;
+                _relicTargets.clear();
+              } else {
+                _activeTargetingRelic = relic;
+                _relicTargets.clear();
+                _isViewingRelics = false;
+              }
+            });
+          },
+        );
+      },
+    );
+  }
 }

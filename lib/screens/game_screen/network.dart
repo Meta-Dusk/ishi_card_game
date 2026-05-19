@@ -10,60 +10,48 @@ extension GameScreenNetwork on GameScreenState {
     return 0;
   }
 
-  void _onGameStateUpdate(GameStateMessage message) {
-    updateUI(() {
-      int oldLocalSize = currentHand.length;
+  Future<void> _onGameStateUpdate(GameStateMessage message) async {
+    if (_net.isHost) return;
 
+    List<int> oldOpponentSizes = [];
+    List<IshiCard> newlyDealtCards = [];
+
+    updateUI(() {
       // Snapshot EVERY opponent's hand size before applying the new state
-      List<int> oldOpponentSizes = List.generate(
+      oldOpponentSizes = List.generate(
         _manager.playerCount,
         (i) => _getHandSize(i),
       );
 
       // Apply Master State
-      _manager.applyGameStateJson(message.payload);
+      newlyDealtCards = _manager.applyGameStateJson(message.payload);
 
-      int newLocalSize = currentHand.length;
-
-      if (newLocalSize <= oldLocalSize) {
-        _manager.sortHand(_manager.localPlayerIndex, _manager.handSortType);
-      }
-
-      if (_manager.winnerIndex != null) {
-        _showGameOverDialog();
-        return;
-      }
-
-      // Animate Local Player (Insertions only)
-      if (newLocalSize > oldLocalSize) {
-        int diff = newLocalSize - oldLocalSize;
-        for (int i = 0; i < diff; i++) {
-          getCurrentState?.insertItem(
-            0,
-            duration: const Duration(milliseconds: 400),
-          );
-        }
-        _triggerAutoSortIfNeeded();
-      }
-
-      // _triggerAutoSortIfNeeded();
       _animateOpponentHands(oldOpponentSizes);
     });
+
+    if (newlyDealtCards.isNotEmpty) {
+      await _staggerDrawCards(newlyDealtCards);
+      _triggerAutoSortIfNeeded();
+    }
   }
 
   void initializeNetworkSync() {
-    _manager.eventStream.listen((event) {
-      if (!mounted) return;
-      switch (event) {
-        case .gameOver:
-          _showGameOverDialog();
-          break;
+    _gameEventSubscription = _manager.events.listen(_processGameEvents);
+    _netSubscription = _net.messages.listen(_processNetworkMessage);
+    _pingSubscription = _net.messages.listen((message) {
+      if (message is LobbyStateMessage && _showPingOverlay) {
+        updateUI(() {});
       }
     });
+  }
 
-    _netSubscription = _net.messages.listen(
-      (message) => _processNetworkMessage(message),
-    );
+  void _processGameEvents(GameManagerEvent event) {
+    if (!mounted) return;
+    switch (event) {
+      case .gameOver:
+        _showGameOverDialog();
+        break;
+    }
   }
 
   void _processNetworkMessage(NetMessage message) {
@@ -112,7 +100,7 @@ extension GameScreenNetwork on GameScreenState {
 
       switch (message.action) {
         case .drawCard:
-          _clientDrawCard(pIndex);
+          _onClientDrawCard(pIndex);
           break;
         case .endTurn:
           _onIntentEndTurn();
@@ -123,19 +111,17 @@ extension GameScreenNetwork on GameScreenState {
         case .playCard:
           _onIntentPlayCard(pIndex, message);
           break;
+        case .activateRelic:
+          _onActivateRelic(pIndex, message);
+          break;
       }
     });
 
     _animateOpponentHands(oldOpponentSizes);
-
-    if (_manager.winnerIndex != null) {
-      _showGameOverDialog();
-    }
-
     broadcastGameState();
   }
 
-  void _clientDrawCard(int pIndex) {
+  void _onClientDrawCard(int pIndex) {
     if (_manager.deck.isEmpty) _manager.deck = generateStandardDeck();
     _manager.drawCard(pIndex);
   }
@@ -162,15 +148,43 @@ extension GameScreenNetwork on GameScreenState {
 
     if (message.relicId == null) return;
 
-    final relic = relicPool.firstWhere((relic) => relic.id == message.relicId);
-    _manager.playerRelics[playerIndex].add(relic);
+    final template = relicPool.firstWhere(
+      (relic) => relic.id == message.relicId,
+    );
+    final freshRelic = Relic.fromJson(template.toJson());
 
-    if (relic.effect == .immediateDraw3) {
+    _manager.playerRelics[playerIndex].add(freshRelic);
+
+    if (freshRelic.effect == .immediateDraw3) {
       _manager.forceDraw(playerIndex, count: 3);
-      _manager.playerRelics[playerIndex].remove(relic);
+      _manager.playerRelics[playerIndex].remove(freshRelic);
+    }
+  }
+
+  void _onActivateRelic(int playerIndex, PlayIntentMessage message) {
+    final relic = relicPool.firstWhere((r) => r.id == message.relicId);
+
+    // Find the actual physical cards in the Host's master array
+    List<IshiCard> targetCards = [];
+    for (String id in message.targetCardIds ?? []) {
+      final card = _manager.playerHands[playerIndex].firstWhere(
+        (c) => c.id == id,
+      );
+      targetCards.add(card);
     }
 
-    if (_manager.winnerIndex != null) _showGameOverDialog();
+    IshiCard? template = message.polymorphTemplate != null
+        ? IshiCard.fromJson(message.polymorphTemplate!)
+        : null;
+
+    // Apply it on the master state and broadcast!
+    _applyRelicEffectLocally(
+      playerIndex: playerIndex,
+      relic: relic,
+      targets: targetCards,
+      chosenTemplate: template,
+    );
+    broadcastGameState();
   }
 
   void _animateOpponentHands(List<int> oldOpponentSizes) {

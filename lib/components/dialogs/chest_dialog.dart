@@ -1,7 +1,7 @@
 import 'dart:math';
-
-import 'package:ishi/models/relic.dart';
 import 'package:flutter/material.dart';
+import 'package:ishi/components/cards/relic_choice_card.dart';
+import 'package:ishi/models/relic.dart';
 
 class ChestDialog extends StatefulWidget {
   const ChestDialog({super.key});
@@ -22,54 +22,37 @@ class _ChestDialogState extends State<ChestDialog> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: Colors.grey.shade900,
-      title: const Text(
-        "CHOOSE A RELIC",
-        textAlign: .center,
-        style: TextStyle(
-          color: Colors.amber,
-          fontWeight: .bold,
-          letterSpacing: 2,
+  Widget build(BuildContext context) => AlertDialog(
+    backgroundColor: Colors.grey.shade900,
+    title: const Text(
+      "CHOOSE A RELIC",
+      textAlign: .center,
+      style: TextStyle(
+        color: Colors.amber,
+        fontWeight: .bold,
+        letterSpacing: 2,
+      ),
+    ),
+    content: SizedBox(
+      width: MediaQuery.of(context).size.width * 0.9,
+      child: Align(
+        alignment: .center,
+        heightFactor: 1,
+        child: SingleChildScrollView(
+          scrollDirection: .horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(mainAxisSize: .min, children: _relicChoiceCards(context)),
         ),
       ),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: .min,
-          children: _choices.map((relic) => RelicCard(relic: relic)).toList(),
+    ),
+  );
+
+  List<RelicChoiceCard> _relicChoiceCards(BuildContext context) => _choices
+      .map(
+        (relic) => RelicChoiceCard(
+          relic: relic,
+          onTap: () => Navigator.of(context).pop(relic),
         ),
-      ),
-    );
-  }
-}
-
-class RelicCard extends StatelessWidget {
-  const RelicCard({super.key, required this.relic});
-
-  final Relic relic;
-
-  @override
-  Widget build(BuildContext context) {
-    final listTile = ListTile(
-      leading: Icon(relic.icon, color: relic.color, size: 36),
-      title: Text(
-        relic.name,
-        style: const TextStyle(color: Colors.white, fontWeight: .bold),
-      ),
-      subtitle: Text(
-        relic.description,
-        style: TextStyle(color: Colors.grey.shade400),
-      ),
-      onTap: () => Navigator.of(
-        context,
-      ).pop(relic), // Returns the selected relic to GameScreen
-    );
-    return Card(
-      color: Colors.grey.shade800,
-      margin: const .symmetric(vertical: 8),
-      child: listTile,
-    );
-  }
+      )
+      .toList();
 }

@@ -27,7 +27,6 @@ class PlayerStats extends StatelessWidget {
     }
 
     return Column(
-      crossAxisAlignment: .center,
       mainAxisSize: .min,
       children: [
         Text(
@@ -38,7 +37,6 @@ class PlayerStats extends StatelessWidget {
             fontWeight: .bold,
             letterSpacing: 2,
           ),
-          textAlign: .center,
         ),
         const SizedBox(height: 8),
         _PlayerResourceBar(actionPoints: actionPoints, cardDraws: cardDraws),

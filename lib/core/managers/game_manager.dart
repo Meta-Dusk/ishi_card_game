@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:ishi/core/data_types.dart';
 import 'package:ishi/models/relic.dart';
-import 'package:ishi/models/uno_card.dart';
+import 'package:ishi/models/ishi_card.dart';
 
 enum DeckSortType { byColor, byType, byValue, unsorted }
 
@@ -22,6 +22,8 @@ class _BoardKeys {
   static const String hasDrawnCard = 'hasDrawnCard';
   static const String playerRelics = 'playerRelics';
   static const String winnerIndex = 'winnerIndex';
+  static const String turnDeadline = 'turnDeadline';
+  static const String roundCount = 'roundCount';
 }
 
 enum GameManagerEvent { gameOver }
@@ -54,6 +56,13 @@ class GameManager {
   /// Stacks if multiple skips are played.
   int _playersToSkip = 0;
 
+  int turnDeadlineEpoch = 0;
+  static const int turnDurationSeconds = 60;
+  int get _getTurnDeadlineEpoch =>
+      DateTime.now().millisecondsSinceEpoch + (turnDurationSeconds * 1000);
+
+  int roundCount = 1;
+
   // --- ACTION STATES ---
   bool hasPlayedCard = false;
   bool hasDrawnCard = false;
@@ -73,7 +82,7 @@ class GameManager {
 
   // --- EVENTS ---
   final _eventController = StreamController<GameManagerEvent>.broadcast();
-  Stream<GameManagerEvent> get eventStream => _eventController.stream;
+  Stream<GameManagerEvent> get events => _eventController.stream;
 
   GameManager({required this.playerCount, required this.startingHandSize});
 
@@ -98,8 +107,10 @@ class GameManager {
         .map((card) => card.toJson())
         .toList();
 
-    List<List<String>> serializedRelics = playerRelics.map((playerList) {
-      return playerList.map((relic) => relic.id).toList();
+    List<List<StringDynamicMap>> serializedRelics = playerRelics.map((
+      playerList,
+    ) {
+      return playerList.map((relic) => relic.toJson()).toList();
     }).toList();
 
     return {
@@ -118,11 +129,13 @@ class GameManager {
       _BoardKeys.hasDrawnCard: hasDrawnCard,
       _BoardKeys.playerRelics: serializedRelics,
       _BoardKeys.winnerIndex: winnerIndex,
+      _BoardKeys.turnDeadline: turnDeadlineEpoch,
+      _BoardKeys.roundCount: roundCount,
     };
   }
 
   /// CLIENT ONLY: Takes the JSON from the Host and forces the local UI to match it.
-  void applyGameStateJson(StringDynamicMap json) {
+  List<IshiCard> applyGameStateJson(StringDynamicMap json) {
     localPlayerIndex = json[_BoardKeys.myPlayerIndex] as int;
     currentPlayer = json[_BoardKeys.currentPlayer] as int;
     isClockwise = json[_BoardKeys.direction] as bool;
@@ -153,39 +166,42 @@ class GameManager {
       discardPile = [IshiCard.fromJson(json[_BoardKeys.topCard])];
     }
 
+    List<IshiCard> newlyDealtCards = [];
+
     if (json[_BoardKeys.myHand] != null) {
       final List<dynamic> handData = json[_BoardKeys.myHand];
       List<IshiCard> incomingHand = handData
           .map((c) => IshiCard.fromJson(c as StringDynamicMap))
           .toList();
 
-      List<IshiCard> mergedHand = [];
-      for (IshiCard newCard in incomingHand) {
-        // Check if we already hold this exact card ID in our local hand
-        int existingIdx = playerHands[localPlayerIndex].indexWhere(
-          (card) => card.id == newCard.id,
-        );
-
-        if (existingIdx != -1) {
-          // If we do, keep the exact local object! This perfectly preserves
-          // the face-up status and any ongoing animations.
-          mergedHand.add(playerHands[localPlayerIndex][existingIdx]);
-        } else {
-          // If we don't, it's a freshly drawn card. Add the new one!
-          mergedHand.add(newCard);
+      // Preserve LOCAL sorted order for existing cards
+      List<IshiCard> preservedLocalHand = [];
+      for (IshiCard localCard in playerHands[localPlayerIndex]) {
+        if (incomingHand.any((c) => c.id == localCard.id)) {
+          preservedLocalHand.add(localCard);
         }
       }
-      playerHands[localPlayerIndex] = mergedHand;
+
+      // Find the brand new cards the Host gave us
+      for (IshiCard incomingCard in incomingHand) {
+        if (!preservedLocalHand.any((c) => c.id == incomingCard.id)) {
+          newlyDealtCards.add(
+            incomingCard,
+          ); // Intercept! Do not add to hand yet.
+        }
+      }
+
+      // Update the local hand with ONLY the preserved cards (maintaining their sort)
+      playerHands[localPlayerIndex] = preservedLocalHand;
     }
 
     if (json[_BoardKeys.playerRelics] != null) {
       List<dynamic> incomingRelics = json[_BoardKeys.playerRelics];
       for (int i = 0; i < incomingRelics.length; i++) {
-        List<dynamic> relicIds = incomingRelics[i];
+        List<dynamic> relicData = incomingRelics[i];
 
-        // Convert the string IDs back into actual Relic objects using the pool
-        playerRelics[i] = relicIds
-            .map((id) => relicPool.firstWhere((r) => r.id == id))
+        playerRelics[i] = relicData
+            .map((r) => Relic.fromJson(r as StringDynamicMap))
             .toList();
       }
     }
@@ -203,7 +219,8 @@ class GameManager {
 
     hasPlayedCard = json[_BoardKeys.hasPlayedCard] as bool? ?? false;
     hasDrawnCard = json[_BoardKeys.hasDrawnCard] as bool? ?? false;
-    winnerIndex = json[_BoardKeys.winnerIndex] as int?;
+    turnDeadlineEpoch = json[_BoardKeys.turnDeadline] as int? ?? 0;
+    roundCount = json[_BoardKeys.roundCount] as int? ?? 1;
 
     int? incomingWinner = json[_BoardKeys.winnerIndex] as int?;
     if (winnerIndex == null && incomingWinner != null) {
@@ -212,6 +229,8 @@ class GameManager {
     } else {
       winnerIndex = incomingWinner;
     }
+
+    return newlyDealtCards;
   }
 
   int getCardIndexByPlayerIndex(IshiCard card) =>
@@ -239,6 +258,34 @@ class GameManager {
         if (deck.isNotEmpty) playerHands[p].add(deck.removeLast());
       }
     }
+
+    turnDeadlineEpoch = _getTurnDeadlineEpoch;
+    roundCount = 1;
+  }
+
+  bool hasValidMoves(int playerIndex) {
+    // If they are under attack, they must either deflect or take the penalty
+    if (pendingDrawCount > 0) return true;
+
+    final playerAP = actionPoints[playerIndex];
+    final playerCD = cardDraws[playerIndex];
+
+    // If they have action points, check if ANY card in their hand is playable
+    if (playerAP > 0) {
+      for (IshiCard card in playerHands[playerIndex]) {
+        if (canPlay(card, playerIndex)) return true;
+      }
+    }
+
+    // If they can still draw a card, they have a valid move
+    if (playerCD > 0 && deck.isNotEmpty) return true;
+
+    if (playerAP <= 0 && playerCD <= 0) {
+      return false;
+    }
+
+    // Otherwise, they are completely out of options
+    return false;
   }
 
   void sortHand(int playerIndex, DeckSortType sortType) {
@@ -318,17 +365,33 @@ class GameManager {
     return false;
   }
 
-  void resolvePendingAttack() {
+  List<IshiCard> resolvePendingAttack({bool skipHandInsertion = false}) {
     int playerIndex = currentPlayer - 1;
+    List<IshiCard> drawnCards = [];
+
     for (int i = 0; i < pendingDrawCount; i++) {
       if (deck.isEmpty) continue;
-      playerHands[playerIndex].insert(0, deck.removeLast());
+
+      IshiCard card = deck.removeLast();
+      drawnCards.add(card);
+
+      // Only insert instantly if the UI isn't handling it
+      if (!skipHandInsertion) {
+        playerHands[playerIndex].insert(0, card);
+      }
     }
+
     pendingDrawCount = 0;
     actionPoints[playerIndex] = 0; // Force their turn to end
     cardDraws[playerIndex] = 0; // Prevent them from digging for answers
     hasDrawnCard = true;
-    if (playerIndex == localPlayerIndex) sortHand(playerIndex, handSortType);
+
+    // Only sort if we instantly inserted the cards
+    if (!skipHandInsertion && playerIndex == localPlayerIndex) {
+      sortHand(playerIndex, handSortType);
+    }
+
+    return drawnCards;
   }
 
   /// ACTION: Play a card and apply its effects
@@ -353,12 +416,22 @@ class GameManager {
   void setDeclaredColor(CardColor color) => declaredColor = color;
 
   /// ACTION: Draw a card
-  IshiCard drawCard(int playerIndex) {
+  IshiCard drawCard(int playerIndex, {bool skipHandInsertion = false}) {
     cardDraws[playerIndex]--;
     IshiCard drawn = deck.removeLast();
-    playerHands[playerIndex].insert(0, drawn);
+
+    // Only insert instantly if the UI isn't handling it
+    if (!skipHandInsertion) {
+      playerHands[playerIndex].insert(0, drawn);
+    }
+
     hasDrawnCard = true;
-    if (playerIndex == localPlayerIndex) sortHand(playerIndex, handSortType);
+
+    // Only auto-sort instantly if we inserted the card instantly
+    if (!skipHandInsertion && playerIndex == localPlayerIndex) {
+      sortHand(playerIndex, handSortType);
+    }
+
     return drawn;
   }
 
@@ -394,15 +467,30 @@ class GameManager {
   }
 
   /// Forces a player to draw cards without consuming their CD points
-  void forceDraw(int targetPlayerIndex, {int count = 1}) {
+  List<IshiCard> forceDraw(
+    int targetPlayerIndex, {
+    int count = 1,
+    bool skipHandInsertion = false,
+  }) {
+    List<IshiCard> drawnCards = [];
+
     for (int i = 0; i < count; i++) {
       if (deck.isEmpty) break;
       IshiCard drawn = deck.removeLast();
-      playerHands[targetPlayerIndex].insert(0, drawn);
+      drawnCards.add(drawn);
+
+      // Only insert instantly if the UI isn't handling it
+      if (!skipHandInsertion) {
+        playerHands[targetPlayerIndex].insert(0, drawn);
+      }
     }
-    if (targetPlayerIndex == localPlayerIndex) {
+
+    // Only sort instantly if we inserted the cards instantly
+    if (!skipHandInsertion && targetPlayerIndex == localPlayerIndex) {
       sortHand(targetPlayerIndex, handSortType);
     }
+
+    return drawnCards;
   }
 
   /// TURN CALCULATION
@@ -427,6 +515,8 @@ class GameManager {
     currentPlayer = getNextPlayer();
     _playersToSkip = 0; // Reset skips after they are consumed
 
+    if (currentPlayer == 1) roundCount++;
+
     int playerIndex = currentPlayer - 1;
 
     // Calculate base economies + relic bonuses
@@ -442,5 +532,6 @@ class GameManager {
     hasPlayedCard = false;
     hasDrawnCard = false;
     hasDeflected = false;
+    turnDeadlineEpoch = _getTurnDeadlineEpoch;
   }
 }

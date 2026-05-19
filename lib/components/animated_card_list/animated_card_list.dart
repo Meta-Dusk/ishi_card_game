@@ -1,6 +1,6 @@
 import 'curved_card.dart';
 import 'package:flutter/material.dart';
-import 'package:ishi/models/uno_card.dart';
+import 'package:ishi/models/ishi_card.dart';
 
 const double itemWidth = 80.0;
 
@@ -12,6 +12,7 @@ class AnimatedCardList extends StatelessWidget {
     required this.onTapCard,
     required this.scrollController,
     required this.isMyTurn,
+    this.selectedCards = const [],
   });
 
   final void Function(IshiCard) onTapCard;
@@ -19,6 +20,7 @@ class AnimatedCardList extends StatelessWidget {
   final ScrollController? scrollController;
   final List<IshiCard> currentHand;
   final bool isMyTurn;
+  final List<IshiCard> selectedCards;
 
   bool _onScrollNotification(ScrollNotification notification) {
     if (notification is ScrollEndNotification) {
@@ -56,7 +58,6 @@ class AnimatedCardList extends StatelessWidget {
         initialItemCount: currentHand.length,
         itemBuilder: (_, index, animation) {
           if (index >= currentHand.length) return const SizedBox.shrink();
-
           final card = currentHand[index];
           return CurvedCard(
             key: ValueKey(card.id),
@@ -67,6 +68,7 @@ class AnimatedCardList extends StatelessWidget {
             scrollController: scrollController,
             onTapCard: onTapCard,
             isMyTurn: isMyTurn,
+            isSelected: selectedCards.contains(card),
           );
         },
       ),

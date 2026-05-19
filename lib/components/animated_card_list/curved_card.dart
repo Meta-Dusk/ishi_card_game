@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'animated_card.dart';
 import 'animated_card_list.dart';
-import 'package:ishi/models/uno_card.dart';
+import 'package:ishi/models/ishi_card.dart';
 
 class CurvedCard extends StatelessWidget {
   const CurvedCard({
@@ -13,6 +13,7 @@ class CurvedCard extends StatelessWidget {
     required this.scrollController,
     required this.onTapCard,
     required this.isMyTurn,
+    required this.isSelected,
   });
 
   final int index;
@@ -22,6 +23,7 @@ class CurvedCard extends StatelessWidget {
   final ScrollController? scrollController;
   final void Function(IshiCard) onTapCard;
   final bool isMyTurn;
+  final bool isSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +54,7 @@ class CurvedCard extends StatelessWidget {
         totalCards: totalCards,
         onTapCard: onTapCard,
         isMyTurn: isMyTurn,
+        isSelected: isSelected,
       ),
     );
   }

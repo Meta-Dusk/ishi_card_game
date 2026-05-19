@@ -5,14 +5,14 @@ class FlipCard extends StatefulWidget {
   final Widget front;
   final Widget back;
   final bool isFaceUp;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const FlipCard({
     super.key,
     required this.front,
     required this.back,
     required this.isFaceUp,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
@@ -63,30 +63,37 @@ class _FlipCardState extends State<FlipCard>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: AnimatedBuilder(
-        animation: _animation,
-        builder: (_, _) {
-          bool isFrontVisible = _animation.value < (math.pi / 2);
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: widget.onTap,
+    child: AnimatedBuilder(
+      animation: _animation,
+      builder: (_, _) => _FlipTransform(animation: _animation, widget: widget),
+    ),
+  );
+}
 
-          return Transform(
-            alignment: .center,
-            transform: .identity()
-              ..setEntry(3, 2, 0.001) // 3D Perspective
-              ..rotateY(_animation.value),
-            child: isFrontVisible
-                ? widget.front
-                : Transform(
-                    // Flip the back 180 degrees so it's not mirrored
-                    alignment: .center,
-                    transform: .identity()..rotateY(math.pi),
-                    child: widget.back,
-                  ),
-          );
-        },
-      ),
+class _FlipTransform extends StatelessWidget {
+  const _FlipTransform({required this.animation, required this.widget});
+
+  final Animation<double> animation;
+  final FlipCard widget;
+
+  @override
+  Widget build(BuildContext context) {
+    bool isFrontVisible = animation.value < (math.pi / 2);
+    return Transform(
+      alignment: .center,
+      transform: .identity()
+        ..setEntry(3, 2, 0.001) // 3D Perspective
+        ..rotateY(animation.value),
+      child: isFrontVisible ? widget.front : _flipTransform(),
     );
   }
+
+  Transform _flipTransform() => Transform(
+    // Flip the back 180 degrees so it's not mirrored
+    alignment: .center,
+    transform: .identity()..rotateY(math.pi),
+    child: widget.back,
+  );
 }

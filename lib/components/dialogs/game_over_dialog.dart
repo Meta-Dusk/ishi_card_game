@@ -1,64 +1,99 @@
 import 'package:flutter/material.dart';
-import 'package:ishi/services/network_service.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class GameOverDialog extends StatelessWidget {
   const GameOverDialog({
     super.key,
     required this.winnerName,
-    required this.network,
+    required this.isWinner,
+    required this.onExit,
   });
 
   final String winnerName;
-  final NetworkService network;
+  final bool isWinner;
+  final VoidCallback onExit;
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    backgroundColor: Colors.grey.shade900,
+    shape: RoundedRectangleBorder(borderRadius: .circular(16)),
+    title: _dialogTitle(),
+    content: Column(
+      mainAxisSize: .min,
+      children: [
+        if (isWinner) _AnimatedTrophy(),
+        if (!isWinner) _AnimatedLoss(),
+        const SizedBox(height: 16),
+        Text(
+          winnerName,
+          textAlign: .center,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: .bold,
+          ),
+        ),
+        const Text(
+          "Won the match!",
+          textAlign: .center,
+          style: TextStyle(color: Colors.white70, fontSize: 16),
+        ),
+      ],
+    ),
+    actionsAlignment: .center,
+    actions: [
+      ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue.shade700,
+          foregroundColor: Colors.white,
+        ),
+        icon: const Icon(Icons.exit_to_app),
+        label: const Text("RETURN TO MENU"),
+        onPressed: onExit,
+      ),
+    ],
+  );
+
+  Text _dialogTitle() => Text(
+    isWinner ? "VICTORY" : "DEFEAT",
+    textAlign: .center,
+    style: TextStyle(
+      color: isWinner ? Colors.white : Colors.red,
+      fontSize: 24,
+      fontWeight: .bold,
+      letterSpacing: 2,
+    ),
+  );
+}
+
+class _AnimatedLoss extends StatelessWidget {
+  const _AnimatedLoss();
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: Colors.grey.shade900,
-      shape: RoundedRectangleBorder(borderRadius: .circular(16)),
-      title: const Text(
-        "GAME OVER",
-        textAlign: .center,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: .bold,
-          letterSpacing: 2,
-        ),
-      ),
-      content: Column(
-        mainAxisSize: .min,
-        children: [
-          const Icon(Icons.emoji_events, color: Colors.amber, size: 80),
-          const SizedBox(height: 16),
-          Text(
-            "$winnerName\nWon the match!",
-            textAlign: .center,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 18,
-              fontWeight: .bold,
-            ),
-          ),
-        ],
-      ),
-      actionsAlignment: .center,
-      actions: [
-        ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue.shade700,
-            foregroundColor: Colors.white,
-          ),
-          icon: const Icon(Icons.exit_to_app),
-          label: const Text("RETURN TO MENU"),
-          onPressed: () async {
-            // Disconnect from WebRTC/LAN and pop back to the Root Menu
-            await network.disconnect();
-            if (!context.mounted) return;
-            Navigator.of(context).popUntil((route) => route.isFirst);
-          },
-        ),
-      ],
+    final icon = Icon(
+      Icons.sentiment_dissatisfied_outlined,
+      color: Colors.red,
+      size: 160,
     );
+    return icon
+        .animate(onPlay: (controller) => controller.repeat(reverse: true))
+        .scale(
+          delay: 1.seconds,
+          begin: Offset(1.0, 1.0),
+          end: Offset(1.2, 1.2),
+        );
+  }
+}
+
+class _AnimatedTrophy extends StatelessWidget {
+  const _AnimatedTrophy();
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = Icon(Icons.emoji_events, color: Colors.amber, size: 160);
+    return icon
+        .animate(onPlay: (controller) => controller.repeat(reverse: true))
+        .shimmer(duration: 1500.ms, color: Colors.white.withValues(alpha: 0.4));
   }
 }

@@ -53,4 +53,6 @@ class _NetKey {
   // --- ACTION PAYLOADS ---
   static const String cardId = 'cardId';
   static const String relicId = 'relicId';
+  static const String targetCardIds = 'targetCardIds';
+  static const String polymorphTemplate = 'polymorphTemplate';
 }

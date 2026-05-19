@@ -86,7 +86,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             duration: 2.seconds,
             curve: Curves.easeInOut,
           )
-          .tint(color: Colors.orangeAccent, end: 0.2),
+          .tint(color: Colors.black, end: 0.2),
 
       const GameSubtitle(),
 

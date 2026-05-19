@@ -107,7 +107,7 @@ List<IshiCard> generateStandardDeck() {
     }
   }
 
-  //Add the standard 4 Wilds and 4 Wild Draw 4s
+  // Add the standard 4 Wilds and 4 Wild Draw 4s
   for (int i = 0; i < 4; i++) {
     deck.add(IshiCard(id: 'wild_${idCounter++}', color: .wild, type: .wild));
     deck.add(
@@ -115,9 +115,10 @@ List<IshiCard> generateStandardDeck() {
     );
   }
 
-  // Add a couple of chests for the roguelike flavor
-  deck.add(IshiCard(id: 'chest_1', color: .wild, type: .chest));
-  deck.add(IshiCard(id: 'chest_2', color: .wild, type: .chest));
+  // Add some chests cuz why not
+  for (int i = 0; i < 10; i++) {
+    deck.add(IshiCard(id: 'chest_${idCounter++}', color: .wild, type: .chest));
+  }
 
   deck.shuffle();
   return deck;

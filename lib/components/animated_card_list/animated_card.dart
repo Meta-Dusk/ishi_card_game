@@ -1,6 +1,6 @@
 import 'animated_card_builder.dart';
 import 'package:ishi/components/cards/card_display.dart';
-import 'package:ishi/models/uno_card.dart';
+import 'package:ishi/models/ishi_card.dart';
 import 'package:flutter/material.dart';
 
 class AnimatedCard extends StatelessWidget {
@@ -12,6 +12,7 @@ class AnimatedCard extends StatelessWidget {
     required this.totalCards,
     required this.onTapCard,
     required this.isMyTurn,
+    required this.isSelected,
   });
 
   final ScrollController? scrollController;
@@ -20,6 +21,7 @@ class AnimatedCard extends StatelessWidget {
   final int totalCards;
   final void Function(IshiCard) onTapCard;
   final bool isMyTurn;
+  final bool isSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +43,7 @@ class AnimatedCard extends StatelessWidget {
       card: card,
       onTapCard: onTapCard,
       isMyTurn: isMyTurn,
+      isSelected: isSelected,
     ),
   );
 }
