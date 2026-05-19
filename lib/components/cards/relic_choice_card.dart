@@ -1,6 +1,6 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
-import 'package:ishi/models/relic.dart';
+import 'package:ishi/core/models/relic.dart';
 
 class RelicChoiceCard extends StatelessWidget {
   const RelicChoiceCard({super.key, required this.relic, this.onTap});

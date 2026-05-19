@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'color_ring.dart';
 import 'card_designs.dart';
 import 'minimalist_card.dart';
-import 'package:ishi/models/ishi_card.dart';
+import 'package:ishi/core/models/ishi_card.dart';
 
 class CardFront extends StatelessWidget {
   const CardFront({

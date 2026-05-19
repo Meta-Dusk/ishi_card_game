@@ -1,64 +1,7 @@
 import 'package:ishi/core/data_types.dart';
 
 part 'network_keys.dart';
-
-enum NetType {
-  ping,
-  pong,
-  playerJoined,
-  requestLobbyState,
-  lobbyState,
-  lobbySyncResponse,
-  gameStateUpdate,
-  playIntent,
-  setProfile,
-  kicked,
-  systemNotification,
-  lobbySettings,
-}
-
-enum IntentAction { drawCard, endTurn, takePenalty, playCard, activateRelic }
-
-sealed class NetMessage {
-  const NetMessage();
-
-  StringDynamicMap toJson();
-
-  factory NetMessage.fromJson(StringDynamicMap json) {
-    final typeStr = json[_NetKey.type] as String?;
-    final NetType type = NetType.values.firstWhere(
-      (e) => e.name == typeStr,
-      orElse: () => throw FormatException('Unknown message type: $typeStr'),
-    );
-
-    switch (type) {
-      case .ping:
-        return PingMessage.fromJson(json);
-      case .pong:
-        return PongMessage.fromJson(json);
-      case .playerJoined:
-        return PlayerJoinedMessage.fromJson(json);
-      case .requestLobbyState:
-        return RequestLobbyStateMessage.fromJson(json);
-      case .lobbyState:
-        return LobbyStateMessage.fromJson(json);
-      case .lobbySyncResponse:
-        return LobbySyncResponseMessage.fromJson(json);
-      case .gameStateUpdate:
-        return GameStateMessage.fromJson(json);
-      case .playIntent:
-        return PlayIntentMessage.fromJson(json);
-      case .setProfile:
-        return SetProfileMessage.fromJson(json);
-      case .kicked:
-        return KickedMessage.fromJson(json);
-      case .systemNotification:
-        return SystemNotificationMessage.fromJson(json);
-      case .lobbySettings:
-        return LobbySettingsMessage.fromJson(json);
-    }
-  }
-}
+part 'network_types.dart';
 
 // --- SYSTEM & HEARTBEAT ---
 class PingMessage extends NetMessage {
@@ -166,13 +109,13 @@ class SetProfileMessage extends NetMessage {
   StringDynamicMap toJson() => {
     _NetKey.type: NetType.setProfile.name,
     _NetKey.playerName: playerName,
-    _NetKey.avatarColor: avatarColorName,
+    _NetKey.avatarColorName: avatarColorName,
   };
 
   factory SetProfileMessage.fromJson(StringDynamicMap json) =>
       SetProfileMessage(
         json[_NetKey.playerName] as String,
-        json[_NetKey.avatarColor] as String,
+        json[_NetKey.avatarColorName] as String,
       );
 }
 
@@ -232,7 +175,9 @@ class PlayIntentMessage extends NetMessage {
       cardId: json[_NetKey.cardId] as String?,
       declaredColor: json[_NetKey.declaredColor] as int?,
       relicId: json[_NetKey.relicId] as String?,
-      targetCardIds: json[_NetKey.targetCardIds] as List<String>?,
+      targetCardIds: (json[_NetKey.targetCardIds] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(),
       polymorphTemplate: json[_NetKey.polymorphTemplate] as StringDynamicMap?,
     );
   }
@@ -286,6 +231,7 @@ class LobbySettingsMessage extends NetMessage {
       );
 }
 
+// --- SYSTEM ---
 class LobbyPlayer {
   String playerName;
   int pingMs;
@@ -300,12 +246,12 @@ class LobbyPlayer {
   Map<String, dynamic> toJson() => {
     _NetKey.playerName: playerName,
     _NetKey.pingMs: pingMs,
-    _NetKey.avatarColor: avatarColorName,
+    _NetKey.avatarColorName: avatarColorName,
   };
 
   factory LobbyPlayer.fromJson(Map<String, dynamic> json) => LobbyPlayer(
     playerName: json[_NetKey.playerName] as String,
     pingMs: json[_NetKey.pingMs] as int,
-    avatarColorName: json[_NetKey.avatarColor] as String,
+    avatarColorName: json[_NetKey.avatarColorName] as String,
   );
 }

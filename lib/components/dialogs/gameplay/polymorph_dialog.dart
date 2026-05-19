@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ishi/models/ishi_card.dart';
+import 'package:ishi/core/models/ishi_card.dart';
 import 'package:ishi/components/cards/card_display.dart';
 
 class PolymorphDialog extends StatefulWidget {
@@ -65,7 +65,10 @@ class _PolymorphDialogState extends State<PolymorphDialog> {
 
           return GestureDetector(
             onTap: () => Navigator.of(context).pop(card),
-            child: AbsorbPointer(child: CardFront(card: card)),
+            child: FittedBox(
+              fit: .contain,
+              child: AbsorbPointer(child: CardFront(card: card)),
+            ),
           );
         },
       ),

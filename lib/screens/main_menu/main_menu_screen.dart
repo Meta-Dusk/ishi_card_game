@@ -76,56 +76,49 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final mainContent = [
-      const GameTitle()
-          .animate(onPlay: (controller) => controller.repeat(reverse: true))
-          .moveY(
-            begin: -5,
-            end: 5,
-            duration: 2.seconds,
-            curve: Curves.easeInOut,
-          )
-          .tint(color: Colors.black, end: 0.2),
+  Widget build(BuildContext context) => _MenuHandler(
+    currentMenu: _currentMenu,
+    mainContent: _mainContent,
+    onPopInvoked: _onPopInvoked,
+  );
 
-      const GameSubtitle(),
+  List<Widget> get _mainContent => [
+    const GameTitle()
+        .animate(onPlay: (controller) => controller.repeat(reverse: true))
+        .moveY(begin: -5, end: 5, duration: 2.seconds, curve: Curves.easeInOut)
+        .tint(color: Colors.black, end: 0.2),
 
-      if (_appVersion.isNotEmpty) ...[
-        const SizedBox(height: 16),
-        AppVersion(appVersion: _appVersion)
-            .animate()
-            .fadeIn(delay: 600.ms)
-            .slideY(begin: 1.0, curve: Curves.easeOut),
-      ],
+    const GameSubtitle(),
 
-      const SizedBox(height: 40),
+    if (_appVersion.isNotEmpty) ...[
+      const SizedBox(height: 16),
+      AppVersion(appVersion: _appVersion)
+          .animate()
+          .fadeIn(delay: 600.ms)
+          .slideY(begin: 1.0, curve: Curves.easeOut),
+    ],
 
-      // THE GAME MENU ANIMATION ENGINE
-      AnimatedSize(
-        duration: 1.seconds,
-        curve: Curves.easeOutCubic,
-        alignment: .topCenter,
-        child: _AnimatedMenuSwitcher(
-          currentMenu: _currentMenu,
-          localSetupMenu: () => LocalSetupMenu(
-            key: const ValueKey('localSetup'),
-            playerCount: _playerCount,
-            startingHandSize: _startingHandSize,
-            onPlayerCountChanged: (val) => setState(() => _playerCount = val),
-            onHandSizeChanged: (val) => setState(() => _startingHandSize = val),
-            onBack: () => _changeMenu(.playMode),
-          ),
-          onChangeMenu: _changeMenu,
+    const SizedBox(height: 40),
+
+    // THE GAME MENU ANIMATION ENGINE
+    AnimatedSize(
+      duration: const Duration(seconds: 1),
+      curve: Curves.easeOutCubic,
+      alignment: .topCenter,
+      child: _AnimatedMenuSwitcher(
+        currentMenu: _currentMenu,
+        localSetupMenu: () => LocalSetupMenu(
+          key: const ValueKey('localSetup'),
+          playerCount: _playerCount,
+          startingHandSize: _startingHandSize,
+          onPlayerCountChanged: (val) => setState(() => _playerCount = val),
+          onHandSizeChanged: (val) => setState(() => _startingHandSize = val),
+          onBack: () => _changeMenu(.playMode),
         ),
+        onChangeMenu: _changeMenu,
       ),
-    ];
-
-    return _MenuHandler(
-      currentMenu: _currentMenu,
-      mainContent: mainContent,
-      onPopInvoked: _onPopInvoked,
-    );
-  }
+    ),
+  ];
 }
 
 class _MenuHandler extends StatelessWidget {
@@ -140,24 +133,22 @@ class _MenuHandler extends StatelessWidget {
   final void Function(bool) onPopInvoked;
 
   @override
-  Widget build(BuildContext context) {
-    final scrollView = SingleChildScrollView(
-      padding: const .symmetric(vertical: 24, horizontal: 16),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 400),
-        child: Column(mainAxisAlignment: .center, children: mainContent),
-      ),
-    );
+  Widget build(BuildContext context) => PopScope(
+    canPop: currentMenu == .root, // Only exit app if on Root
+    onPopInvokedWithResult: (didPop, _) => onPopInvoked(didPop),
+    child: Scaffold(
+      backgroundColor: Colors.grey.shade100,
+      body: SafeArea(child: Center(child: _scrollView())),
+    ),
+  );
 
-    return PopScope(
-      canPop: currentMenu == .root, // Only exit app if on Root
-      onPopInvokedWithResult: (didPop, _) => onPopInvoked(didPop),
-      child: Scaffold(
-        backgroundColor: Colors.grey.shade100,
-        body: SafeArea(child: Center(child: scrollView)),
-      ),
-    );
-  }
+  SingleChildScrollView _scrollView() => SingleChildScrollView(
+    padding: const .symmetric(vertical: 24, horizontal: 16),
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 400),
+      child: Column(mainAxisAlignment: .center, children: mainContent),
+    ),
+  );
 }
 
 class _ActiveMenu extends StatelessWidget {
@@ -171,8 +162,7 @@ class _ActiveMenu extends StatelessWidget {
   final void Function(MenuState) onChangeMenu;
   final Widget Function() localSetupMenu;
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildMenu(MenuState currentMenu) {
     switch (currentMenu) {
       case .root:
         AudioManager().playMusic(Audio.music.menuLoop1);
@@ -216,6 +206,9 @@ class _ActiveMenu extends StatelessWidget {
         );
     }
   }
+
+  @override
+  Widget build(BuildContext context) => _buildMenu(currentMenu);
 }
 
 class _AnimatedMenuSwitcher extends StatelessWidget {
@@ -230,23 +223,21 @@ class _AnimatedMenuSwitcher extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 250),
-      switchInCurve: Curves.easeOutBack,
-      switchOutCurve: Curves.easeIn,
-      transitionBuilder: (child, animation) => FadeTransition(
-        opacity: animation,
-        child: ScaleTransition(
-          scale: animation.drive(Tween<double>(begin: 0.9, end: 1.0)),
-          child: child,
-        ),
+  Widget build(BuildContext context) => AnimatedSwitcher(
+    duration: const Duration(milliseconds: 250),
+    switchInCurve: Curves.easeOutBack,
+    switchOutCurve: Curves.easeIn,
+    transitionBuilder: (child, animation) => FadeTransition(
+      opacity: animation,
+      child: ScaleTransition(
+        scale: animation.drive(Tween<double>(begin: 0.9, end: 1.0)),
+        child: child,
       ),
-      child: _ActiveMenu(
-        currentMenu: currentMenu,
-        onChangeMenu: onChangeMenu,
-        localSetupMenu: localSetupMenu,
-      ),
-    );
-  }
+    ),
+    child: _ActiveMenu(
+      currentMenu: currentMenu,
+      onChangeMenu: onChangeMenu,
+      localSetupMenu: localSetupMenu,
+    ),
+  );
 }

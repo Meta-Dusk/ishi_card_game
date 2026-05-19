@@ -4,16 +4,6 @@ extension GameScreenActions on GameScreenState {
   Future<void> drawCardAction() async {
     if (!isMyTurn) return;
 
-    if (_manager.pendingDrawCount > 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("You are under attack!"),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-
     if (_manager.cardDraws[_manager.localPlayerIndex] <= 0) {
       ScaffoldMessenger.of(
         context,
@@ -113,14 +103,16 @@ extension GameScreenActions on GameScreenState {
       }
 
       if (chosenRelic != null) {
-        _manager.playerRelics[playerIndex].add(chosenRelic);
-        if (chosenRelic.effect == .immediateDraw3) {
+        final freshRelic = chosenRelic.clone();
+        _manager.playerRelics[playerIndex].add(freshRelic);
+
+        if (freshRelic.effect == .immediateDraw3) {
           drawnCards = _manager.forceDraw(
             playerIndex,
             count: 3,
             skipHandInsertion: true,
           );
-          _manager.playerRelics[playerIndex].remove(chosenRelic);
+          _manager.playerRelics[playerIndex].remove(freshRelic);
         }
       }
 

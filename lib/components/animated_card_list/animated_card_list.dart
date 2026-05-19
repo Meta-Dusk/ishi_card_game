@@ -1,6 +1,6 @@
 import 'curved_card.dart';
 import 'package:flutter/material.dart';
-import 'package:ishi/models/ishi_card.dart';
+import 'package:ishi/core/models/ishi_card.dart';
 
 const double itemWidth = 80.0;
 

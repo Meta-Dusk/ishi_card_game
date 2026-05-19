@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:ishi/core/managers/dev_commands.dart';
+import 'package:ishi/core/dev/dev_commands.dart';
 import 'package:ishi/core/managers/game_manager.dart';
 import 'package:ishi/services/network_service.dart';
 

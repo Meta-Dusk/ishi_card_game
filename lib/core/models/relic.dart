@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../core/data_types.dart';
+import '../data_types.dart';
 
 enum RelicEffect {
   addActionPoint,
@@ -39,7 +39,18 @@ class Relic {
     if (usesLeft != null) 'usesLeft': usesLeft,
   };
 
-  /// Create a UNIQUE instance for the player
+  Relic clone() => Relic(
+    id: id,
+    name: name,
+    description: description,
+    icon: icon,
+    color: color,
+    effect: effect,
+    types: Set.from(types),
+    maxUses: maxUses,
+    usesLeft: maxUses ?? maxUses,
+  );
+
   factory Relic.fromJson(StringDynamicMap json) {
     final template = relicPool.firstWhere(
       (r) => r.id == json['id'],
@@ -55,7 +66,6 @@ class Relic {
       effect: template.effect,
       types: template.types,
       maxUses: template.maxUses,
-      // If we receive network data, use it. Otherwise, fill it up!
       usesLeft: json['usesLeft'] as int? ?? template.maxUses,
     );
   }

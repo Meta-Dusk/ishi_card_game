@@ -1,22 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:ishi/core/audio.dart';
-import 'package:ishi/core/managers/audio_manager.dart';
-import 'package:ishi/core/managers/dev_console.dart';
-import 'package:ishi/core/network_messages.dart';
-import 'package:ishi/core/managers/game_manager.dart';
-import 'package:ishi/components/cards/relic_choice_card.dart';
-import 'package:ishi/components/dialogs/polymorph_dialog.dart';
-import 'package:ishi/components/dialogs/dev_console_toggle_dialog.dart';
-import 'package:ishi/components/overlays/dev_console/dev_console_overlay.dart';
-import 'package:ishi/components/dialogs/leave_game_dialog.dart';
-import 'package:ishi/components/dialogs/settings_dialog.dart';
-import 'package:ishi/components/gameplay/animated_play_button.dart';
+
 import 'package:ishi/services/network_service.dart';
-import 'package:ishi/models/relic.dart';
-import 'package:ishi/models/ishi_card.dart';
-import 'game_components.dart';
+import 'imports/game_components.dart';
+import 'imports/game_core.dart';
 
 part 'actions.dart';
 part 'network.dart';
@@ -488,48 +476,62 @@ class GameScreenState extends State<GameScreen> {
         .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
   );
 
-  Widget _buildRelicDisplay() {
-    final myRelics = _manager.playerRelics[_manager.localPlayerIndex];
+  Widget _buildRelicDisplay() => RelicDisplay(
+    relics: _manager.playerRelics[_manager.localPlayerIndex],
+    onTapRelic: (isActiveRelic, relic) {
+      if (!isMyTurn || !isActiveRelic) return;
+      setState(() {
+        if (_activeTargetingRelic == relic) {
+          _activeTargetingRelic = null;
+          _relicTargets.clear();
+        } else {
+          _activeTargetingRelic = relic;
+          _relicTargets.clear();
+          _isViewingRelics = false;
+        }
+      });
+    },
+  );
+}
 
-    if (myRelics.isEmpty) {
-      return const Center(
-        child: Text(
-          "NO RELICS EQUIPPED",
-          style: TextStyle(
-            color: Colors.white54,
-            letterSpacing: 2,
-            fontWeight: .bold,
-          ),
-        ),
-      );
-    }
+class RelicDisplay extends StatelessWidget {
+  const RelicDisplay({
+    super.key,
+    required this.relics,
+    required this.onTapRelic,
+  });
+
+  final List<Relic> relics;
+  final void Function(bool isActiveRelic, Relic relic) onTapRelic;
+
+  @override
+  Widget build(BuildContext context) {
+    if (relics.isEmpty) return _emptyRelics();
 
     return ListView.builder(
       scrollDirection: .horizontal,
       physics: const BouncingScrollPhysics(),
       padding: const .symmetric(horizontal: 40, vertical: 20),
-      itemCount: myRelics.length,
+      itemCount: relics.length,
       itemBuilder: (_, index) {
-        final relic = myRelics[index];
-        final isActiveRelic = relic.types.contains(RelicEffectType.active);
-
+        final relic = relics[index];
         return RelicChoiceCard(
           relic: relic,
-          onTap: () {
-            if (!isMyTurn || !isActiveRelic) return;
-            setState(() {
-              if (_activeTargetingRelic == relic) {
-                _activeTargetingRelic = null;
-                _relicTargets.clear();
-              } else {
-                _activeTargetingRelic = relic;
-                _relicTargets.clear();
-                _isViewingRelics = false;
-              }
-            });
-          },
+          onTap: () =>
+              onTapRelic(relic.types.contains(RelicEffectType.active), relic),
         );
       },
     );
   }
+
+  Center _emptyRelics() => const Center(
+    child: Text(
+      "NO RELICS EQUIPPED",
+      style: TextStyle(
+        color: Colors.white54,
+        letterSpacing: 2,
+        fontWeight: .bold,
+      ),
+    ),
+  );
 }

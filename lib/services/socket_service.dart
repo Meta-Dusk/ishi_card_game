@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:async';
 
 import 'package:ishi/core/managers/profile_manager.dart';
-import 'package:ishi/core/network_messages.dart';
+import 'package:ishi/core/network/network_messages.dart';
 import 'package:ishi/services/network_service.dart';
 
 class SocketService implements NetworkService {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ishi/core/managers/dev_console.dart';
+import 'package:ishi/core/dev/dev_console.dart';
 import 'dev_console_overlay.dart';
 import 'custom_dropdown_box.dart';
 import 'custom_text_field.dart';

@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:ishi/components/dialogs/on_kicked_dialog.dart';
+import 'package:ishi/components/dialogs/menus/on_kicked_dialog.dart';
 import 'package:ishi/screens/lobby/settings/lobby_settings.dart';
 import 'package:ishi/services/webrtc_service.dart';
 import 'package:ishi/services/network_service.dart';
 import 'package:ishi/core/managers/game_manager.dart';
-import 'package:ishi/core/network_messages.dart';
+import 'package:ishi/core/network/network_messages.dart';
 import '../game_screen/game_screen.dart';
 import 'verbose_player_list.dart';
 import 'client_view.dart';

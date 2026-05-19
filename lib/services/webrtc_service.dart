@@ -6,7 +6,7 @@ import 'package:ishi/services/network_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:ishi/core/network_messages.dart';
+import 'package:ishi/core/network/network_messages.dart';
 import 'package:ishi/core/managers/profile_manager.dart';
 
 class WebRTCService implements NetworkService {

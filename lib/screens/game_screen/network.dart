@@ -151,7 +151,7 @@ extension GameScreenNetwork on GameScreenState {
     final template = relicPool.firstWhere(
       (relic) => relic.id == message.relicId,
     );
-    final freshRelic = Relic.fromJson(template.toJson());
+    final freshRelic = template.clone();
 
     _manager.playerRelics[playerIndex].add(freshRelic);
 
@@ -214,7 +214,7 @@ extension GameScreenNetwork on GameScreenState {
               sizeFactor: animation,
               axis: .horizontal,
               axisAlignment: -1.0,
-              child: MiniFaceDownCard(),
+              child: const MiniFaceDownCard(),
             ),
             duration: const Duration(milliseconds: 300),
           );

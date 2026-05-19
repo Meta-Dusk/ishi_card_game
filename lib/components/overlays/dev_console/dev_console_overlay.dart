@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ishi/core/managers/dev_console.dart';
+import 'package:ishi/core/dev/dev_console.dart';
 import 'autocomplete_input.dart';
 
 class DevConsoleOverlay extends StatefulWidget {
