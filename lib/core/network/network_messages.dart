@@ -1,4 +1,5 @@
 import 'package:ishi/core/data_types.dart';
+import 'package:ishi/core/models/deck_event.dart';
 
 part 'network_keys.dart';
 part 'network_types.dart';
@@ -181,6 +182,21 @@ class PlayIntentMessage extends NetMessage {
       polymorphTemplate: json[_NetKey.polymorphTemplate] as StringDynamicMap?,
     );
   }
+}
+
+class DeckEventSyncMessage extends NetMessage {
+  final DeckEventEffect effect;
+
+  const DeckEventSyncMessage(this.effect);
+
+  @override
+  StringDynamicMap toJson() => {
+    _NetKey.type: NetType.deckEventSync.name,
+    _NetKey.effect: effect.index,
+  };
+
+  factory DeckEventSyncMessage.fromJson(StringDynamicMap json) =>
+      DeckEventSyncMessage(DeckEventEffect.values[json[_NetKey.effect] as int]);
 }
 
 // --- SYSTEM NOTIFICATIONS ---

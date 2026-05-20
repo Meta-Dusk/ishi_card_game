@@ -1,5 +1,6 @@
 import 'package:ishi/core/dev/dev_console.dart';
 import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/core/models/deck_event.dart';
 import 'package:ishi/services/network_service.dart';
 
 class DevCommandRegistry {
@@ -12,17 +13,18 @@ class DevCommandRegistry {
     DevCommand(
       name: "help",
       description: "Lists all available commands",
-      onExecute: (_) {
+      onExecute: (_, _) {
         console.log("Available Commands:");
         for (DevCommand command in allCommandsRef) {
-          console.log("  ${command.name} - ${command.description}");
+          final usage = command.usage != null ? "Usage: ${command.usage}" : "";
+          console.log("  ${command.name} - ${command.description} $usage");
         }
       },
     ),
     DevCommand(
       name: "exit",
       description: "Closes the terminal",
-      onExecute: (_) {
+      onExecute: (_, _) {
         if (console.onExit != null) {
           console.log("Closing terminal...");
           console.onExit!();
@@ -35,15 +37,14 @@ class DevCommandRegistry {
     // CARD COMMAND
     DevCommand(
       name: "card",
-      description: "Modifies your hand. Usage: card <draw|remove> [amount]",
-      onExecute: (args) {
+      description: "Modifies your hand.",
+      usage: "card <draw|remove> [amount]",
+      onExecute: (args, usage) {
         if (!net.isHost) {
           return console.log("Error: Only the host can modify the game state!");
         }
         if (args.isEmpty) {
-          return console.log(
-            "Error: Missing action. Usage: card <draw|remove> [amount]",
-          );
+          return console.log("Error: Missing amount. Usage: $usage");
         }
         String action = args[0].toLowerCase();
         int amount = args.length > 1 ? (int.tryParse(args[1]) ?? 1) : 1;
@@ -77,15 +78,14 @@ class DevCommandRegistry {
     // DECK COMMAND (Modifies the Play Deck / Discard Pile)
     DevCommand(
       name: "deck",
-      description: "Modifies the play deck. Usage: deck <add|remove> [amount]",
-      onExecute: (args) {
+      description: "Modifies the play deck.",
+      usage: "deck <add|remove> [amount]",
+      onExecute: (args, usage) {
         if (!net.isHost) {
           return console.log("Error: Only the host can modify the game state!");
         }
         if (args.isEmpty) {
-          return console.log(
-            "Error: Missing action. Usage: deck <add|remove> [amount]",
-          );
+          return console.log("Error: Missing amount. Usage: $usage");
         }
         String action = args[0].toLowerCase();
         int amount = args.length > 1 ? (int.tryParse(args[1]) ?? 1) : 1;
@@ -128,15 +128,14 @@ class DevCommandRegistry {
     // PILE COMMAND (Modifies the Draw Pile / Remaining Cards)
     DevCommand(
       name: "pile",
-      description: "Modifies the draw pile. Usage: pile <add|remove> [amount]",
-      onExecute: (args) {
+      description: "Modifies the draw pile.",
+      usage: "pile <add|remove> [amount]",
+      onExecute: (args, usage) {
         if (!net.isHost) {
           return console.log("Error: Only the host can modify the game state!");
         }
         if (args.isEmpty) {
-          return console.log(
-            "Error: Missing action. Usage: pile <add|remove> [amount]",
-          );
+          return console.log("Error: Missing amount. Usage: $usage");
         }
         String action = args[0].toLowerCase();
         int amount = args.length > 1 ? (int.tryParse(args[1]) ?? 1) : 1;
@@ -177,47 +176,33 @@ class DevCommandRegistry {
 
     // SORTBY COMMAND
     DevCommand(
-      name: "sortby",
-      description: "Sorts your hand. Usage: sortby <color|type|value|unsorted>",
-      onExecute: (args) {
+      name: "sortBy",
+      description: "Sorts your hand.",
+      usage: "sortBy <color|type|value|unsorted>",
+      onExecute: (args, usage) {
         if (args.isEmpty) {
-          return console.log(
-            "Error: Missing sort type. Usage: sortby <color|type|value|unsorted>",
-          );
+          return console.log("Error: Missing sort type. Usage: $usage");
         }
         String type = args[0].toLowerCase();
+        final finalSortType = DeckSortType.values.asNameMap()[type];
 
-        DeckSortType? sortType;
-        switch (type) {
-          case "color":
-            sortType = .byColor;
-            break;
-          case "type":
-            sortType = .byType;
-            break;
-          case "value":
-            sortType = .byValue;
-            break;
-          case "unsorted":
-            sortType = .unsorted;
-            break;
-          default:
-            return console.log("Error: Unknown sort type '$type'.");
+        if (finalSortType != null) {
+          manager.handSortType = finalSortType;
+          manager.sortHand(manager.localPlayerIndex, finalSortType);
+          console.log("Hand sorted by $type.");
+        } else {
+          return console.log("Error: Unknown sort type '$type'.");
         }
-
-        // Apply the sort directly to the manager
-        manager.handSortType = sortType;
-        manager.sortHand(manager.localPlayerIndex, sortType);
-        console.log("Hand sorted by $type.");
       },
     ),
     DevCommand(
       name: "kick",
-      description: "Kicks a player. Usage: kick [index]",
-      onExecute: (args) {
+      description: "Kicks a player.",
+      usage: "kick [index]",
+      onExecute: (args, usage) {
         if (!net.isHost) return console.log("Error: Only the host can kick.");
         if (args.isEmpty) {
-          return console.log("Error: Missing index. Usage: kick [index]");
+          return console.log("Error: Missing index. Usage: $usage");
         }
         int index = int.tryParse(args[0]) ?? 0;
         net.kickPlayer(index, reason: "Kicked via dev console.");
@@ -227,20 +212,21 @@ class DevCommandRegistry {
     DevCommand(
       name: "cls",
       description: "Clears the console log",
-      onExecute: (_) {
+      onExecute: (_, _) {
         console.logs.clear();
         console.onLogAdded?.call();
       },
     ),
     DevCommand(
       name: "win",
-      description: "Makes a specific player the winner. Usage: win [index]",
-      onExecute: (args) {
+      description: "Makes a specific player the winner.",
+      usage: "win [index]",
+      onExecute: (args, usage) {
         if (!net.isHost) {
           return console.log("Error: Only the host can modify the game state!");
         }
         if (args.isEmpty) {
-          return console.log("Error: Missing index. Usage: win [index]");
+          return console.log("Error: Missing index. Usage: $usage");
         }
         int index = int.tryParse(args[0]) ?? 0;
         console.log("Ending game for player $index...");
@@ -250,19 +236,43 @@ class DevCommandRegistry {
       },
     ),
     DevCommand(
-      name: "settime",
-      description:
-          "Sets the current running turn timer to a value. Usage: settime [seconds]",
-      onExecute: (args) {
+      name: "setTime",
+      description: "Sets the current running turn timer to a value.",
+      usage: "setTime [seconds]",
+      onExecute: (args, usage) {
         if (!net.isHost) {
           return console.log("Error: Only the host can modify the game state!");
         }
         if (args.isEmpty) {
-          return console.log("Error: Missing value. Usage: settime [seconds]");
+          return console.log("Error: Missing seconds. Usage: $usage");
         }
         int value = int.tryParse(args[0]) ?? 0;
         console.log("Setting current running turn timer to: $value");
         manager.turnDeadlineEpoch = value;
+      },
+    ),
+    DevCommand(
+      name: "deckEvent",
+      description: "Trigger a deck event.",
+      usage: "deckevent [type]",
+      onExecute: (args, usage) {
+        if (!net.isHost) {
+          return console.log("Error: Only the host can modify the game state!");
+        }
+        if (args.isEmpty) {
+          return console.log("Error: Missing type. Usage: $usage");
+        }
+        String type = args[0];
+        final selectedEvent = DeckEventEffect.values.asNameMap()[type];
+
+        if (selectedEvent != null) {
+          manager.activeDeckEvent = selectedEvent;
+          console.log("Triggered deck event: ${selectedEvent.name}");
+          manager.addEvent(.deckEventTriggered);
+          console.onStateForceSynced?.call();
+        } else {
+          console.log("Error: Unknown deck event '$type'");
+        }
       },
     ),
   ];

@@ -310,6 +310,7 @@ class GameScreenState extends State<GameScreen> {
       },
       scrollController: scrollControllers[localUIIndex],
       isMyTurn: isMyTurn,
+      event: _manager.activeDeckEvent,
     );
 
     final cardViewSwapButton = ElevatedButton.icon(

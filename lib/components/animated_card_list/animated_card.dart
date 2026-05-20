@@ -1,3 +1,5 @@
+import 'package:ishi/core/models/deck_event.dart';
+
 import 'animated_card_builder.dart';
 import 'package:ishi/components/cards/card_display.dart';
 import 'package:ishi/core/models/ishi_card.dart';
@@ -13,6 +15,7 @@ class AnimatedCard extends StatelessWidget {
     required this.onTapCard,
     required this.isMyTurn,
     required this.isSelected,
+    required this.event,
   });
 
   final ScrollController? scrollController;
@@ -22,6 +25,7 @@ class AnimatedCard extends StatelessWidget {
   final void Function(IshiCard) onTapCard;
   final bool isMyTurn;
   final bool isSelected;
+  final DeckEventEffect event;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +48,7 @@ class AnimatedCard extends StatelessWidget {
       onTapCard: onTapCard,
       isMyTurn: isMyTurn,
       isSelected: isSelected,
+      event: event,
     ),
   );
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ishi/components/cards/card_aura/card_aura.dart';
 import '../../core/managers/game_manager.dart';
 import '../../core/models/ishi_card.dart';
 import '../cards/card_display.dart';
@@ -18,22 +19,21 @@ class PlayAndPileDeck extends StatelessWidget {
   final GlobalKey<PlayCardsPileState>? playPileKey;
 
   @override
-  Widget build(BuildContext context) {
-    final mainContent = [
-      _AvailableCardsPile(
-        onDrawCard: onDrawCard,
-        deckLength: manager.deck.length,
-      ),
-      const SizedBox(width: 20),
-      PlayCardsPile(
-        key: playPileKey,
-        manager: manager,
-        onPlayCard: onPlayCard,
-      ), // DragTarget
-    ];
+  Widget build(BuildContext context) =>
+      Row(mainAxisAlignment: .center, children: _mainContent);
 
-    return Row(mainAxisAlignment: .center, children: mainContent);
-  }
+  List<Widget> get _mainContent => [
+    _AvailableCardsPile(
+      onDrawCard: onDrawCard,
+      deckLength: manager.deck.length,
+    ),
+    const SizedBox(width: 20),
+    PlayCardsPile(
+      key: playPileKey,
+      manager: manager,
+      onPlayCard: onPlayCard,
+    ), // DragTarget
+  ];
 }
 
 class PlayCardsPile extends StatefulWidget {
@@ -73,52 +73,46 @@ class PlayCardsPileState extends State<PlayCardsPile>
   void animateOpponentDrop() => _dropController.forward(from: 0.0);
 
   @override
-  Widget build(BuildContext context) {
-    return DragTarget<IshiCard>(
-      onWillAcceptWithDetails: (details) => widget.manager.canPlay(
-        details.data,
-        widget.manager.currentPlayer - 1,
-      ),
-      onAcceptWithDetails: (details) => widget.onPlayCard(details.data),
-      builder: (_, candidateCards, rejectedCards) => _AnimatedHoverableCard(
-        dropController: _dropController,
-        widget: widget,
-        candidateCards: candidateCards,
-        rejectedCards: rejectedCards,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => DragTarget<IshiCard>(
+    onWillAcceptWithDetails: (details) =>
+        widget.manager.canPlay(details.data, widget.manager.currentPlayer - 1),
+    onAcceptWithDetails: (details) => widget.onPlayCard(details.data),
+    builder: (_, candidateCards, rejectedCards) => _AnimatedHoverableCard(
+      dropController: _dropController,
+      manager: widget.manager,
+      candidateCards: candidateCards,
+      rejectedCards: rejectedCards,
+    ),
+  );
 }
 
 class _AnimatedHoverableCard extends StatelessWidget {
   const _AnimatedHoverableCard({
     required this.dropController,
-    required this.widget,
+    required this.manager,
     required this.candidateCards,
     required this.rejectedCards,
   });
 
   final AnimationController dropController;
-  final PlayCardsPile widget;
+  final GameManager manager;
   final List<IshiCard?> candidateCards;
   final List<dynamic> rejectedCards;
 
   @override
-  Widget build(BuildContext context) {
-    return ScaleTransition(
-      scale: Tween<double>(begin: 1.3, end: 1.0).animate(
-        CurvedAnimation(parent: dropController, curve: Curves.easeOutBack),
+  Widget build(BuildContext context) => ScaleTransition(
+    scale: Tween<double>(begin: 1.3, end: 1.0).animate(
+      CurvedAnimation(parent: dropController, curve: Curves.easeOutBack),
+    ),
+    child: FadeTransition(
+      opacity: Tween<double>(begin: 0.5, end: 1.0).animate(dropController),
+      child: _HoverableCard(
+        isHoveringValid: candidateCards.isNotEmpty,
+        isInvalidHover: rejectedCards.isNotEmpty,
+        manager: manager,
       ),
-      child: FadeTransition(
-        opacity: Tween<double>(begin: 0.5, end: 1.0).animate(dropController),
-        child: _HoverableCard(
-          isHoveringValid: candidateCards.isNotEmpty,
-          isInvalidHover: rejectedCards.isNotEmpty,
-          manager: widget.manager,
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
 
 class _HoverableCard extends StatelessWidget {
@@ -162,7 +156,11 @@ class _HoverableCard extends StatelessWidget {
     );
 
     final stackedContent = [
-      CardFront(card: manager.topCard),
+      CardAura(
+        card: manager.topCard,
+        activeEvent: manager.activeDeckEvent,
+        child: CardFront(card: manager.topCard),
+      ),
       if (manager.declaredColor != null)
         _DeclaredColorAura(displayColor: manager.declaredColor!.displayColor),
       tint,
@@ -192,16 +190,14 @@ class _DeclaredColorAura extends StatelessWidget {
   final Color displayColor;
 
   @override
-  Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: .circular(12),
-          border: .all(color: displayColor, width: 6),
-        ),
+  Widget build(BuildContext context) => Positioned.fill(
+    child: Container(
+      decoration: BoxDecoration(
+        borderRadius: .circular(12),
+        border: .all(color: displayColor, width: 6),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _AvailableCardsPile extends StatelessWidget {
@@ -214,21 +210,20 @@ class _AvailableCardsPile extends StatelessWidget {
   final int deckLength;
 
   @override
-  Widget build(BuildContext context) {
-    final stackedContent = [
-      CardBack(),
-      Container(
-        padding: const .all(8),
-        decoration: const BoxDecoration(color: Colors.black54, shape: .circle),
-        child: Text(
-          "$deckLength",
-          style: const TextStyle(color: Colors.white, fontWeight: .bold),
-        ),
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onDrawCard,
+    child: Stack(alignment: .center, children: _stackedContent),
+  );
+
+  List<StatelessWidget> get _stackedContent => [
+    CardBack(),
+    Container(
+      padding: const .all(8),
+      decoration: const BoxDecoration(color: Colors.black54, shape: .circle),
+      child: Text(
+        "$deckLength",
+        style: const TextStyle(color: Colors.white, fontWeight: .bold),
       ),
-    ];
-    return GestureDetector(
-      onTap: onDrawCard,
-      child: Stack(alignment: .center, children: stackedContent),
-    );
-  }
+    ),
+  ];
 }

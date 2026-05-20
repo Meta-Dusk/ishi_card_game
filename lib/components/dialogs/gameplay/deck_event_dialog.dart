@@ -3,13 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ishi/core/models/deck_event.dart';
 
 class DeckEventDialog extends StatelessWidget {
-  const DeckEventDialog({
-    super.key,
-    required this.onDrawCard,
-    required this.event,
-  });
+  const DeckEventDialog({super.key, required this.event});
 
-  final VoidCallback onDrawCard;
   final DeckEvent event;
 
   @override
@@ -34,10 +29,7 @@ class DeckEventDialog extends StatelessWidget {
         backgroundColor: Colors.purple,
         foregroundColor: Colors.white,
       ),
-      onPressed: () {
-        Navigator.of(context).pop();
-        onDrawCard();
-      },
+      onPressed: () => Navigator.of(context).pop(),
       child: const Text("Accept Fate"),
     ),
   ];

@@ -18,6 +18,7 @@ class _NetKey {
   // --- GAME STATE PAYLOADS ---
   static const String playerIndex = 'playerIndex';
   static const String declaredColor = 'declaredColor';
+  static const String effect = 'effect';
 
   // --- INTENT ACTIONS ---
   static const String action = 'action';

@@ -13,9 +13,17 @@ enum NetType {
   kicked,
   systemNotification,
   lobbySettings,
+  deckEventSync,
 }
 
-enum IntentAction { drawCard, endTurn, takePenalty, playCard, activateRelic }
+enum IntentAction {
+  drawCard,
+  endTurn,
+  takePenalty,
+  playCard,
+  activateRelic,
+  requestDeckRestock,
+}
 
 sealed class NetMessage {
   const NetMessage();
@@ -54,6 +62,8 @@ sealed class NetMessage {
         return SystemNotificationMessage.fromJson(json);
       case .lobbySettings:
         return LobbySettingsMessage.fromJson(json);
+      case .deckEventSync:
+        return DeckEventSyncMessage.fromJson(json);
     }
   }
 }

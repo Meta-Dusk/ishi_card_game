@@ -1,5 +1,6 @@
-import 'curved_card.dart';
 import 'package:flutter/material.dart';
+import 'package:ishi/core/models/deck_event.dart';
+import 'curved_card.dart';
 import 'package:ishi/core/models/ishi_card.dart';
 
 const double itemWidth = 80.0;
@@ -13,6 +14,7 @@ class AnimatedCardList extends StatelessWidget {
     required this.scrollController,
     required this.isMyTurn,
     this.selectedCards = const [],
+    required this.event,
   });
 
   final void Function(IshiCard) onTapCard;
@@ -21,6 +23,7 @@ class AnimatedCardList extends StatelessWidget {
   final List<IshiCard> currentHand;
   final bool isMyTurn;
   final List<IshiCard> selectedCards;
+  final DeckEventEffect event;
 
   bool _onScrollNotification(ScrollNotification notification) {
     if (notification is ScrollEndNotification) {
@@ -69,6 +72,7 @@ class AnimatedCardList extends StatelessWidget {
             onTapCard: onTapCard,
             isMyTurn: isMyTurn,
             isSelected: selectedCards.contains(card),
+            event: event,
           );
         },
       ),
