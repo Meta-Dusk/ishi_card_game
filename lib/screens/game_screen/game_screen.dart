@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/core/models/deck_event.dart';
 
 import 'package:ishi/services/network_service.dart';
 import 'imports/game_components.dart';
@@ -153,7 +155,7 @@ class GameScreenState extends State<GameScreen> {
             context: context,
             builder: (_) => DevConsoleToggleDialog(
               showDevConsole: _showDevConsoleToggle,
-              onChanged: (val) => setState(() => _showDevConsoleToggle = val),
+              onToggle: (val) => setState(() => _showDevConsoleToggle = val),
             ),
           ),
         ),

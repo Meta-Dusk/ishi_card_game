@@ -22,9 +22,14 @@ class _SettingsDialogState extends State<SettingsDialog> {
     _sfxVol = AudioManager().sfxVolume;
   }
 
+  Widget _animatedDialog(AlertDialog dialog) => dialog
+      .animate()
+      .fadeIn(duration: 200.ms)
+      .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack);
+
   @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
+  Widget build(BuildContext context) => _animatedDialog(
+    AlertDialog(
       backgroundColor: Colors.grey.shade900,
       shape: RoundedRectangleBorder(borderRadius: .circular(16)),
       title: const Row(
@@ -42,11 +47,11 @@ class _SettingsDialogState extends State<SettingsDialog> {
           child: const Text("CLOSE", style: TextStyle(color: Colors.white)),
         ),
       ],
-    );
-  }
+    ),
+  );
 
   Column _settingsSliders() {
-    final mainContent = [
+    final sliders = [
       _VolumeSlider(
         label: "Master Volume",
         icon: Icons.volume_up,
@@ -78,8 +83,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
 
     return Column(
       mainAxisSize: .min,
-      children: mainContent
-          .animate(interval: 100.ms)
+      children: sliders
+          .animate(interval: 100.ms, delay: 100.ms)
           .fadeIn(duration: 400.ms)
           .slideY(delay: 100.ms, begin: 0.5, curve: Curves.easeOutCubic),
     );
@@ -100,37 +105,36 @@ class _VolumeSlider extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final mainContent = [
-      Row(
-        children: [
-          Icon(icon, color: Colors.orangeAccent, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            "${(value * 100).toInt()}%",
-            style: const TextStyle(color: Colors.white70),
-          ),
-        ],
-      ),
-      Slider(
-        value: value,
-        min: 0.0,
-        max: 1.0,
-        activeColor: Colors.orangeAccent,
-        inactiveColor: Colors.white24,
-        onChanged: onChanged,
-      ),
-      const SizedBox(height: 8),
-    ];
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: .start, children: _mainContent);
 
-    return Column(crossAxisAlignment: .start, children: mainContent);
-  }
+  List<Widget> get _mainContent => [
+    Row(
+      children: [
+        Icon(icon, color: Colors.orangeAccent, size: 20),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          "${(value * 100).toInt()}%",
+          style: const TextStyle(color: Colors.white70),
+        ),
+      ],
+    ),
+    Slider(
+      value: value,
+      min: 0.0,
+      max: 1.0,
+      activeColor: Colors.orangeAccent,
+      inactiveColor: Colors.white24,
+      onChanged: onChanged,
+    ),
+    const SizedBox(height: 8),
+  ];
 }
