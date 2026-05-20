@@ -1,5 +1,5 @@
 import 'dart:async';
-import '../core/network_messages.dart';
+import '../core/network/network_messages.dart';
 import '../core/managers/profile_manager.dart';
 import 'network_service.dart';
 

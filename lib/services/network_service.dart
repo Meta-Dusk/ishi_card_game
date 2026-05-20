@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:ishi/core/network_messages.dart';
+import 'package:ishi/core/network/network_messages.dart';
 
 abstract class NetworkService {
   bool get isHost;

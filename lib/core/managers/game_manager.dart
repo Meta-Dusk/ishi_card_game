@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:ishi/core/data_types.dart';
-import 'package:ishi/models/relic.dart';
-import 'package:ishi/models/ishi_card.dart';
+import 'package:ishi/core/models/relic.dart';
+import 'package:ishi/core/models/ishi_card.dart';
+import 'package:ishi/core/models/deck_event.dart';
 
 enum DeckSortType { byColor, byType, byValue, unsorted }
 
@@ -83,6 +84,8 @@ class GameManager {
   // --- EVENTS ---
   final _eventController = StreamController<GameManagerEvent>.broadcast();
   Stream<GameManagerEvent> get events => _eventController.stream;
+
+  DeckEventEffect activeDeckEvent = .none;
 
   GameManager({required this.playerCount, required this.startingHandSize});
 
@@ -421,9 +424,7 @@ class GameManager {
     IshiCard drawn = deck.removeLast();
 
     // Only insert instantly if the UI isn't handling it
-    if (!skipHandInsertion) {
-      playerHands[playerIndex].insert(0, drawn);
-    }
+    if (!skipHandInsertion) playerHands[playerIndex].insert(0, drawn);
 
     hasDrawnCard = true;
 

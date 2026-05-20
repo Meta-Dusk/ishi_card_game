@@ -19,10 +19,9 @@ class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: MainMenuScreen(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
+  Widget build(BuildContext context) => MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: MainMenuScreen(),
+    builder: (_, child) => ExcludeSemantics(child: child),
+  );
 }

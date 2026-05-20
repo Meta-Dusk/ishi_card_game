@@ -63,7 +63,7 @@ class LocalSetupMenu extends StatelessWidget {
         onTap: () => _onStart(context),
       ),
       const SizedBox(height: 32),
-      backButton(onPressed: onBack),
+      textBackButton(onPressed: onBack),
     ];
 
     return Column(

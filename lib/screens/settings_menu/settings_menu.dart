@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:ishi/components/dialogs/settings_dialog.dart';
+import 'package:ishi/components/dialogs/menus/settings_dialog.dart';
 import 'package:ishi/core/audio.dart';
 import 'package:ishi/core/managers/audio_manager.dart';
 import 'package:ishi/core/managers/profile_manager.dart';
@@ -54,7 +54,7 @@ class SettingsMenu extends StatelessWidget {
         },
       ),
       const SizedBox(height: 40),
-      backButton(onPressed: onBack),
+      textBackButton(onPressed: onBack),
     ];
     return Column(
       children: mainContent

@@ -1,5 +1,5 @@
 import 'package:ishi/components/animated_card_list/animated_card_list.dart';
-import 'package:ishi/models/ishi_card.dart';
+import 'package:ishi/core/models/ishi_card.dart';
 import 'package:flutter/material.dart';
 import 'card_display.dart';
 

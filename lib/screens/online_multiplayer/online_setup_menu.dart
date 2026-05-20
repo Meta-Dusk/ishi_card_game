@@ -45,7 +45,7 @@ class OnlineSetupMenu extends StatelessWidget {
         ),
       ),
       const SizedBox(height: 32),
-      backButton(onPressed: onPrimaryBack),
+      textBackButton(onPressed: onPrimaryBack),
     ];
 
     return Column(

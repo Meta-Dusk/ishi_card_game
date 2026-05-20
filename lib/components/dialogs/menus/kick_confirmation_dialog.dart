@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ishi/core/network_messages.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/core/network/network_messages.dart';
 
 class KickConfirmationDialog extends StatelessWidget {
   const KickConfirmationDialog({
@@ -15,41 +16,20 @@ class KickConfirmationDialog extends StatelessWidget {
   final void Function(int, {String? reason})? onKick;
   final int playerIndex;
 
-  @override
-  Widget build(BuildContext context) {
-    final dialogContent = [
-      Text(
-        "Are you sure you want to kick ${player.playerName}?",
-        style: const TextStyle(color: Colors.white70),
-      ),
-      const SizedBox(height: 16),
-      TextField(
-        controller: textController,
-        style: const TextStyle(color: Colors.white),
-        decoration: const InputDecoration(
-          hintText: "Reason (Optional)",
-          hintStyle: TextStyle(color: Colors.white30),
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.white24),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.orangeAccent),
-          ),
-        ),
-        onSubmitted: (value) {
-          Navigator.pop(context);
-          onKick!(playerIndex, reason: value.trim());
-        },
-      ),
-    ];
+  Widget _animatedDialog(AlertDialog dialog) => dialog
+      .animate()
+      .fadeIn(duration: 200.ms)
+      .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack);
 
-    return AlertDialog(
+  @override
+  Widget build(BuildContext context) => _animatedDialog(
+    AlertDialog(
       backgroundColor: Colors.grey.shade900,
       title: const Text("KICK PLAYER", style: TextStyle(color: Colors.white)),
       content: Column(
         mainAxisSize: .min,
         crossAxisAlignment: .start,
-        children: dialogContent,
+        children: _dialogContent(context),
       ),
       actions: [
         TextButton(
@@ -69,6 +49,32 @@ class KickConfirmationDialog extends StatelessWidget {
           child: const Text("Kick"),
         ),
       ],
-    );
-  }
+    ),
+  );
+
+  List<Widget> _dialogContent(BuildContext context) => [
+    Text(
+      "Are you sure you want to kick ${player.playerName}?",
+      style: const TextStyle(color: Colors.white70),
+    ),
+    const SizedBox(height: 16),
+    TextField(
+      controller: textController,
+      style: const TextStyle(color: Colors.white),
+      decoration: const InputDecoration(
+        hintText: "Reason (Optional)",
+        hintStyle: TextStyle(color: Colors.white30),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.white24),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.orangeAccent),
+        ),
+      ),
+      onSubmitted: (value) {
+        Navigator.pop(context);
+        onKick!(playerIndex, reason: value.trim());
+      },
+    ),
+  ];
 }

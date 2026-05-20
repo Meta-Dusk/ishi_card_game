@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ishi/core/network_messages.dart';
+import 'package:ishi/core/network/network_messages.dart';
 import 'package:ishi/services/network_service.dart';
 
 class LivePingPanel extends StatelessWidget {

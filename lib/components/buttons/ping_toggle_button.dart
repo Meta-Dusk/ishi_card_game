@@ -13,12 +13,10 @@ class PingToggleButton extends StatelessWidget {
   final VoidCallback onLongPress;
 
   @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(showPingOverlay ? Icons.close : Icons.network_ping),
-      color: Colors.grey.shade600,
-      onPressed: onToggle,
-      onLongPress: onLongPress,
-    );
-  }
+  Widget build(BuildContext context) => IconButton(
+    icon: Icon(showPingOverlay ? Icons.close : Icons.network_ping),
+    color: Colors.grey.shade600,
+    onPressed: onToggle,
+    onLongPress: onLongPress,
+  );
 }

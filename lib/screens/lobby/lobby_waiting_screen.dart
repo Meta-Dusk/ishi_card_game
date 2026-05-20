@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:ishi/components/dialogs/on_kicked_dialog.dart';
+import 'package:ishi/components/dialogs/menus/on_kicked_dialog.dart';
+import 'package:ishi/screens/lobby/loading_screen.dart';
+import 'package:ishi/screens/lobby/lobby_app_bar.dart';
 import 'package:ishi/screens/lobby/settings/lobby_settings.dart';
 import 'package:ishi/services/webrtc_service.dart';
 import 'package:ishi/services/network_service.dart';
 import 'package:ishi/core/managers/game_manager.dart';
-import 'package:ishi/core/network_messages.dart';
+import 'package:ishi/core/network/network_messages.dart';
 import '../game_screen/game_screen.dart';
 import 'verbose_player_list.dart';
 import 'client_view.dart';
@@ -34,6 +36,8 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
   int _startingHandSize = 7;
   int _maxPlayers = 10;
   bool _isStartingGame = false;
+
+  List<LobbyPlayer> get players => _net.playersList;
 
   @override
   void initState() {
@@ -106,7 +110,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
 
       case GameStateMessage(:final payload):
         setState(() => _isStartingGame = true);
-        await Future.delayed(150.ms);
+        await Future.delayed(const Duration(milliseconds: 150));
 
         final localManager = GameManager(
           playerCount: _net.currentPlayer,
@@ -164,147 +168,107 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final players = _net.playersList;
+  Widget build(BuildContext context) => PopScope(
+    canPop: false,
+    onPopInvokedWithResult: (didPop, result) async {
+      if (didPop) return;
+      await _net.disconnect();
+      if (context.mounted) Navigator.of(context).pop();
+    },
+    child: Scaffold(
+      backgroundColor: Colors.grey.shade900,
+      appBar: LobbyAppBar(net: _net),
+      body: Stack(children: _stackedContent(_getMainContent(players))),
+    ),
+  );
 
-    final verbosePlayerList = VerbosePlayerList(
+  List<Widget> _getMainContent(List<LobbyPlayer> players) => _mainContent(
+    _PlayerCountLabel(
+      connectedPlayers: _connectedPlayers,
+      maxPlayers: _maxPlayers,
+    ),
+    VerbosePlayerList(
       players: players,
       onKick: _net.isHost
           ? (index, {reason}) => _net.kickPlayer(index, reason: reason)
           : null,
-    );
+    ),
+  );
 
-    final playerCountLabel = Text(
-      "PLAYERS CONNECTED: $_connectedPlayers/$_maxPlayers",
-      style: const TextStyle(
-        color: Colors.white70,
-        fontSize: 16,
-        fontWeight: .bold,
-        letterSpacing: 1.5,
-      ),
-    );
-
-    final mainContent = [
-      if (roomCode != null) ...[
-        RoomCodeView(roomCode: roomCode)
-            .animate()
-            .fadeIn(duration: 100.ms)
-            .slideY(delay: 100.ms, begin: -0.5, curve: Curves.easeOutCubic),
-        const SizedBox(height: 24),
-      ],
-      playerCountLabel
+  List<Widget> _mainContent(
+    Widget playerCountLabel,
+    VerbosePlayerList verbosePlayerList,
+  ) => [
+    if (roomCode != null) ...[
+      RoomCodeView(roomCode: roomCode)
           .animate()
-          .fadeIn(duration: 200.ms)
+          .fadeIn(duration: 300.ms)
           .slideY(delay: 100.ms, begin: -0.5, curve: Curves.easeOutCubic),
-      const SizedBox(height: 16),
-      Expanded(
-        child: verbosePlayerList
-            .animate()
-            .fadeIn(duration: 300.ms)
-            .slideY(delay: 100.ms, begin: -0.5, curve: Curves.easeOutCubic),
-      ),
-      const SizedBox(height: 16),
-      LobbySettings(
-        network: _net,
-        startingHandSize: _startingHandSize,
-        maxPlayers: _maxPlayers,
-        connectedPlayers: _connectedPlayers,
-        onHandSizeChanged: (val) => setState(() => _startingHandSize = val),
-        onMaxPlayersChanged: (val) => setState(() => _maxPlayers = val),
-        onSettingsChangeEnd: () => _net.broadcast(
-          LobbySettingsMessage(_startingHandSize, _maxPlayers),
-        ), // Blast the network packet ONLY when the slider drag ends!
-      ),
-      const SizedBox(height: 20),
-      Center(
-        child: _net.isHost
-            ? StartGameButton(onStartGame: _onStartGame)
-            : ClientView(),
-      ),
-      const SizedBox(height: 20),
-    ];
+      const SizedBox(height: 24),
+    ],
+    playerCountLabel
+        .animate()
+        .fadeIn(duration: 300.ms)
+        .slideY(delay: 200.ms, begin: -0.5, curve: Curves.easeOutCubic),
+    const SizedBox(height: 16),
+    Expanded(
+      child: verbosePlayerList
+          .animate()
+          .fadeIn(duration: 300.ms)
+          .slideY(delay: 300.ms, begin: -0.5, curve: Curves.easeOutCubic),
+    ),
+    const SizedBox(height: 16),
+    LobbySettings(
+      network: _net,
+      startingHandSize: _startingHandSize,
+      maxPlayers: _maxPlayers,
+      connectedPlayers: _connectedPlayers,
+      onHandSizeChanged: (val) => setState(() => _startingHandSize = val),
+      onMaxPlayersChanged: (val) => setState(() => _maxPlayers = val),
+      onSettingsChangeEnd: () =>
+          _net.broadcast(LobbySettingsMessage(_startingHandSize, _maxPlayers)),
+    ),
+    const SizedBox(height: 20),
+    Center(
+      child: _net.isHost
+          ? StartGameButton(onStartGame: _onStartGame)
+          : ClientView(),
+    ),
+    const SizedBox(height: 20),
+  ];
 
-    return Scaffold(
-      backgroundColor: Colors.grey.shade900,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: BackButton(
-          color: Colors.white,
-          onPressed: () async {
-            await _net.disconnect();
-            if (context.mounted) Navigator.pop(context);
-          },
-        ),
-        title: const Text(
-          "LOBBY",
-          style: TextStyle(
-            fontWeight: .bold,
-            letterSpacing: 2,
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          if (_net.isHost)
-            IconButton(
-              icon: const Icon(
-                Icons.cleaning_services_rounded,
-                color: Colors.orangeAccent,
-              ),
-              tooltip: "Purge Invalid Players",
-              onPressed: () => _net.purgeInvalidPlayers(),
-            ),
-        ],
+  List<Widget> _stackedContent(List<Widget> mainContent) => [
+    Padding(
+      padding: const .all(16.0),
+      child: Column(
+        crossAxisAlignment: .start,
+        children: mainContent
+            .animate(interval: 100.ms)
+            .fadeIn(duration: 400.ms)
+            .slideY(begin: 0.1, curve: Curves.easeOutCubic),
       ),
-      body: Stack(
-        children: [
-          Padding(
-            padding: const .all(16.0),
-            child: Column(crossAxisAlignment: .start, children: mainContent)
-                .animate()
-                .fadeIn(duration: 400.ms)
-                .slideY(begin: 0.1, curve: Curves.easeOutCubic),
-          ),
-          if (_isStartingGame)
-            LoadingScreen().animate().fadeIn(duration: 200.ms),
-        ],
-      ),
-    );
-  }
+    ),
+    if (_isStartingGame) LoadingScreen().animate().fadeIn(duration: 200.ms),
+  ];
 }
 
-class LoadingScreen extends StatelessWidget {
-  const LoadingScreen({super.key});
+class _PlayerCountLabel extends StatelessWidget {
+  const _PlayerCountLabel({
+    required this.connectedPlayers,
+    required this.maxPlayers,
+  });
+
+  final int connectedPlayers;
+  final int maxPlayers;
 
   @override
-  Widget build(BuildContext context) {
-    final mainContent = [
-      CircularProgressIndicator(color: Colors.orangeAccent, strokeWidth: 6),
-      SizedBox(height: 24),
-      Text(
-        "SHUFFLING DECK...",
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: .bold,
-          fontSize: 18,
-          letterSpacing: 2.0,
-        ),
-      ),
-    ];
-
-    return Container(
-      color: Colors.black87,
-      width: double.infinity,
-      height: double.infinity,
-      child: Center(
-        child: Column(
-          mainAxisSize: .min,
-          children: mainContent
-              .animate(interval: 100.ms)
-              .slideY(delay: 100.ms, begin: 0.5, curve: Curves.easeOutCubic),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Text(
+    "PLAYERS CONNECTED: $connectedPlayers/$maxPlayers",
+    style: const TextStyle(
+      color: Colors.white70,
+      fontSize: 16,
+      fontWeight: .bold,
+      letterSpacing: 1.5,
+    ),
+  );
 }

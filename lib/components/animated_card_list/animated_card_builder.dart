@@ -4,7 +4,7 @@ import 'animated_card_list.dart';
 import 'draggable_card.dart';
 import 'package:ishi/components/cards/card_display.dart';
 import 'package:ishi/components/cards/flip_card.dart';
-import 'package:ishi/models/ishi_card.dart';
+import 'package:ishi/core/models/ishi_card.dart';
 
 class AnimatedCardBuilder extends StatelessWidget {
   const AnimatedCardBuilder({

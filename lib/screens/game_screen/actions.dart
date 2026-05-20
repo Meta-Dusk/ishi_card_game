@@ -4,16 +4,6 @@ extension GameScreenActions on GameScreenState {
   Future<void> drawCardAction() async {
     if (!isMyTurn) return;
 
-    if (_manager.pendingDrawCount > 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("You are under attack!"),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-
     if (_manager.cardDraws[_manager.localPlayerIndex] <= 0) {
       ScaffoldMessenger.of(
         context,
@@ -113,14 +103,16 @@ extension GameScreenActions on GameScreenState {
       }
 
       if (chosenRelic != null) {
-        _manager.playerRelics[playerIndex].add(chosenRelic);
-        if (chosenRelic.effect == .immediateDraw3) {
+        final freshRelic = chosenRelic.clone();
+        _manager.playerRelics[playerIndex].add(freshRelic);
+
+        if (freshRelic.effect == .immediateDraw3) {
           drawnCards = _manager.forceDraw(
             playerIndex,
             count: 3,
             skipHandInsertion: true,
           );
-          _manager.playerRelics[playerIndex].remove(chosenRelic);
+          _manager.playerRelics[playerIndex].remove(freshRelic);
         }
       }
 
@@ -234,11 +226,15 @@ extension GameScreenActions on GameScreenState {
   }
 
   void _triggerDeckRestockEvent() {
+    final random = Random();
+    final chosenEvent = deckEventPool[random.nextInt(deckEventPool.length)];
+    _manager.activeDeckEvent = chosenEvent.effect;
     updateUI(() => _manager.deck = generateStandardDeck());
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => DeckEventDialog(onDrawCard: drawCardAction),
+      builder: (_) =>
+          DeckEventDialog(onDrawCard: drawCardAction, event: chosenEvent),
     );
   }
 
@@ -300,7 +296,6 @@ extension GameScreenActions on GameScreenState {
   }
 
   void _showGameOverDialog() {
-    // Determine the winner's display name
     final int winner = _manager.winnerIndex!;
     String winnerName = "Player ${winner + 1}";
     final bool isWinner = winner == _manager.localPlayerIndex;
@@ -314,22 +309,16 @@ extension GameScreenActions on GameScreenState {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
-        final dialog = GameOverDialog(
-          winnerName: winnerName,
-          isWinner: isWinner,
-          onExit: () async {
-            // Disconnect from WebRTC/LAN and pop back to the Root Menu
-            await _net.disconnect();
-            if (!context.mounted) return;
-            Navigator.of(context).popUntil((route) => route.isFirst);
-          },
-        );
-        return dialog
-            .animate()
-            .fadeIn(duration: 200.ms)
-            .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack);
-      },
+      builder: (context) => GameOverDialog(
+        winnerName: winnerName,
+        isWinner: isWinner,
+        onExit: () async {
+          // Disconnect from WebRTC/LAN and pop back to the Root Menu
+          await _net.disconnect();
+          if (!context.mounted) return;
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        },
+      ),
     );
   }
 

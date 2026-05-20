@@ -1,6 +1,6 @@
 import 'animated_card_builder.dart';
 import 'package:ishi/components/cards/card_display.dart';
-import 'package:ishi/models/ishi_card.dart';
+import 'package:ishi/core/models/ishi_card.dart';
 import 'package:flutter/material.dart';
 
 class AnimatedCard extends StatelessWidget {
