@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ishi/core/dev/dev_console.dart';
 import 'autocomplete_input.dart';
 
@@ -37,32 +38,30 @@ class _DevConsoleOverlayState extends State<DevConsoleOverlay> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.45,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.black87,
-        border: const Border(
-          bottom: BorderSide(color: Colors.greenAccent, width: 2),
+  Widget build(BuildContext context) => Container(
+    height: MediaQuery.of(context).size.height * 0.45,
+    width: double.infinity,
+    decoration: BoxDecoration(
+      color: Colors.black87,
+      border: const Border(
+        bottom: BorderSide(color: Colors.greenAccent, width: 2),
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.greenAccent.withValues(alpha: 0.2),
+          blurRadius: 10,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.greenAccent.withValues(alpha: 0.2),
-            blurRadius: 10,
-          ),
+      ],
+    ),
+    child: SafeArea(
+      child: Column(
+        children: [
+          LogHistory(scrollController: _scrollController),
+          AutocompleteInput(devConsoleOverlay: widget),
         ],
       ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            LogHistory(scrollController: _scrollController),
-            AutocompleteInput(devConsoleOverlay: widget),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  ).animate().fadeIn().slideY(begin: -0.5);
 }
 
 class LogHistory extends StatelessWidget {

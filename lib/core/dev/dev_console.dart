@@ -2,16 +2,19 @@ import 'dart:ui';
 
 import 'package:ishi/core/dev/dev_commands.dart';
 import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/core/models/deck_event.dart';
 import 'package:ishi/services/network_service.dart';
 
 class DevCommand {
   final String name;
   final String description;
-  final void Function(List<String> args) onExecute;
+  final String? usage;
+  final void Function(List<String> args, String? usage) onExecute;
 
   DevCommand({
     required this.name,
     required this.description,
+    this.usage,
     required this.onExecute,
   });
 }
@@ -22,7 +25,7 @@ class DevConsole {
   DevConsole._internal();
 
   final List<String> logs = [
-    "Ishi Dev Console v1.0",
+    "Ishi Dev Console v2.0",
     "Type 'help' for commands.",
   ];
   final List<DevCommand> _commands = [];
@@ -63,12 +66,12 @@ class DevConsole {
     log(input);
 
     List<String> parts = input.trim().split(" ");
-    String commandName = parts.first.toLowerCase();
+    String commandName = parts.first;
     List<String> args = parts.length > 1 ? parts.sublist(1) : [];
 
     try {
       final command = _commands.firstWhere((c) => c.name == commandName);
-      command.onExecute(args);
+      command.onExecute(args, command.usage);
     } catch (e) {
       log("Unknown command: '$commandName'. Type 'help'.");
     }
@@ -77,37 +80,35 @@ class DevConsole {
   /// Returns command suggestions for the Autocomplete widget.
   List<String> getSuggestions(String query) {
     if (query.isEmpty) return [];
-    String qry = query.toLowerCase();
-
     List<String> matches = [];
 
     // Suggest main commands (e.g., typing "ca" suggests "card")
     for (DevCommand cmd in _commands) {
-      if (cmd.name.startsWith(qry)) {
-        matches.add(cmd.name);
-      }
+      if (cmd.name.startsWith(query)) matches.add(cmd.name);
     }
 
     // Suggest specific sub-arguments!
-    if (qry.startsWith("card ")) {
-      if ("card draw".startsWith(qry)) matches.add("card draw");
-      if ("card remove".startsWith(qry)) matches.add("card remove");
-    }
-    if (qry.startsWith("deck ")) {
-      if ("deck add".startsWith(qry)) matches.add("deck add");
-      if ("deck remove".startsWith(qry)) matches.add("deck remove");
-    }
-    if (qry.startsWith("pile ")) {
-      if ("pile add".startsWith(qry)) matches.add("pile add");
-      if ("pile remove".startsWith(qry)) matches.add("pile remove");
-    }
-    if (qry.startsWith("sortby ")) {
-      if ("sortby color".startsWith(qry)) matches.add("sortby color");
-      if ("sortby type".startsWith(qry)) matches.add("sortby type");
-      if ("sortby value".startsWith(qry)) matches.add("sortby value");
-      if ("sortby unsorted".startsWith(qry)) matches.add("sortby unsorted");
-    }
+    matches.addAll(_mapMatches({"draw", "remove"}, "card", query));
+    matches.addAll(_mapMatches({"add", "remove"}, "deck", query));
+    matches.addAll(_mapMatches({"add", "remove"}, "pile", query));
+
+    final sortTypes = DeckSortType.values.map((t) => t.name);
+    matches.addAll(_mapMatches(sortTypes, "sortBy", query));
+
+    final deckEvents = DeckEventEffect.values.map((e) => e.name);
+    matches.addAll(_mapMatches(deckEvents, "deckEvent", query));
 
     return matches;
+  }
+
+  List<String> _mapMatches(
+    Iterable<String> iterable,
+    String prefix,
+    String query,
+  ) {
+    return iterable
+        .map((arg) => "$prefix $arg")
+        .where((str) => str.startsWith(query))
+        .toList();
   }
 }

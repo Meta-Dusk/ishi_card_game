@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ishi/core/models/deck_event.dart';
 import 'animated_card.dart';
 import 'animated_card_list.dart';
 import 'package:ishi/core/models/ishi_card.dart';
@@ -14,6 +15,7 @@ class CurvedCard extends StatelessWidget {
     required this.onTapCard,
     required this.isMyTurn,
     required this.isSelected,
+    required this.event,
   });
 
   final int index;
@@ -24,6 +26,7 @@ class CurvedCard extends StatelessWidget {
   final void Function(IshiCard) onTapCard;
   final bool isMyTurn;
   final bool isSelected;
+  final DeckEventEffect event;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +58,7 @@ class CurvedCard extends StatelessWidget {
         onTapCard: onTapCard,
         isMyTurn: isMyTurn,
         isSelected: isSelected,
+        event: event,
       ),
     );
   }

@@ -39,9 +39,7 @@ extension GameScreenNetwork on GameScreenState {
     _gameEventSubscription = _manager.events.listen(_processGameEvents);
     _netSubscription = _net.messages.listen(_processNetworkMessage);
     _pingSubscription = _net.messages.listen((message) {
-      if (message is LobbyStateMessage && _showPingOverlay) {
-        updateUI(() {});
-      }
+      if (message is LobbyStateMessage && _showPingOverlay) updateUI(() {});
     });
   }
 
@@ -50,6 +48,9 @@ extension GameScreenNetwork on GameScreenState {
     switch (event) {
       case .gameOver:
         _showGameOverDialog();
+        break;
+      case .deckEventTriggered:
+        _showDeckEventDialog();
         break;
     }
   }
@@ -72,6 +73,12 @@ extension GameScreenNetwork on GameScreenState {
           playerIndex - 1,
           GameStateMessage(_manager.generateGameStateJson(playerIndex)),
         );
+        break;
+
+      case DeckEventSyncMessage(:final effect):
+        if (_manager.activeDeckEvent == effect) return;
+        updateUI(() => _manager.activeDeckEvent = effect);
+        _manager.addEvent(.deckEventTriggered);
         break;
 
       default:
@@ -113,6 +120,20 @@ extension GameScreenNetwork on GameScreenState {
           break;
         case .activateRelic:
           _onActivateRelic(pIndex, message);
+          break;
+        case .requestDeckRestock:
+          if (_manager.deck.isEmpty) {
+            final random = Random();
+            final chosenEvent =
+                deckEventPool[random.nextInt(deckEventPool.length)];
+
+            _manager.activeDeckEvent = chosenEvent.effect;
+            updateUI(() => _manager.deck = generateStandardDeck());
+
+            // Broadcast the sync AND the trigger to all clients
+            _net.broadcast(DeckEventSyncMessage(chosenEvent.effect));
+            _manager.addEvent(.deckEventTriggered); // Host triggers self
+          }
           break;
       }
     });

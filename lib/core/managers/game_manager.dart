@@ -25,9 +25,10 @@ class _BoardKeys {
   static const String winnerIndex = 'winnerIndex';
   static const String turnDeadline = 'turnDeadline';
   static const String roundCount = 'roundCount';
+  static const String activeDeckEvent = 'activeDeckEvent';
 }
 
-enum GameManagerEvent { gameOver }
+enum GameManagerEvent { gameOver, deckEventTriggered }
 
 class GameManager {
   // --- CORE STATES ---
@@ -134,6 +135,7 @@ class GameManager {
       _BoardKeys.winnerIndex: winnerIndex,
       _BoardKeys.turnDeadline: turnDeadlineEpoch,
       _BoardKeys.roundCount: roundCount,
+      _BoardKeys.activeDeckEvent: activeDeckEvent.index,
     };
   }
 
@@ -224,6 +226,9 @@ class GameManager {
     hasDrawnCard = json[_BoardKeys.hasDrawnCard] as bool? ?? false;
     turnDeadlineEpoch = json[_BoardKeys.turnDeadline] as int? ?? 0;
     roundCount = json[_BoardKeys.roundCount] as int? ?? 1;
+    activeDeckEvent =
+        DeckEventEffect.values[json[_BoardKeys.activeDeckEvent] as int? ??
+            DeckEventEffect.none.index];
 
     int? incomingWinner = json[_BoardKeys.winnerIndex] as int?;
     if (winnerIndex == null && incomingWinner != null) {
@@ -341,6 +346,30 @@ class GameManager {
 
   /// RULE EVALUATION: Can this card be played?
   bool canPlay(IshiCard card, int playerIndex) {
+    int apCost = 1;
+    if (activeDeckEvent == .wildsTakeDoubleAP && card.color == .wild) {
+      apCost = 2;
+    }
+    if (actionPoints[playerIndex] < apCost) return false;
+
+    if (pendingDrawCount > 0) {
+      if (card.type == topCard.type) return true;
+
+      // DEFLECTION MECHANICS
+      bool isNaturalSkip = card.type == .skip;
+      bool isBlueFreezeSkip =
+          activeDeckEvent == .blueCardsFreeze && card.color == .blue;
+      bool isGreenSkip =
+          activeDeckEvent == .greenCardsSkipsTurns && card.color == .green;
+
+      // You can now deflect attacks with Blue or Green cards if their event is active!
+      if ((isNaturalSkip || isBlueFreezeSkip || isGreenSkip) &&
+          (topCard.color == .wild || card.color == topCard.color)) {
+        return true;
+      }
+      return false;
+    }
+
     if (actionPoints[playerIndex] <= 0) return false;
 
     if (pendingDrawCount > 0) {
@@ -401,7 +430,12 @@ class GameManager {
   void playCard(int playerIndex, int cardIndex) {
     bool wasUnderAttack = pendingDrawCount > 0;
     IshiCard playedCard = playerHands[playerIndex].removeAt(cardIndex);
-    actionPoints[playerIndex]--;
+
+    int apCost = 1;
+    if (activeDeckEvent == .wildsTakeDoubleAP && playedCard.color == .wild) {
+      apCost = 2;
+    }
+    actionPoints[playerIndex] -= apCost;
 
     playedCard.isFaceUp = true;
     discardPile.add(playedCard);
@@ -436,7 +470,8 @@ class GameManager {
     return drawn;
   }
 
-  // THE UNO RULES ENGINE
+  /// THE CARD RULES ENGINE\
+  /// Also includes some rules reminiscent of Uno.
   void _applyCardEffect(IshiCard card) {
     switch (card.type) {
       case .reverse:
@@ -464,6 +499,24 @@ class GameManager {
         break;
       default:
         break;
+    }
+
+    // --- APPLY ACTIVE DECK EVENTS ---
+
+    // RED BURN: +1 Pending Draw
+    if (activeDeckEvent == .redCardsBurn && card.color == .red) {
+      pendingDrawCount += 1;
+    }
+
+    // BLUE FREEZE & GREEN SKIPS
+    // (We make sure it's not ALREADY a skip card, so we don't accidentally double-skip)
+    if (card.type != .skip && pendingDrawCount == 0) {
+      if (activeDeckEvent == .blueCardsFreeze && card.color == .blue) {
+        _playersToSkip++; // Add offensive skip
+      } else if (activeDeckEvent == .greenCardsSkipsTurns &&
+          card.color == .green) {
+        _playersToSkip++; // Add offensive skip
+      }
     }
   }
 

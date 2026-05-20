@@ -1,5 +1,7 @@
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter/material.dart';
+import 'package:ishi/components/cards/card_aura/card_aura.dart';
+import 'package:ishi/core/models/deck_event.dart';
 import 'animated_card_list.dart';
 import 'draggable_card.dart';
 import 'package:ishi/components/cards/card_display.dart';
@@ -16,6 +18,7 @@ class AnimatedCardBuilder extends StatelessWidget {
     required this.onTapCard,
     required this.isMyTurn,
     required this.isSelected,
+    required this.event,
   });
 
   final ScrollController scrollController;
@@ -25,6 +28,7 @@ class AnimatedCardBuilder extends StatelessWidget {
   final void Function(IshiCard) onTapCard;
   final bool isMyTurn;
   final bool isSelected;
+  final DeckEventEffect event;
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +82,12 @@ class AnimatedCardBuilder extends StatelessWidget {
       key: ValueKey('${card.id}_flip'),
       isFaceUp: card.isFaceUp,
       onTap: () => onTapCard(card),
-      front: CardFront(card: card),
+      front: CardAura(
+        card: card,
+        activeEvent: event,
+        useParticles: false,
+        child: CardFront(card: card),
+      ),
       back: const CardBack(),
     );
 

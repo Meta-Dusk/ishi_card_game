@@ -6,6 +6,8 @@
 - [ ] Improve relics readability on mobile
 - [ ] Improve relics selection dialog on mobile
 - [ ] Rework deck events
+- [ ] Improve the opponents overview by making it scrollable and stuff
+- [ ] Add a new view for "debuffs" in-game
 
 ## Gameplay Ideas
 
@@ -18,7 +20,7 @@
 
 - [ ] (Relic) **Blackhole**: Sacrifice 50 cards in hand to make 1 special card
 - [ ] (Relic) **Rod of Discord**: Swap decks of all players to each other randomly, excluding the caster, unless they choose to swap with a specific player
-- [ ] (Relic) **Pistol**: Shoot a player. Shot players gets their turn skipped for 3 turns
+- [ ] (Relic) **Pistol**: Shoot a player. Shot players gets their turn skipped for 3 rounds
 - [ ] (Relic) **Medkit**: Removes all current debuffs
 - [ ] (Relic) **Heavy Briefcase**: Contains `Ishi Credits`
 - [ ] (Relic) **CCTV**: Permanently be able to view the cards of a player

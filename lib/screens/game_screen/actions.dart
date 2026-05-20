@@ -11,12 +11,28 @@ extension GameScreenActions on GameScreenState {
       return;
     }
 
-    if (_net.isHost) {
-      if (_manager.deck.isEmpty) {
-        _triggerDeckRestockEvent();
-        return;
-      }
+    if (_manager.deck.isEmpty && !_net.isHost) {
+      _net.sendIntent(
+        PlayIntentMessage(
+          action: .requestDeckRestock,
+          playerIndex: _manager.localPlayerIndex,
+        ),
+      );
+      return;
+    }
 
+    if (_net.isHost && _manager.deck.isEmpty) {
+      final random = Random();
+      final chosenEvent = deckEventPool[random.nextInt(deckEventPool.length)];
+
+      updateUI(() => _manager.deck = generateStandardDeck());
+
+      // Broadcast the change so clients update their local activeDeckEvent
+      _net.broadcast(DeckEventSyncMessage(chosenEvent.effect));
+      return;
+    }
+
+    if (_net.isHost) {
       IshiCard drawnCard = _manager.drawCard(
         _manager.localPlayerIndex,
         skipHandInsertion: true,
@@ -225,16 +241,16 @@ extension GameScreenActions on GameScreenState {
     _evaluateSmartAutoEnd();
   }
 
-  void _triggerDeckRestockEvent() {
-    final random = Random();
-    final chosenEvent = deckEventPool[random.nextInt(deckEventPool.length)];
-    _manager.activeDeckEvent = chosenEvent.effect;
-    updateUI(() => _manager.deck = generateStandardDeck());
+  void _showDeckEventDialog() {
+    final currentEventModel = deckEventPool.firstWhere(
+      (e) => e.effect == _manager.activeDeckEvent,
+      orElse: () => deckEventPool.first,
+    );
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) =>
-          DeckEventDialog(onDrawCard: drawCardAction, event: chosenEvent),
+      builder: (_) => DeckEventDialog(event: currentEventModel),
     );
   }
 
