@@ -25,7 +25,13 @@ extension GameScreenActions on GameScreenState {
       final random = Random();
       final chosenEvent = deckEventPool[random.nextInt(deckEventPool.length)];
 
-      updateUI(() => _manager.deck = generateStandardDeck());
+      updateUI(() {
+        final generatedDeck = generateStandardDeck(
+          startingIdCount: _manager.lastDeckTotalIndex,
+        );
+        _manager.deck = generatedDeck.newDeck;
+        _manager.lastDeckTotalIndex = generatedDeck.lastDeckTotalIndex;
+      });
 
       // Broadcast the change so clients update their local activeDeckEvent
       _net.broadcast(DeckEventSyncMessage(chosenEvent.effect));
@@ -141,6 +147,7 @@ extension GameScreenActions on GameScreenState {
       if (playerIndex == _manager.localPlayerIndex) _triggerAutoSortIfNeeded();
     }
 
+    triggerCombatMessages(_manager.topCard);
     broadcastGameState();
   }
 
@@ -196,8 +203,8 @@ extension GameScreenActions on GameScreenState {
     Relic? chosenRelic;
 
     switch (card.type) {
-      case .wild:
-      case .wildDraw4:
+      case .chooseColor:
+      case .draw4:
         final CardColor? chosenColor = await showDialog<CardColor>(
           context: context,
           barrierDismissible: false,
@@ -251,7 +258,10 @@ extension GameScreenActions on GameScreenState {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => DeckEventDialog(event: currentEventModel),
+      builder: (_) => DeckEventDialog(
+        event: currentEventModel,
+        useEventTitleAsTitle: _manager.manualTriggerDeckEvent,
+      ),
     );
   }
 

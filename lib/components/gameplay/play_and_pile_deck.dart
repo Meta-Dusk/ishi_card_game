@@ -155,11 +155,30 @@ class _HoverableCard extends StatelessWidget {
       ),
     );
 
+    final topCard = manager.topCard;
+
     final stackedContent = [
-      CardAura(
-        card: manager.topCard,
-        activeEvent: manager.activeDeckEvent,
-        child: CardFront(card: manager.topCard),
+      AnimatedSwitcher(
+        duration: const Duration(milliseconds: 500),
+        switchInCurve: Curves.easeOutBack,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, animation) => ScaleTransition(
+          scale: animation,
+          child: RotationTransition(
+            turns: Tween<double>(begin: 0.5, end: 1.0).animate(animation),
+            child: child,
+          ),
+        ),
+        child: CardAura(
+          key: ValueKey(
+            "${topCard.id}_${topCard.color.name}_"
+            "${topCard.type.name}_${topCard.number}",
+          ),
+          card: topCard,
+          activeEvent: manager.activeDeckEvent,
+          pendingEvolutions: manager.pendingEvolutions,
+          child: CardFront(card: topCard),
+        ),
       ),
       if (manager.declaredColor != null)
         _DeclaredColorAura(displayColor: manager.declaredColor!.displayColor),
@@ -216,7 +235,7 @@ class _AvailableCardsPile extends StatelessWidget {
   );
 
   List<StatelessWidget> get _stackedContent => [
-    CardBack(),
+    const CardBack(),
     Container(
       padding: const .all(8),
       decoration: const BoxDecoration(color: Colors.black54, shape: .circle),

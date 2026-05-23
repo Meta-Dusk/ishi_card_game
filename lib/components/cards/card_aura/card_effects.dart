@@ -150,7 +150,7 @@ extension CardEffects on CardAura {
       ),
     ),
     particleConfiguration: ParticleConfiguration(
-      shape: ImageAssetShape(AppAssets.particles.snowflake),
+      shape: ImageAssetShape(Assets.particles.snowflake),
       size: const .square(25),
       color: LinearInterpolationParticleColor(
         colors: [

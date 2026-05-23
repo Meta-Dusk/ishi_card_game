@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/components/gameplay/relic_display.dart';
 import 'package:ishi/core/models/deck_event.dart';
-
 import 'package:ishi/services/network_service.dart';
 import 'imports/game_components.dart';
 import 'imports/game_core.dart';
@@ -57,6 +57,10 @@ class GameScreenState extends State<GameScreen> {
 
   late Timer _hostTurnTimer;
 
+  List<CombatMessage> _currentCombatMessages = [];
+  Key _combatMessagesKey = UniqueKey();
+  final List<CombatMessage> _newMessages = [];
+
   void updateUI(VoidCallback fn) {
     if (mounted) setState(fn);
   }
@@ -109,6 +113,11 @@ class GameScreenState extends State<GameScreen> {
         broadcastGameState();
       }
     });
+
+    _manager.onChaosTrigger = _onChaosTrigger;
+    _manager.onWildBuffTrigger = _onWildBuffTrigger;
+    _manager.onEvolvedTrigger = _onEvolvedTrigger;
+    _manager.onFrozenTrigger = _onFrozenTrigger;
 
     DevConsole().initialize(_manager, _net);
     DevConsole().onStateForceSynced = () {
@@ -268,12 +277,13 @@ class GameScreenState extends State<GameScreen> {
         onPlayCard: playCardAction,
         playPileKey: playPileKey,
       ),
-      if (_manager.pendingDrawCount > 0)
+      if (_currentCombatMessages.isNotEmpty)
         Positioned(
           top: -20,
-          child: FloatingCombatText(
-            key: ValueKey(_manager.pendingDrawCount),
-            text: "STACK: +${_manager.pendingDrawCount}!",
+          child: FloatingCombatTextGroup(
+            key: _combatMessagesKey,
+            interval: const Duration(milliseconds: 500),
+            messages: _currentCombatMessages,
           ),
         ),
     ],
@@ -515,46 +525,75 @@ class GameScreenState extends State<GameScreen> {
       });
     },
   );
-}
 
-class RelicDisplay extends StatelessWidget {
-  const RelicDisplay({
-    super.key,
-    required this.relics,
-    required this.onTapRelic,
-  });
+  void _onChaosTrigger() =>
+      _newMessages.add(const CombatMessage(text: "CHAOS!", color: Colors.red));
 
-  final List<Relic> relics;
-  final void Function(bool isActiveRelic, Relic relic) onTapRelic;
-
-  @override
-  Widget build(BuildContext context) {
-    if (relics.isEmpty) return _emptyRelics();
-
-    return ListView.builder(
-      scrollDirection: .horizontal,
-      physics: const BouncingScrollPhysics(),
-      padding: const .symmetric(horizontal: 40, vertical: 20),
-      itemCount: relics.length,
-      itemBuilder: (_, index) {
-        final relic = relics[index];
-        return RelicChoiceCard(
-          relic: relic,
-          onTap: () =>
-              onTapRelic(relic.types.contains(RelicEffectType.active), relic),
-        );
-      },
-    );
-  }
-
-  Center _emptyRelics() => const Center(
-    child: Text(
-      "NO RELICS EQUIPPED",
-      style: TextStyle(
-        color: Colors.white54,
-        letterSpacing: 2,
-        fontWeight: .bold,
-      ),
+  void _onWildBuffTrigger() => _newMessages.add(
+    const CombatMessage(
+      text: "DOUBLE TROUBLE!",
+      color: Colors.deepPurpleAccent,
     ),
   );
+
+  void _onEvolvedTrigger() => _newMessages.add(
+    CombatMessage(
+      text: "EVOLVED! (${_manager.pendingEvolutions} left)",
+      color: Colors.lightGreenAccent,
+    ),
+  );
+
+  void _onFrozenTrigger() => _newMessages.add(
+    const CombatMessage(text: "FROZEN!", color: Colors.lightBlueAccent),
+  );
+
+  void triggerCombatMessages(IshiCard playedCard) {
+    final event = _manager.activeDeckEvent;
+
+    // STANDARD RULES
+    if (playedCard.type == .reverse) {
+      _newMessages.add(
+        const CombatMessage(text: "REVERSED!", color: Colors.amber),
+      );
+    } else if (playedCard.type == .skip) {
+      _newMessages.add(
+        const CombatMessage(text: "SKIPPED!", color: Colors.blueAccent),
+      );
+    }
+
+    // STACKING PENALTIES
+    if (playedCard.type == .draw2 || playedCard.type == .draw4) {
+      _newMessages.add(
+        CombatMessage(
+          text: "STACK +${_manager.pendingDrawCount}!",
+          color: Colors.redAccent,
+          fontSize: 56,
+        ),
+      );
+    }
+
+    // DECK MODIFYING EVENTS
+    if (event == .greenCardsEvolution && playedCard.color == .green) {
+      _newMessages.add(
+        CombatMessage(
+          text: "EVOLUTION +${_manager.pendingEvolutions}!",
+          color: Colors.lightGreen,
+          fontSize: 32,
+        ),
+      );
+    }
+
+    if (event == .yellowCardsUnflux && playedCard.color == .yellow) {
+      _newMessages.add(
+        const CombatMessage(text: "UNFLUX!", color: Colors.amberAccent),
+      );
+    }
+
+    if (_newMessages.isEmpty) return;
+    updateUI(() {
+      _currentCombatMessages = List.from(_newMessages);
+      _combatMessagesKey = UniqueKey();
+    });
+    _newMessages.clear();
+  }
 }

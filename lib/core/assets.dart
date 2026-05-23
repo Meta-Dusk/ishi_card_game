@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class AppAssets {
-  const AppAssets();
+class Assets {
+  const Assets();
 
   static const relics = _Relics();
   static const particles = _Particles();

@@ -32,20 +32,19 @@ class ColorPickerDialog extends StatelessWidget {
     mainAxisSpacing: 10,
     crossAxisSpacing: 10,
     physics: const NeverScrollableScrollPhysics(),
-    children: [
-      _ColorOption(color: .red, displayColor: Colors.red.shade600),
-      _ColorOption(color: .blue, displayColor: Colors.blue.shade600),
-      _ColorOption(color: .green, displayColor: Colors.green.shade600),
-      _ColorOption(color: .yellow, displayColor: Colors.amber.shade500),
+    children: const [
+      _ColorOption(color: .red),
+      _ColorOption(color: .blue),
+      _ColorOption(color: .green),
+      _ColorOption(color: .yellow),
     ],
   );
 }
 
 class _ColorOption extends StatelessWidget {
-  const _ColorOption({required this.color, required this.displayColor});
+  const _ColorOption({required this.color});
 
   final CardColor color;
-  final Color displayColor;
 
   @override
   Widget build(BuildContext context) => InkWell(
@@ -53,7 +52,7 @@ class _ColorOption extends StatelessWidget {
     borderRadius: .circular(16),
     child: Container(
       decoration: BoxDecoration(
-        color: displayColor,
+        color: color.displayColor,
         borderRadius: .circular(16),
         border: .all(color: Colors.white24, width: 2),
       ),

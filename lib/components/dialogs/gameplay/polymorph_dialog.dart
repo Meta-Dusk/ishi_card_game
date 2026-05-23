@@ -19,7 +19,7 @@ class _PolymorphDialogState extends State<PolymorphDialog> {
     _allCards = [];
 
     // Generate all colored cards
-    final colors = <CardColor>[.red, .blue, .green, .yellow];
+    final colors = CardColor.getNormalColors;
     for (CardColor c in colors) {
       for (int i = 0; i <= 9; i++) {
         _allCards.add(IshiCard(id: 'temp', color: c, type: .number, number: i));
@@ -30,8 +30,8 @@ class _PolymorphDialogState extends State<PolymorphDialog> {
     }
 
     // Generate Wilds
-    _allCards.add(IshiCard(id: 'temp', color: .wild, type: .wild));
-    _allCards.add(IshiCard(id: 'temp', color: .wild, type: .wildDraw4));
+    _allCards.add(IshiCard(id: 'temp', color: .wild, type: .chooseColor));
+    _allCards.add(IshiCard(id: 'temp', color: .wild, type: .draw4));
   }
 
   Widget _animatedDialog(AlertDialog dialog) => dialog
