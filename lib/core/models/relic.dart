@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:ishi/core/assets.dart';
 import '../data_types.dart';
 
 enum RelicEffect {
   addActionPoint,
   addCardDraw,
-  immediateDraw3,
+  immediateDraw5,
   polymorph,
-  trashcan,
+  obliterate,
 }
 
 enum RelicEffectType { active, passive, singleUse }
@@ -15,7 +16,7 @@ class Relic {
   final String id;
   final String name;
   final String description;
-  final IconData icon;
+  final Widget icon;
   final Color color;
   final RelicEffect effect;
   final Set<RelicEffectType> types;
@@ -74,48 +75,50 @@ class Relic {
 /// The master pool of relics the chest can pull from.
 final List<Relic> relicPool = [
   Relic(
-    id: 'energy_drink',
-    name: 'Energy Drink',
+    id: 'might_ring',
+    name: 'Ring of Might',
     description: '+1 Action Point at the start of your turn.',
-    icon: Icons.bolt,
+    icon: AppAssets.asImageIcon(
+      AppAssets.relics.mightRing,
+      color: Colors.amber,
+    ),
     color: Colors.amber,
     effect: .addActionPoint,
   ),
   Relic(
-    id: 'greeds_eye',
-    name: "Greed's Eye",
+    id: 'greed_eye',
+    name: "Eye of Greed",
     description: '+1 Card Draw at the start of your turn.',
-    icon: Icons.visibility,
+    icon: AppAssets.asImageIcon(AppAssets.relics.greedEye),
     color: Colors.purpleAccent,
     effect: .addCardDraw,
   ),
   Relic(
     id: 'golden_ticket',
     name: 'Golden Ticket',
-    description: 'Instantly draw 3 cards. (One-time use)',
-    icon: Icons.local_activity,
+    description: 'Instantly draw 5 cards. (One-time use)',
+    icon: AppAssets.asImageIcon(AppAssets.relics.goldenTicket),
     color: Colors.orange,
-    effect: .immediateDraw3,
+    effect: .immediateDraw5,
     types: {.singleUse},
   ),
   Relic(
-    id: 'staff_of_polymorph',
+    id: 'polymorph_staff',
     name: 'Staff of Polymorphism',
-    description:
-        'Transform a card into a card of your choice. (1 Turn Cooldown)',
-    icon: Icons.auto_fix_high,
+    description: 'Transform a card into a card of your choice. (-1 AP)',
+    icon: AppAssets.asImageIcon(AppAssets.relics.polymorphStaff),
     color: Colors.pinkAccent,
     effect: .polymorph,
     types: {.active},
     maxUses: 3,
   ),
   Relic(
-    id: 'trashcan',
-    name: 'Trashcan',
-    description: 'Dispose of up to 2 cards from your hand. (One-time use)',
-    icon: Icons.delete_sweep,
+    id: 'obliterator',
+    name: 'The Obliterator',
+    description: 'Dispose of up to 5 cards from your hand. (One-time use)',
+    icon: AppAssets.asImageIcon(AppAssets.relics.obliterator),
     color: Colors.blueGrey,
-    effect: .trashcan,
+    effect: .obliterate,
     types: {.singleUse, .active},
   ),
 ];

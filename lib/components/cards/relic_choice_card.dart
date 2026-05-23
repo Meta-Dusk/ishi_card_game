@@ -44,7 +44,7 @@ class _RelicCardContent extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     mainAxisAlignment: .center,
     children: [
-      Icon(relic.icon, color: relic.color, size: 48),
+      SizedBox(width: 48, height: 48, child: relic.icon),
       const SizedBox(height: 12),
       AutoSizeText(
         relic.name,
@@ -69,7 +69,7 @@ class _RelicCardContent extends StatelessWidget {
           child: Text(
             relic.description,
             textAlign: .center,
-            style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
+            style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
           ),
         ),
       ),
