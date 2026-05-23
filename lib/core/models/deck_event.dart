@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 enum DeckEventEffect {
+  none,
   blueCardsFreeze,
   redCardsBurn,
-  wildsTakeDoubleAP,
-  greenCardsSkipsTurns,
-  none,
+  wildDoubleTrouble,
+  greenCardsEvolution,
+  butterFlyEffect,
+  yellowCardsUnflux,
 }
 
 class DeckEvent {
@@ -64,16 +66,21 @@ final List<DeckEvent> deckEventPool = [
     ],
   ),
   DeckEvent(
-    id: 'wilds_double_ap',
-    title: "SUPPLY AND DEMAND?",
-    effect: .wildsTakeDoubleAP,
+    id: 'wilds_double_trouble',
+    title: "THE WILDEST WEST?",
+    effect: .wildDoubleTrouble,
     richDescription: const [
       TextSpan(text: "All "),
       TextSpan(
         text: "Wild Cards ",
         style: TextStyle(color: Colors.deepPurple, fontWeight: .bold),
       ),
-      TextSpan(text: "now cost "),
+      TextSpan(text: "now inflict "),
+      TextSpan(
+        text: "double ",
+        style: TextStyle(fontWeight: .bold),
+      ),
+      TextSpan(text: "their effect, but will now also cost "),
       TextSpan(
         text: "double ",
         style: TextStyle(fontWeight: .bold),
@@ -87,20 +94,87 @@ final List<DeckEvent> deckEventPool = [
     ],
   ),
   DeckEvent(
-    id: 'green_skips',
+    id: 'green_evolves',
     title: "MOTHER NATURE IS ANGRY!",
-    effect: .greenCardsSkipsTurns,
+    effect: .greenCardsEvolution,
     richDescription: [
       const TextSpan(text: "All "),
       TextSpan(
         text: "Green Cards ",
         style: TextStyle(color: Colors.green.shade500),
       ),
-      const TextSpan(text: "now also act as "),
+      const TextSpan(text: "can now induce "),
       const TextSpan(
-        text: "skips.",
-        style: TextStyle(color: Colors.greenAccent, fontWeight: .bold),
+        text: "evolution, ",
+        style: TextStyle(color: Colors.lightGreen, fontWeight: .bold),
       ),
+      const TextSpan(text: "which makes all green cards played, "),
+      const TextSpan(
+        text: "evolve ",
+        style: TextStyle(color: Colors.lightGreenAccent, fontStyle: .italic),
+      ),
+      const TextSpan(text: "the next "),
+      const TextSpan(
+        text: "non-green card, ",
+        style: TextStyle(fontStyle: .italic),
+      ),
+      const TextSpan(text: "which can either increment their value "),
+      const TextSpan(
+        text: "(if below 9), ",
+        style: TextStyle(color: Colors.grey),
+      ),
+      const TextSpan(text: "cycle to the next color "),
+      const TextSpan(
+        text: "(if 9, or skip), ",
+        style: TextStyle(color: Colors.grey),
+      ),
+      const TextSpan(text: "or just "),
+      const TextSpan(
+        text: "upgrade ",
+        style: TextStyle(fontWeight: .bold),
+      ),
+      const TextSpan(text: "to a +4, if it's already a +2 of "),
+      const TextSpan(
+        text: "any ",
+        style: TextStyle(fontStyle: .italic),
+      ),
+      const TextSpan(text: "color."),
+    ],
+  ),
+  DeckEvent(
+    id: 'yellow_unflux',
+    title: "TESLA LIKES AC/DC?",
+    effect: .yellowCardsUnflux,
+    richDescription: [
+      const TextSpan(text: "All played "),
+      TextSpan(
+        text: "yellow cards ",
+        style: TextStyle(color: Colors.amber.shade500),
+      ),
+      const TextSpan(text: "now inflict "),
+      const TextSpan(
+        text: "unflux ",
+        style: TextStyle(fontWeight: .bold, color: Colors.amberAccent),
+      ),
+      const TextSpan(text: "which "),
+      const TextSpan(
+        text: "reverses ",
+        style: TextStyle(fontStyle: .italic),
+      ),
+      const TextSpan(text: "the turn order."),
+    ],
+  ),
+  DeckEvent(
+    id: 'buttefly_effect',
+    title: "CHAOS ENSUES...",
+    effect: .butterFlyEffect,
+    richDescription: const [
+      TextSpan(text: "Played cards may change into something "),
+      TextSpan(
+        text: "entirely different ",
+        style: TextStyle(fontWeight: .bold),
+      ),
+      TextSpan(text: "once per round."),
     ],
   ),
 ];

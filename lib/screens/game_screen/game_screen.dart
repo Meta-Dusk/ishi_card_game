@@ -161,6 +161,7 @@ class GameScreenState extends State<GameScreen> {
         ),
       ),
 
+      // Round Indicator
       Positioned(
         top: 24,
         left: 0,
@@ -295,8 +296,8 @@ class GameScreenState extends State<GameScreen> {
               _relicTargets.remove(card); // Deselect target
             } else {
               // Select target/s
-              int maxTargets = _activeTargetingRelic!.effect == .trashcan
-                  ? 2
+              int maxTargets = _activeTargetingRelic!.effect == .obliterate
+                  ? 5
                   : 1;
               if (_relicTargets.length < maxTargets) {
                 _relicTargets.add(card);
@@ -357,7 +358,10 @@ class GameScreenState extends State<GameScreen> {
             ],
           ],
         ),
-        if (_activeTargetingRelic != null) targetingBanner!,
+        if (_activeTargetingRelic != null) ...[
+          const SizedBox(height: 16),
+          targetingBanner!,
+        ],
         if (_activeTargetingRelic == null && !_isViewingRelics) ...[
           Opacity(
             opacity: isMyTurn ? 1.0 : 0.5,
@@ -404,6 +408,49 @@ class GameScreenState extends State<GameScreen> {
   }
 
   Container _targetingBanner() {
+    int maxTargets = _activeTargetingRelic!.effect == .obliterate ? 5 : 1;
+
+    final usingRelicIndicator = Row(
+      mainAxisSize: .min,
+      children: [
+        Text(
+          "USING: ${_activeTargetingRelic!.name.toUpperCase()}",
+          style: const TextStyle(color: Colors.white, fontWeight: .bold),
+        ),
+        const SizedBox(width: 16),
+        IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => setState(() {
+            _activeTargetingRelic = null;
+            _relicTargets.clear();
+          }),
+        ),
+      ],
+    );
+
+    final targetsLeftIndicator = Row(
+      mainAxisSize: .min,
+      children: [
+        const Icon(Icons.track_changes, color: Colors.white),
+        const SizedBox(width: 12),
+        Text(
+          "TARGETING: ${_relicTargets.length}/$maxTargets",
+          style: const TextStyle(color: Colors.white, fontWeight: .bold),
+        ),
+        if (_relicTargets.isNotEmpty) ...[
+          const SizedBox(width: 16),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            onPressed: () => _executeActiveRelic(),
+            child: const Text(
+              "CONFIRM",
+              style: TextStyle(color: Colors.white, fontWeight: .bold),
+            ),
+          ),
+        ],
+      ],
+    );
+
     return Container(
       margin: const .only(bottom: 16),
       padding: const .symmetric(horizontal: 16, vertical: 8),
@@ -412,34 +459,7 @@ class GameScreenState extends State<GameScreen> {
         border: .all(color: Colors.redAccent, width: 2),
         borderRadius: .circular(12),
       ),
-      child: Row(
-        mainAxisSize: .min,
-        children: [
-          const Icon(Icons.track_changes, color: Colors.white),
-          const SizedBox(width: 12),
-          Text(
-            "TARGETING: ${_activeTargetingRelic!.name.toUpperCase()}",
-            style: const TextStyle(color: Colors.white, fontWeight: .bold),
-          ),
-          const SizedBox(width: 16),
-          if (_relicTargets.isNotEmpty)
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              onPressed: () => _executeActiveRelic(),
-              child: const Text(
-                "CONFIRM",
-                style: TextStyle(color: Colors.white, fontWeight: .bold),
-              ),
-            ),
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
-            onPressed: () => setState(() {
-              _activeTargetingRelic = null;
-              _relicTargets.clear();
-            }),
-          ),
-        ],
-      ),
+      child: Column(children: [usingRelicIndicator, targetsLeftIndicator]),
     );
   }
 

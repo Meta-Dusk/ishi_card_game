@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ishi/core/assets.dart';
 import 'color_ring.dart';
 import 'card_designs.dart';
 import 'minimalist_card.dart';
@@ -139,14 +140,13 @@ class CardFront extends StatelessWidget {
         break;
 
       case .chest:
-        // A simple gift icon for the roguelike chest concept
-        centerWidget = const Icon(
-          Icons.card_giftcard,
+        centerWidget = AppAssets.asImageIcon(
+          AppAssets.cardIcons.chest,
           size: 60,
           color: Colors.amber,
         );
-        cornerWidget = const Icon(
-          Icons.card_giftcard,
+        cornerWidget = AppAssets.asImageIcon(
+          AppAssets.cardIcons.chest,
           size: 16,
           color: Colors.amber,
         );

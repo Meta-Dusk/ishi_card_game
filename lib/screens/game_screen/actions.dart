@@ -92,6 +92,7 @@ extension GameScreenActions on GameScreenState {
     _evaluateSmartAutoEnd();
   }
 
+  /// Animated card removal
   void _removeCard(int cardIndex, IshiCard removedCard) {
     getCurrentState?.removeItem(
       cardIndex,
@@ -122,10 +123,10 @@ extension GameScreenActions on GameScreenState {
         final freshRelic = chosenRelic.clone();
         _manager.playerRelics[playerIndex].add(freshRelic);
 
-        if (freshRelic.effect == .immediateDraw3) {
+        if (freshRelic.effect == .immediateDraw5) {
           drawnCards = _manager.forceDraw(
             playerIndex,
-            count: 3,
+            count: 5,
             skipHandInsertion: true,
           );
           _manager.playerRelics[playerIndex].remove(freshRelic);
@@ -457,23 +458,18 @@ extension GameScreenActions on GameScreenState {
     IshiCard? chosenTemplate,
   }) {
     updateUI(() {
-      // EFFECT: TRASHCAN
-      if (relic.effect == .trashcan) {
+      if (relic.effect == .obliterate) {
         for (IshiCard target in targets) {
           int index = _manager.playerHands[playerIndex].indexOf(target);
-          if (index != -1) {
-            _manager.playerHands[playerIndex].removeAt(
-              index,
-            ); // Remove from logic
+          if (index == -1) continue;
+          // Remove from logic
+          _manager.playerHands[playerIndex].removeAt(index);
 
-            if (playerIndex == _manager.localPlayerIndex) {
-              _removeCard(index, target); // Slide out of the AnimatedList!
-            }
+          if (playerIndex == _manager.localPlayerIndex) {
+            _removeCard(index, target);
           }
         }
-      }
-      // EFFECT: POLYMORPH
-      else if (relic.effect == .polymorph && chosenTemplate != null) {
+      } else if (relic.effect == .polymorph && chosenTemplate != null) {
         int lastModifiedIndex = 0;
 
         for (IshiCard target in targets) {

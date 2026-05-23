@@ -30,7 +30,7 @@ extension CardEffects on CardAura {
         duration: 800.ms,
       );
 
-  Animate get natureSkipEffect => child
+  Animate get natureEffect => child
       .animate(onPlay: (controller) => controller.repeat(reverse: true))
       .boxShadow(
         begin: const BoxShadow(color: Colors.transparent),
@@ -46,7 +46,39 @@ extension CardEffects on CardAura {
         duration: 800.ms,
       );
 
-  Animate get wildDoubleApEffect => child
+  Animate get unfluxEffect => child
+      .animate(onPlay: (controller) => controller.repeat(reverse: true))
+      .boxShadow(
+        begin: const BoxShadow(color: Colors.transparent),
+        end: BoxShadow(color: Colors.yellow, blurRadius: 15, spreadRadius: 5),
+        duration: 800.ms,
+      )
+      .tint(
+        color: Colors.yellowAccent.withValues(alpha: 0.2),
+        duration: 800.ms,
+      );
+
+  Animate get unfluxEffectAmp => child
+      .animate(onPlay: (controller) => controller.repeat(reverse: true))
+      .boxShadow(
+        begin: BoxShadow(
+          color: Colors.yellow.withValues(alpha: 0.35),
+          blurRadius: 15,
+          spreadRadius: 5,
+        ),
+        end: BoxShadow(color: Colors.yellow, blurRadius: 15, spreadRadius: 5),
+        duration: 200.ms,
+      )
+      .tint(color: Colors.yellowAccent.withValues(alpha: 0.2), duration: 200.ms)
+      .shake(
+        delay: 300.ms,
+        duration: 100.ms,
+        curve: Curves.easeInOutQuint,
+        offset: Offset(0.5, 0.5),
+        rotation: 0.1,
+      );
+
+  Animate get wildDoubleTroubleEffect => child
       .animate(onPlay: (controller) => controller.repeat(reverse: true))
       .boxShadow(
         begin: const BoxShadow(color: Colors.transparent),
@@ -70,24 +102,24 @@ extension CardEffects on CardAura {
       _natureEffectConfig;
 
   static final _fireEffectConfig = DeterministicEffectConfiguration(
-    deterministicProperties: DeterministicProperties(
+    deterministicProperties: const DeterministicProperties(
       distance: .single(100.0),
       angle: .between(-130.0, -30.0),
     ),
-    visualProperties: VisualProperties(
+    visualProperties: const VisualProperties(
       beginScale: .between(0.0, 1.0),
       fadeInThreshold: .between(0.1, 0.4),
       fadeOutThreshold: .between(0.1, 0.3),
     ),
-    emissionProperties: EmissionProperties(
+    emissionProperties: const EmissionProperties(
       particlesPerEmit: 2,
       origin: Offset(0.4, 0.9),
       minOriginOffset: .zero,
       maxOriginOffset: Offset(0.2, 0.05),
     ),
     particleConfiguration: ParticleConfiguration(
-      shape: CircleShape(),
-      size: .square(100.0),
+      shape: const CircleShape(),
+      size: const .square(100.0),
       color: LinearInterpolationParticleColor(
         colors: [
           Colors.orange.withValues(alpha: 0.6),
@@ -97,70 +129,60 @@ extension CardEffects on CardAura {
         ],
       ),
     ),
-    layerProperties: LayerProperties(particleLayer: .foreground),
+    layerProperties: const LayerProperties(particleLayer: .foreground),
   );
 
   static final _iceEffectConfig = DeterministicEffectConfiguration(
-    deterministicProperties: DeterministicProperties(
-      distance: .single(100.0),
-      angle: .between(-180.0, 0.0),
+    deterministicProperties: const DeterministicProperties(
+      distance: NumRange.single(180),
+      angle: NumRange.single(90),
     ),
-    visualProperties: VisualProperties(
-      beginScale: .between(0.5, 1.5),
-      endScale: .between(-1.0, 0.3),
-      fadeInThreshold: .between(0.0, 1.0),
-      fadeOutThreshold: .between(0.0, 1.0),
+    visualProperties: const VisualProperties(
+      beginScale: NumRange.between(0.5, 1.0),
     ),
-    emissionProperties: EmissionProperties(
-      emitDuration: Duration(milliseconds: 310),
-      origin: Offset(0.2, 0.9),
-      minOriginOffset: .zero,
-      maxOriginOffset: Offset(0.6, 0.1),
-      particleLifespan: .single(Duration(seconds: 10)),
-    ),
-    layerProperties: LayerProperties(
-      particleLayer: .foreground,
-      trail: StraightTrail(trailProgress: 1.0, trailWidth: 10.0),
+    layerProperties: const LayerProperties(particleLayer: .foreground),
+    emissionProperties: const EmissionProperties(
+      origin: Offset.zero,
+      maxOriginOffset: Offset(1, 0),
+      particleLifespan: DurationRange.between(
+        Duration(seconds: 4),
+        Duration(seconds: 7),
+      ),
     ),
     particleConfiguration: ParticleConfiguration(
-      shape: CircleShape(),
-      size: .square(1.0),
+      shape: ImageAssetShape(AppAssets.particles.snowflake),
+      size: const .square(25),
       color: LinearInterpolationParticleColor(
         colors: [
-          Colors.blue,
-          Colors.blueAccent,
-          Colors.lightBlue.withValues(alpha: 0.5),
-          Colors.lightBlueAccent.withValues(alpha: 0.5),
+          Colors.white.withValues(alpha: 0.4),
+          Colors.white.withValues(alpha: 0.2),
+          Colors.white.withValues(alpha: 0.1),
         ],
       ),
     ),
   );
 
   static final _natureEffectConfig = DeterministicEffectConfiguration(
-    deterministicProperties: DeterministicProperties(
-      distance: .single(80.0),
-      angle: .between(-180.0, 0.0),
+    deterministicProperties: const DeterministicProperties(
+      distance: .single(180),
+      angle: .single(90),
     ),
-    visualProperties: VisualProperties(
-      beginScale: .between(0.5, 1.5),
-      endScale: .between(-1.0, 0.3),
-      fadeInThreshold: .between(0.0, 1.0),
-      fadeOutThreshold: .between(0.0, 1.0),
+    visualProperties: const VisualProperties(
+      endScale: .single(1),
+      fadeOutThreshold: .between(0.6, 0.8),
     ),
-    emissionProperties: EmissionProperties(
-      emitDuration: Duration(milliseconds: 310),
-      origin: Offset(0.15, 0.9),
-      minOriginOffset: .zero,
-      maxOriginOffset: Offset(0.75, 0.1),
-      particleLifespan: .single(Duration(seconds: 10)),
-    ),
-    layerProperties: LayerProperties(
-      particleLayer: .foreground,
-      trail: StraightTrail(trailProgress: 1.0, trailWidth: 10.0),
+    layerProperties: const LayerProperties(particleLayer: .foreground),
+    emissionProperties: const EmissionProperties(
+      origin: Offset.zero,
+      maxOriginOffset: Offset(1, 0),
+      particleLifespan: DurationRange.between(
+        Duration(seconds: 4),
+        Duration(seconds: 7),
+      ),
     ),
     particleConfiguration: ParticleConfiguration(
       shape: CircleShape(),
-      size: .square(1.0),
+      size: const .square(5),
       color: LinearInterpolationParticleColor(
         colors: [
           Colors.green,

@@ -176,8 +176,8 @@ extension GameScreenNetwork on GameScreenState {
 
     _manager.playerRelics[playerIndex].add(freshRelic);
 
-    if (freshRelic.effect == .immediateDraw3) {
-      _manager.forceDraw(playerIndex, count: 3);
+    if (freshRelic.effect == .immediateDraw5) {
+      _manager.forceDraw(playerIndex, count: 5);
       _manager.playerRelics[playerIndex].remove(freshRelic);
     }
   }

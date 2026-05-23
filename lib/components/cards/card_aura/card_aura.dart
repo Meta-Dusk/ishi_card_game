@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_animate/flutter_animate.dart' hide Effect;
 import 'package:newton_particles/newton_particles.dart';
 import 'package:ishi/core/models/deck_event.dart';
 import 'package:ishi/core/models/ishi_card.dart';
+import 'package:ishi/core/assets.dart';
 
 part 'card_effects.dart';
 
@@ -34,17 +35,21 @@ class CardAura extends StatelessWidget {
           : freezeEffect;
     }
 
-    if (activeEvent == .greenCardsSkipsTurns && card.color == .green) {
+    if (activeEvent == .greenCardsEvolution && card.color == .green) {
       return useParticles
           ? Newton(
               effectConfigurations: [natureEffectConfig],
-              child: natureSkipEffect,
+              child: natureEffect,
             )
-          : natureSkipEffect;
+          : natureEffect;
     }
 
-    if (activeEvent == .wildsTakeDoubleAP && card.color == .wild) {
-      return wildDoubleApEffect;
+    if (activeEvent == .yellowCardsUnflux && card.color == .yellow) {
+      return useParticles ? unfluxEffectAmp : unfluxEffect;
+    }
+
+    if (activeEvent == .wildDoubleTrouble && card.color == .wild) {
+      return wildDoubleTroubleEffect;
     }
 
     // NO EVENT: Just return the normal card

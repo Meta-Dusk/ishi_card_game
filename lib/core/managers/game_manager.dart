@@ -347,7 +347,7 @@ class GameManager {
   /// RULE EVALUATION: Can this card be played?
   bool canPlay(IshiCard card, int playerIndex) {
     int apCost = 1;
-    if (activeDeckEvent == .wildsTakeDoubleAP && card.color == .wild) {
+    if (activeDeckEvent == .wildDoubleTrouble && card.color == .wild) {
       apCost = 2;
     }
     if (actionPoints[playerIndex] < apCost) return false;
@@ -359,11 +359,8 @@ class GameManager {
       bool isNaturalSkip = card.type == .skip;
       bool isBlueFreezeSkip =
           activeDeckEvent == .blueCardsFreeze && card.color == .blue;
-      bool isGreenSkip =
-          activeDeckEvent == .greenCardsSkipsTurns && card.color == .green;
 
-      // You can now deflect attacks with Blue or Green cards if their event is active!
-      if ((isNaturalSkip || isBlueFreezeSkip || isGreenSkip) &&
+      if ((isNaturalSkip || isBlueFreezeSkip) &&
           (topCard.color == .wild || card.color == topCard.color)) {
         return true;
       }
@@ -432,7 +429,7 @@ class GameManager {
     IshiCard playedCard = playerHands[playerIndex].removeAt(cardIndex);
 
     int apCost = 1;
-    if (activeDeckEvent == .wildsTakeDoubleAP && playedCard.color == .wild) {
+    if (activeDeckEvent == .wildDoubleTrouble && playedCard.color == .wild) {
       apCost = 2;
     }
     actionPoints[playerIndex] -= apCost;
@@ -508,15 +505,19 @@ class GameManager {
       pendingDrawCount += 1;
     }
 
-    // BLUE FREEZE & GREEN SKIPS
-    // (We make sure it's not ALREADY a skip card, so we don't accidentally double-skip)
-    if (card.type != .skip && pendingDrawCount == 0) {
-      if (activeDeckEvent == .blueCardsFreeze && card.color == .blue) {
-        _playersToSkip++; // Add offensive skip
-      } else if (activeDeckEvent == .greenCardsSkipsTurns &&
-          card.color == .green) {
-        _playersToSkip++; // Add offensive skip
-      }
+    // BLUE FREEZE
+    if (card.type != .skip &&
+        pendingDrawCount == 0 &&
+        activeDeckEvent == .blueCardsFreeze &&
+        card.color == .blue) {
+      _playersToSkip++; // Add offensive skip
+    }
+
+    if (card.type != .reverse &&
+        pendingDrawCount == 0 &&
+        activeDeckEvent == .yellowCardsUnflux &&
+        card.color == .yellow) {
+      isClockwise = !isClockwise;
     }
   }
 
