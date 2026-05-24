@@ -5,7 +5,7 @@ import 'animated_card_fan.dart';
 import 'animated_turn_arrow.dart';
 import 'opponent_stats.dart';
 
-class OpponentsOverlay extends StatelessWidget {
+class OpponentsOverlay extends StatefulWidget {
   const OpponentsOverlay({
     super.key,
     required this.manager,
@@ -18,81 +18,126 @@ class OpponentsOverlay extends StatelessWidget {
   final Map<int, GlobalKey<AnimatedListState>> listKeys;
 
   @override
-  Widget build(BuildContext context) {
-    List<Widget> rows = [];
-    for (int i = 0; i < manager.playerCount; i++) {
-      if (i == manager.localPlayerIndex) continue;
-
-      String name = "Player ${i + 1}";
-      if (i < net.playersList.length) name = net.playersList[i].playerName;
-
-      // Safe hand count
-      int handSize = 0;
-      if (net.isHost) {
-        handSize = manager.playerHands[i].length;
-      } else if (manager.opponentHandSizes.length > i) {
-        handSize = manager.opponentHandSizes[i];
-      }
-
-      bool isTurn = manager.currentPlayer == (i + 1);
-
-      rows.add(
-        _OpponentOverlayRow(
-          name: name,
-          isTurn: isTurn,
-          manager: manager,
-          playerIndex: i,
-          handSize: handSize,
-          listKeys: listKeys,
-        ),
-      );
-    }
-
-    return Column(crossAxisAlignment: .end, children: rows);
-  }
+  State<OpponentsOverlay> createState() => _OpponentsOverlayState();
 }
 
-class _OpponentOverlayRow extends StatelessWidget {
-  const _OpponentOverlayRow({
-    required this.name,
-    required this.isTurn,
-    required this.manager,
-    required this.playerIndex,
-    required this.handSize,
-    required this.listKeys,
-  });
+class _OpponentsOverlayState extends State<OpponentsOverlay> {
+  final ScrollController _scrollController = ScrollController();
+  int _lastTurn = -1;
 
-  final String name;
-  final bool isTurn;
-  final GameManager manager;
-  final int playerIndex;
-  final int handSize;
-  final Map<int, GlobalKey<AnimatedListState>> listKeys;
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant OpponentsOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Auto-Scroll Logic: Check if the turn has changed!
+    if (widget.manager.currentPlayer != _lastTurn) {
+      _lastTurn = widget.manager.currentPlayer;
+
+      // Wait for the frame to render before calculating the scroll position
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToCurrentPlayer();
+      });
+    }
+  }
+
+  void _scrollToCurrentPlayer() {
+    if (!_scrollController.hasClients) return;
+
+    int opponentIndex = -1;
+    int drawnIndex = 0;
+
+    // Find out which slot the current player occupies in the UI list
+    for (int i = 0; i < widget.manager.playerCount; i++) {
+      if (i == widget.manager.localPlayerIndex) continue;
+      if ((i + 1) == widget.manager.currentPlayer) {
+        opponentIndex = drawnIndex;
+        break;
+      }
+      drawnIndex++;
+    }
+
+    if (opponentIndex != -1) {
+      double targetOffset = opponentIndex * 61.0;
+      final maxScroll = _scrollController.position.maxScrollExtent;
+
+      if (targetOffset > maxScroll) targetOffset = maxScroll;
+
+      _scrollController.animateTo(
+        targetOffset,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final mainContent = [
-      _OpponentStatsColumn(
-        isTurn: isTurn,
-        name: name,
-        manager: manager,
-        playerIndex: playerIndex,
-        handSize: handSize,
-      ),
-      const SizedBox(width: 12),
-      AnimatedCardFan(
-        listKeys: listKeys,
-        index: playerIndex,
-        handSize: handSize,
-      ),
-    ];
+    // Collect valid opponent indices (skipping the local player)
+    List<int> opponentIndices = [];
+    for (int i = 0; i < widget.manager.playerCount; i++) {
+      if (i == widget.manager.localPlayerIndex) continue;
+      opponentIndices.add(i);
+    }
 
     return Container(
-      margin: const .only(bottom: 16),
-      child: Row(
-        mainAxisSize: .min,
-        crossAxisAlignment: .center,
-        children: mainContent,
+      width: 300,
+      height: 120,
+      margin: const .only(right: 16, top: 16, bottom: 16),
+      alignment: .centerRight,
+      child: ListView.builder(
+        controller: _scrollController,
+        scrollDirection: .vertical,
+        shrinkWrap: true,
+        physics: const BouncingScrollPhysics(),
+        itemExtent: 61.0,
+        itemCount: opponentIndices.length,
+        itemBuilder: (context, listIndex) {
+          int i = opponentIndices[listIndex];
+
+          String name = "Player ${i + 1}";
+          if (i < widget.net.playersList.length) {
+            name = widget.net.playersList[i].playerName;
+          }
+
+          // Safe hand count
+          int handSize = 0;
+          if (widget.net.isHost) {
+            handSize = widget.manager.playerHands[i].length;
+          } else if (widget.manager.opponentHandSizes.length > i) {
+            handSize = widget.manager.opponentHandSizes[i];
+          }
+
+          bool isTurn = widget.manager.currentPlayer == (i + 1);
+
+          return Padding(
+            padding: const .only(bottom: 16.0),
+            child: Row(
+              mainAxisSize: .min,
+              mainAxisAlignment: .end,
+              children: [
+                _OpponentStatsColumn(
+                  isTurn: isTurn,
+                  name: name,
+                  manager: widget.manager,
+                  playerIndex: i,
+                  handSize: handSize,
+                ),
+                const SizedBox(width: 12),
+                AnimatedCardFan(
+                  listKeys: widget.listKeys,
+                  index: i,
+                  handSize: handSize,
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -133,6 +178,11 @@ class _OpponentStatsColumn extends StatelessWidget {
       const SizedBox(height: 4),
       OpponentStats(manager: manager, index: playerIndex, handSize: handSize),
     ];
-    return Column(crossAxisAlignment: .end, children: mainContent);
+
+    return Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .end,
+      children: mainContent,
+    );
   }
 }

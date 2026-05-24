@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:ishi/components/text/app_version.dart';
@@ -36,7 +37,7 @@ class MainMenuScreenState extends State<MainMenuScreen> {
   int _startingHandSize = 7;
   MenuState _currentMenu = .root;
   String _appVersion = '';
-  bool showLocalMultiplayer = false;
+  bool showLocalMultiplayer = kDebugMode;
 
   @override
   void initState() {
@@ -97,10 +98,19 @@ class MainMenuScreenState extends State<MainMenuScreen> {
 
     if (_appVersion.isNotEmpty) ...[
       const SizedBox(height: 16),
-      AppVersion(appVersion: _appVersion)
-          .animate()
-          .fadeIn(delay: 600.ms)
-          .slideY(begin: 1.0, curve: Curves.easeOut),
+      Row(
+        mainAxisAlignment: .center,
+        children: [
+          AppVersion(appVersion: _appVersion)
+              .animate()
+              .fadeIn(delay: 600.ms)
+              .slideY(begin: 1.0, curve: Curves.easeOut),
+          if (kDebugMode) ...[
+            const SizedBox(width: 8),
+            const Text("(debug)", style: TextStyle(color: Colors.blueGrey)),
+          ],
+        ],
+      ),
     ],
 
     const SizedBox(height: 40),
