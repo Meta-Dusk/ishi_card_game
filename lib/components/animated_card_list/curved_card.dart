@@ -29,37 +29,33 @@ class CurvedCard extends StatelessWidget {
   final DeckEventEffect event;
 
   @override
-  Widget build(BuildContext context) {
-    final slideAnimation = animation.drive(
-      Tween<Offset>(
-        begin: const Offset(0, -0.8),
-        end: Offset.zero,
-      ).chain(CurveTween(curve: Curves.easeOutBack)),
-    );
-
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (_, child) => Align(
-        alignment: .center,
-        widthFactor: animation.value,
-        child: SizedBox(
-          width: itemWidth,
-          child: SlideTransition(
-            position: slideAnimation,
-            child: FadeTransition(opacity: animation, child: child),
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: animation,
+    builder: (_, child) => Align(
+      alignment: .center,
+      widthFactor: animation.value,
+      child: SizedBox(
+        width: itemWidth,
+        child: SlideTransition(
+          position: animation.drive(
+            Tween<Offset>(
+              begin: const Offset(0, -0.8),
+              end: Offset.zero,
+            ).chain(CurveTween(curve: Curves.easeOutBack)),
           ),
+          child: FadeTransition(opacity: animation, child: child),
         ),
       ),
-      child: AnimatedCard(
-        scrollController: scrollController,
-        card: card,
-        index: index,
-        totalCards: totalCards,
-        onTapCard: onTapCard,
-        isMyTurn: isMyTurn,
-        isSelected: isSelected,
-        event: event,
-      ),
-    );
-  }
+    ),
+    child: AnimatedCard(
+      scrollController: scrollController,
+      card: card,
+      index: index,
+      totalCards: totalCards,
+      onTapCard: onTapCard,
+      isMyTurn: isMyTurn,
+      isSelected: isSelected,
+      event: event,
+    ),
+  );
 }

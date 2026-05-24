@@ -1,9 +1,15 @@
 import 'dart:async';
+import 'dart:math';
 
+import 'package:flutter/foundation.dart' show debugPrint, VoidCallback;
 import 'package:ishi/core/data_types.dart';
 import 'package:ishi/core/models/relic.dart';
 import 'package:ishi/core/models/ishi_card.dart';
 import 'package:ishi/core/models/deck_event.dart';
+
+part 'events_manager.dart';
+
+typedef CanPlayRecord = ({bool canPlay, String? reason});
 
 enum DeckSortType { byColor, byType, byValue, unsorted }
 
@@ -39,11 +45,15 @@ class GameManager {
   late List<List<IshiCard>> playerHands;
 
   int playerCount;
+  int lastDeckTotalIndex = 0;
 
   // --- ECONOMY STATES ---
   late List<int> actionPoints;
   late List<int> cardDraws;
+
+  /// `playerRelics`[`playerIndex`][`relicIndex`]
   late List<List<Relic>> playerRelics;
+
   final int startingHandSize;
 
   // --- TURN STATES ---
@@ -87,8 +97,37 @@ class GameManager {
   Stream<GameManagerEvent> get events => _eventController.stream;
 
   DeckEventEffect activeDeckEvent = .none;
+  int pendingEvolutions = 0;
+  bool manualTriggerDeckEvent = false;
+  final double chaosEffectChance = 0.25;
 
-  GameManager({required this.playerCount, required this.startingHandSize});
+  /// Gets called once the effect of the deck
+  /// event `butterflyEvent` gets triggered.
+  VoidCallback? onChaosTrigger;
+
+  /// Gets called once the effect of the deck
+  /// event `wildDoubleTrouble` gets triggered.
+  VoidCallback? onWildBuffTrigger;
+
+  /// Gets called once the effect of the deck
+  /// event `blueCardsFreeze` gets triggered.
+  VoidCallback? onFrozenTrigger;
+
+  /// Gets called once the effect of the deck
+  /// event `greenCardsEvolution` gets triggered.
+  VoidCallback? onEvolvedTrigger;
+
+  /// Gets called once a round ends.
+  VoidCallback? onRoundEnd;
+
+  GameManager({
+    required this.playerCount,
+    required this.startingHandSize,
+    this.onChaosTrigger,
+    this.onWildBuffTrigger,
+    this.onFrozenTrigger,
+    this.onEvolvedTrigger,
+  });
 
   void addEvent(GameManagerEvent eventType) => _eventController.add(eventType);
 
@@ -252,7 +291,9 @@ class GameManager {
   }
 
   void initializeGame() {
-    deck = generateStandardDeck();
+    final generatedDeck = generateStandardDeck();
+    deck = generatedDeck.newDeck;
+    lastDeckTotalIndex = generatedDeck.lastDeckTotalIndex;
     discardPile.add(deck.removeLast());
     discardPile.last.isFaceUp = true;
 
@@ -281,7 +322,7 @@ class GameManager {
     // If they have action points, check if ANY card in their hand is playable
     if (playerAP > 0) {
       for (IshiCard card in playerHands[playerIndex]) {
-        if (canPlay(card, playerIndex)) return true;
+        if (canPlay(card, playerIndex).canPlay) return true;
       }
     }
 
@@ -345,15 +386,18 @@ class GameManager {
   IshiCard get topCard => discardPile.last;
 
   /// RULE EVALUATION: Can this card be played?
-  bool canPlay(IshiCard card, int playerIndex) {
+  CanPlayRecord canPlay(IshiCard card, int playerIndex) {
+    final CanPlayRecord canPlayNoReason = (canPlay: true, reason: null);
     int apCost = 1;
     if (activeDeckEvent == .wildDoubleTrouble && card.color == .wild) {
       apCost = 2;
     }
-    if (actionPoints[playerIndex] < apCost) return false;
+    if (actionPoints[playerIndex] < apCost) {
+      return (canPlay: false, reason: "Insufficient Action Points (AP)!");
+    }
 
     if (pendingDrawCount > 0) {
-      if (card.type == topCard.type) return true;
+      if (card.type == topCard.type) return canPlayNoReason;
 
       // DEFLECTION MECHANICS
       bool isNaturalSkip = card.type == .skip;
@@ -362,36 +406,37 @@ class GameManager {
 
       if ((isNaturalSkip || isBlueFreezeSkip) &&
           (topCard.color == .wild || card.color == topCard.color)) {
-        return true;
+        return canPlayNoReason;
       }
-      return false;
+      return (canPlay: false, reason: "Card cannot deflect incoming attack!");
     }
 
-    if (actionPoints[playerIndex] <= 0) return false;
-
-    if (pendingDrawCount > 0) {
-      if (card.type == topCard.type) return true;
-
-      // You can DEFLECT with a Skip card,
-      // but it must match the color of the attack
-      // (If the top card is a Wild +4, we allow any color Skip to counter it)
-      if (card.type == .skip &&
-          (topCard.color == .wild || card.color == topCard.color)) {
-        return true;
-      }
-      return false; // Nothing else is allowed while under attack
+    if (actionPoints[playerIndex] <= 0) {
+      return (canPlay: false, reason: "Insufficient Action Points (AP)!");
     }
 
-    if (card.color == .wild) return true;
-    if (declaredColor != null) return card.color == declaredColor;
+    if (card.color == .wild) return canPlayNoReason;
+    if (declaredColor != null) {
+      final isSameColor = card.color == declaredColor;
+      return (
+        canPlay: isSameColor,
+        reason: isSameColor ? null : "Card color doesn't match!",
+      );
+    }
 
-    if (topCard.color == .wild) return true;
-    if (card.color == topCard.color) return true;
+    if (topCard.color == .wild) return canPlayNoReason;
+    if (card.color == topCard.color) return canPlayNoReason;
     if (card.type == topCard.type) {
-      if (card.type == .number) return card.number == topCard.number;
-      return true; // Skips, Reverses, etc. match type
+      if (card.type == .number) {
+        final isSameNumber = card.number == topCard.number;
+        return (
+          canPlay: isSameNumber,
+          reason: isSameNumber ? null : "Card number doesn't match!",
+        );
+      }
+      return canPlayNoReason; // Skips, Reverses, etc. match type
     }
-    return false;
+    return (canPlay: false, reason: "Invalid card!");
   }
 
   List<IshiCard> resolvePendingAttack({bool skipHandInsertion = false}) {
@@ -434,6 +479,8 @@ class GameManager {
     }
     actionPoints[playerIndex] -= apCost;
 
+    playedCard = _onPlayCardEventEffect(playedCard);
+
     playedCard.isFaceUp = true;
     discardPile.add(playedCard);
     _applyCardEffect(playedCard);
@@ -469,8 +516,8 @@ class GameManager {
 
   /// THE CARD RULES ENGINE\
   /// Also includes some rules reminiscent of Uno.
-  void _applyCardEffect(IshiCard card) {
-    switch (card.type) {
+  void _applyCardEffect(IshiCard playedCard) {
+    switch (playedCard.type) {
       case .reverse:
         if (playerCount == 2) {
           _playersToSkip++;
@@ -480,45 +527,25 @@ class GameManager {
         break;
       case .skip:
         if (pendingDrawCount > 0) {
-          // DEFENSIVE SKIP: The player successfully deflected!
+          //? DEFENSIVE SKIP: The player successfully deflected!
           // We DO NOT increment _playersToSkip, because we want the VERY NEXT player
           // to face the pendingDrawCount bomb. The stack size stays exactly the same.
         } else {
-          // OFFENSIVE SKIP: Normal play, the next player loses their turn.
+          //? OFFENSIVE SKIP: Normal play, the next player loses their turn.
           _playersToSkip++;
         }
         break;
       case .draw2:
         pendingDrawCount += 2;
         break;
-      case .wildDraw4:
+      case .draw4:
         pendingDrawCount += 4;
         break;
       default:
         break;
     }
 
-    // --- APPLY ACTIVE DECK EVENTS ---
-
-    // RED BURN: +1 Pending Draw
-    if (activeDeckEvent == .redCardsBurn && card.color == .red) {
-      pendingDrawCount += 1;
-    }
-
-    // BLUE FREEZE
-    if (card.type != .skip &&
-        pendingDrawCount == 0 &&
-        activeDeckEvent == .blueCardsFreeze &&
-        card.color == .blue) {
-      _playersToSkip++; // Add offensive skip
-    }
-
-    if (card.type != .reverse &&
-        pendingDrawCount == 0 &&
-        activeDeckEvent == .yellowCardsUnflux &&
-        card.color == .yellow) {
-      isClockwise = !isClockwise;
-    }
+    _applyActiveDeckEventEffects(playedCard);
   }
 
   /// Forces a player to draw cards without consuming their CD points
@@ -570,7 +597,10 @@ class GameManager {
     currentPlayer = getNextPlayer();
     _playersToSkip = 0; // Reset skips after they are consumed
 
-    if (currentPlayer == 1) roundCount++;
+    if (currentPlayer == 1) {
+      roundCount++;
+      if (onRoundEnd != null) onRoundEnd!();
+    }
 
     int playerIndex = currentPlayer - 1;
 

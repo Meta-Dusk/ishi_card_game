@@ -46,7 +46,7 @@ class DevCommandRegistry {
         if (args.isEmpty) {
           return console.log("Error: Missing amount. Usage: $usage");
         }
-        String action = args[0].toLowerCase();
+        String action = args.first.toLowerCase();
         int amount = args.length > 1 ? (int.tryParse(args[1]) ?? 1) : 1;
 
         if (action == "draw") {
@@ -87,7 +87,7 @@ class DevCommandRegistry {
         if (args.isEmpty) {
           return console.log("Error: Missing amount. Usage: $usage");
         }
-        String action = args[0].toLowerCase();
+        String action = args.first.toLowerCase();
         int amount = args.length > 1 ? (int.tryParse(args[1]) ?? 1) : 1;
 
         if (action == "add") {
@@ -137,7 +137,7 @@ class DevCommandRegistry {
         if (args.isEmpty) {
           return console.log("Error: Missing amount. Usage: $usage");
         }
-        String action = args[0].toLowerCase();
+        String action = args.first.toLowerCase();
         int amount = args.length > 1 ? (int.tryParse(args[1]) ?? 1) : 1;
 
         if (action == "add") {
@@ -183,7 +183,7 @@ class DevCommandRegistry {
         if (args.isEmpty) {
           return console.log("Error: Missing sort type. Usage: $usage");
         }
-        String type = args[0].toLowerCase();
+        String type = args.first.toLowerCase();
         final finalSortType = DeckSortType.values.asNameMap()[type];
 
         if (finalSortType != null) {
@@ -204,7 +204,7 @@ class DevCommandRegistry {
         if (args.isEmpty) {
           return console.log("Error: Missing index. Usage: $usage");
         }
-        int index = int.tryParse(args[0]) ?? 0;
+        int index = int.tryParse(args.first) ?? 0;
         net.kickPlayer(index, reason: "Kicked via dev console.");
         console.log("Attempted to kick player at index $index.");
       },
@@ -228,7 +228,7 @@ class DevCommandRegistry {
         if (args.isEmpty) {
           return console.log("Error: Missing index. Usage: $usage");
         }
-        int index = int.tryParse(args[0]) ?? 0;
+        int index = int.tryParse(args.first) ?? 0;
         console.log("Ending game for player $index...");
         manager.winnerIndex = index;
         manager.addEvent(.gameOver);
@@ -246,7 +246,7 @@ class DevCommandRegistry {
         if (args.isEmpty) {
           return console.log("Error: Missing seconds. Usage: $usage");
         }
-        int value = int.tryParse(args[0]) ?? 0;
+        int value = int.tryParse(args.first) ?? 0;
         console.log("Setting current running turn timer to: $value");
         manager.turnDeadlineEpoch = value;
       },
@@ -262,14 +262,16 @@ class DevCommandRegistry {
         if (args.isEmpty) {
           return console.log("Error: Missing type. Usage: $usage");
         }
-        String type = args[0];
+        String type = args.first;
         final selectedEvent = DeckEventEffect.values.asNameMap()[type];
 
         if (selectedEvent != null) {
           manager.activeDeckEvent = selectedEvent;
           console.log("Triggered deck event: ${selectedEvent.name}");
+          manager.manualTriggerDeckEvent = true;
           manager.addEvent(.deckEventTriggered);
           console.onStateForceSynced?.call();
+          manager.manualTriggerDeckEvent = false;
         } else {
           console.log("Error: Unknown deck event '$type'");
         }

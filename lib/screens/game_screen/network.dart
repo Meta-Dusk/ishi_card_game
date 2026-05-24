@@ -128,7 +128,13 @@ extension GameScreenNetwork on GameScreenState {
                 deckEventPool[random.nextInt(deckEventPool.length)];
 
             _manager.activeDeckEvent = chosenEvent.effect;
-            updateUI(() => _manager.deck = generateStandardDeck());
+            updateUI(() {
+              final generatedDeck = generateStandardDeck(
+                startingIdCount: _manager.lastDeckTotalIndex,
+              );
+              _manager.deck = generatedDeck.newDeck;
+              _manager.lastDeckTotalIndex = generatedDeck.lastDeckTotalIndex;
+            });
 
             // Broadcast the sync AND the trigger to all clients
             _net.broadcast(DeckEventSyncMessage(chosenEvent.effect));
@@ -143,7 +149,13 @@ extension GameScreenNetwork on GameScreenState {
   }
 
   void _onClientDrawCard(int pIndex) {
-    if (_manager.deck.isEmpty) _manager.deck = generateStandardDeck();
+    if (_manager.deck.isEmpty) {
+      final generatedDeck = generateStandardDeck(
+        startingIdCount: _manager.lastDeckTotalIndex,
+      );
+      _manager.deck = generatedDeck.newDeck;
+      _manager.lastDeckTotalIndex = generatedDeck.lastDeckTotalIndex;
+    }
     _manager.drawCard(pIndex);
   }
 
@@ -226,6 +238,7 @@ extension GameScreenNetwork on GameScreenState {
         }
       } else if (diff < 0) {
         playPileKey.currentState?.animateOpponentDrop();
+        triggerCombatMessages(_manager.topCard);
 
         // Opponent Played Cards
         for (int j = 0; j < -diff; j++) {

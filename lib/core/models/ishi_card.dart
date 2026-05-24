@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
 
-enum CardColor { red, yellow, green, blue, wild }
+typedef DeckGenerationRecord = ({
+  List<IshiCard> newDeck,
+  int lastDeckTotalIndex,
+});
 
-extension CardColorExtension on CardColor {
+enum CardColor {
+  red,
+  yellow,
+  green,
+  blue,
+  wild;
+
+  static List<CardColor> get getNormalColors => [.red, .green, .blue, .yellow];
+
   Color get displayColor {
     switch (this) {
       case .red:
@@ -19,14 +30,24 @@ extension CardColorExtension on CardColor {
   }
 }
 
-enum CardType { number, skip, reverse, draw2, wild, wildDraw4, chest }
+enum CardType {
+  number,
+  skip,
+  reverse,
+  draw2,
+  chooseColor,
+  draw4,
+  chest;
+
+  static List<CardType> get getWildTypes => [.chest, .chooseColor, .draw4];
+}
 
 class IshiCard {
-  final String id; // Unique ID for animations
+  final String id;
   final CardColor color;
   final CardType type;
   final int? number;
-  bool isFaceUp; // State controlled by the parent!
+  bool isFaceUp;
 
   IshiCard({
     required this.id,
@@ -59,14 +80,38 @@ class IshiCard {
       isFaceUp: json['isFaceUp'] ?? true,
     );
   }
+
+  IshiCard clone({
+    String? newId,
+    CardColor? newColor,
+    CardType? newType,
+    int? newNumber,
+    bool? isFacingUp,
+  }) => IshiCard(
+    id: newId ?? id,
+    color: newColor ?? color,
+    type: newType ?? type,
+    number: newNumber ?? number,
+    isFaceUp: isFacingUp ?? isFaceUp,
+  );
+
+  @override
+  String toString() {
+    final cardName = type == .number ? number.toString() : type.name;
+    return "(${color.name}) $cardName";
+  }
 }
 
-// Generates a basic standard Uno deck (simplified for testing)
-List<IshiCard> generateStandardDeck() {
+/// Generates a standard deck
+DeckGenerationRecord generateStandardDeck({
+  bool basicOnly = false,
+  int? startingIdCount,
+}) {
   List<IshiCard> deck = [];
-  int idCounter = 0;
+  int idCounter = startingIdCount ?? 0;
 
-  for (CardColor color in [.red, .yellow, .green, .blue]) {
+  // Make one pass per card color
+  for (CardColor color in CardColor.getNormalColors) {
     // One 0 card
     deck.add(
       IshiCard(
@@ -107,19 +152,23 @@ List<IshiCard> generateStandardDeck() {
     }
   }
 
-  // Add the standard 4 Wilds and 4 Wild Draw 4s
+  // 4 of each wilds
   for (int i = 0; i < 4; i++) {
-    deck.add(IshiCard(id: 'wild_${idCounter++}', color: .wild, type: .wild));
     deck.add(
-      IshiCard(id: 'wild4_${idCounter++}', color: .wild, type: .wildDraw4),
+      IshiCard(id: 'wild_${idCounter++}', color: .wild, type: .chooseColor),
     );
+    deck.add(IshiCard(id: 'wild4_${idCounter++}', color: .wild, type: .draw4));
   }
 
-  // Add some chests cuz why not
-  for (int i = 0; i < 10; i++) {
-    deck.add(IshiCard(id: 'chest_${idCounter++}', color: .wild, type: .chest));
+  if (!basicOnly) {
+    // Add some chests cuz why not
+    for (int i = 0; i < 10; i++) {
+      deck.add(
+        IshiCard(id: 'chest_${idCounter++}', color: .wild, type: .chest),
+      );
+    }
   }
 
   deck.shuffle();
-  return deck;
+  return (newDeck: deck, lastDeckTotalIndex: idCounter);
 }

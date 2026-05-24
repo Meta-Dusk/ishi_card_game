@@ -7,8 +7,7 @@
 </p>
 <p align="center">
     <a href="https://github.com/Meta-Dusk/ishi_card_game/releases" alt="Ishi Card Game Releases">
-        <img src="https://img.shields.io/github/v/release/Meta-Dusk/ishi_card_game?include_prereleases&display_name=release&style=for-the-badge&logo=github
-        " alt="GitHub Latest Releases Badge" /></a>
+        <img src="https://img.shields.io/github/v/release/Meta-Dusk/ishi_card_game?include_prereleases&display_name=release&style=for-the-badge&logo=github" alt="GitHub Latest Releases Badge" /></a>
     <a href="https://github.com/Meta-Dusk/ishi_card_game/blob/stable/LICENSE" alt="Ishi Card Game License">
         <img src="https://img.shields.io/github/license/Meta-Dusk/ishi_card_game?style=for-the-badge&logo=github&color=%234287f5" alt="GitHub License Badge" /></a>
     <a href="https://github.com/users/Meta-Dusk/projects/2" alt="GitHub Projects Link for Ishi Card Game">

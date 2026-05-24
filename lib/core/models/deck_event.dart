@@ -6,7 +6,7 @@ enum DeckEventEffect {
   redCardsBurn,
   wildDoubleTrouble,
   greenCardsEvolution,
-  butterFlyEffect,
+  butterflyEffect,
   yellowCardsUnflux,
 }
 
@@ -167,14 +167,18 @@ final List<DeckEvent> deckEventPool = [
   DeckEvent(
     id: 'buttefly_effect',
     title: "CHAOS ENSUES...",
-    effect: .butterFlyEffect,
+    effect: .butterflyEffect,
     richDescription: const [
       TextSpan(text: "Played cards may change into something "),
       TextSpan(
         text: "entirely different ",
         style: TextStyle(fontWeight: .bold),
       ),
-      TextSpan(text: "once per round."),
+      TextSpan(text: "at a "),
+      TextSpan(
+        text: "25% chance.",
+        style: TextStyle(fontWeight: .bold, color: Colors.deepPurple),
+      ),
     ],
   ),
 ];

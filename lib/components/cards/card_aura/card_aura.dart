@@ -12,6 +12,7 @@ class CardAura extends StatelessWidget {
   final IshiCard card;
   final DeckEventEffect activeEvent;
   final bool useParticles;
+  final int pendingEvolutions;
 
   const CardAura({
     super.key,
@@ -19,36 +20,47 @@ class CardAura extends StatelessWidget {
     required this.card,
     required this.activeEvent,
     this.useParticles = true,
+    this.pendingEvolutions = 0,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Red card effects
     if (activeEvent == .redCardsBurn && card.color == .red) {
       return useParticles
           ? Newton(effectConfigurations: [fireEffectConfig], child: fireEffect)
           : fireEffect;
     }
-
-    if (activeEvent == .blueCardsFreeze && card.color == .blue) {
+    // Blue card effects
+    else if (activeEvent == .blueCardsFreeze && card.color == .blue) {
       return useParticles
           ? Newton(effectConfigurations: [iceEffectConfig], child: freezeEffect)
           : freezeEffect;
     }
-
-    if (activeEvent == .greenCardsEvolution && card.color == .green) {
-      return useParticles
-          ? Newton(
-              effectConfigurations: [natureEffectConfig],
-              child: natureEffect,
-            )
-          : natureEffect;
+    // Green card effects
+    else if (activeEvent == .greenCardsEvolution) {
+      if (card.color == .green) {
+        return useParticles
+            ? Newton(
+                effectConfigurations: [natureEffectConfig],
+                child: natureEffect,
+              )
+            : natureEffect;
+      } else if (card.color != .green && pendingEvolutions > 0) {
+        return useParticles
+            ? Newton(
+                effectConfigurations: [natureEffectConfig],
+                child: natureEffect,
+              )
+            : natureEffect;
+      }
     }
-
-    if (activeEvent == .yellowCardsUnflux && card.color == .yellow) {
+    // Yellow card effects
+    else if (activeEvent == .yellowCardsUnflux && card.color == .yellow) {
       return useParticles ? unfluxEffectAmp : unfluxEffect;
     }
-
-    if (activeEvent == .wildDoubleTrouble && card.color == .wild) {
+    // Wild card effects
+    else if (activeEvent == .wildDoubleTrouble && card.color == .wild) {
       return wildDoubleTroubleEffect;
     }
 

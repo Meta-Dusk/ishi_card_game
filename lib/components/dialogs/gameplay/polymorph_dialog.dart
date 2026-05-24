@@ -4,7 +4,9 @@ import 'package:ishi/core/models/ishi_card.dart';
 import 'package:ishi/components/cards/card_display.dart';
 
 class PolymorphDialog extends StatefulWidget {
-  const PolymorphDialog({super.key});
+  final List<String> usedCardIds;
+
+  const PolymorphDialog({super.key, required this.usedCardIds});
 
   @override
   State<PolymorphDialog> createState() => _PolymorphDialogState();
@@ -19,19 +21,34 @@ class _PolymorphDialogState extends State<PolymorphDialog> {
     _allCards = [];
 
     // Generate all colored cards
-    final colors = <CardColor>[.red, .blue, .green, .yellow];
-    for (CardColor c in colors) {
+    final colors = CardColor.getNormalColors;
+    for (CardColor color in colors) {
       for (int i = 0; i <= 9; i++) {
-        _allCards.add(IshiCard(id: 'temp', color: c, type: .number, number: i));
+        _allCards.add(
+          IshiCard(
+            id: '${color.name}_$i',
+            color: color,
+            type: .number,
+            number: i,
+          ),
+        );
       }
-      _allCards.add(IshiCard(id: 'temp', color: c, type: .skip));
-      _allCards.add(IshiCard(id: 'temp', color: c, type: .reverse));
-      _allCards.add(IshiCard(id: 'temp', color: c, type: .draw2));
+      _allCards.add(
+        IshiCard(id: '${color.name}_skip', color: color, type: .skip),
+      );
+      _allCards.add(
+        IshiCard(id: '${color.name}_reverse', color: color, type: .reverse),
+      );
+      _allCards.add(
+        IshiCard(id: '${color.name}_draw2', color: color, type: .draw2),
+      );
     }
 
     // Generate Wilds
-    _allCards.add(IshiCard(id: 'temp', color: .wild, type: .wild));
-    _allCards.add(IshiCard(id: 'temp', color: .wild, type: .wildDraw4));
+    _allCards.add(
+      IshiCard(id: 'wild_choose', color: .wild, type: .chooseColor),
+    );
+    _allCards.add(IshiCard(id: 'wild_draw4', color: .wild, type: .draw4));
   }
 
   Widget _animatedDialog(AlertDialog dialog) => dialog
@@ -71,13 +88,18 @@ class _PolymorphDialogState extends State<PolymorphDialog> {
     itemCount: _allCards.length,
     itemBuilder: (context, index) {
       final card = _allCards[index];
+      final isUsed = widget.usedCardIds.contains(card.id);
       card.isFaceUp = true;
 
       return GestureDetector(
-        onTap: () => Navigator.of(context).pop(card),
-        child: FittedBox(
-          fit: .contain,
-          child: AbsorbPointer(child: CardFront(card: card)),
+        onTap: isUsed ? null : () => Navigator.of(context).pop(card),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: isUsed ? 0.25 : 1.0,
+          child: FittedBox(
+            fit: .contain,
+            child: AbsorbPointer(child: CardFront(card: card)),
+          ),
         ),
       );
     },

@@ -22,6 +22,7 @@ class Relic {
   final Set<RelicEffectType> types;
   final int? maxUses;
   int? usesLeft;
+  final List<String> memory;
 
   Relic({
     required this.id,
@@ -33,11 +34,13 @@ class Relic {
     this.types = const {.passive},
     this.maxUses,
     this.usesLeft,
-  });
+    List<String>? memory,
+  }) : memory = memory ?? <String>[];
 
   StringDynamicMap toJson() => {
     'id': id,
     if (usesLeft != null) 'usesLeft': usesLeft,
+    'memory': memory,
   };
 
   Relic clone() => Relic(
@@ -50,6 +53,7 @@ class Relic {
     types: Set.from(types),
     maxUses: maxUses,
     usesLeft: maxUses ?? maxUses,
+    memory: List<String>.from(memory),
   );
 
   factory Relic.fromJson(StringDynamicMap json) {
@@ -68,6 +72,7 @@ class Relic {
       types: template.types,
       maxUses: template.maxUses,
       usesLeft: json['usesLeft'] as int? ?? template.maxUses,
+      memory: List<String>.from(json['memory'] ?? []),
     );
   }
 }
@@ -78,10 +83,7 @@ final List<Relic> relicPool = [
     id: 'might_ring',
     name: 'Ring of Might',
     description: '+1 Action Point at the start of your turn.',
-    icon: AppAssets.asImageIcon(
-      AppAssets.relics.mightRing,
-      color: Colors.amber,
-    ),
+    icon: Assets.asImageIcon(Assets.relics.mightRing, color: Colors.amber),
     color: Colors.amber,
     effect: .addActionPoint,
   ),
@@ -89,7 +91,7 @@ final List<Relic> relicPool = [
     id: 'greed_eye',
     name: "Eye of Greed",
     description: '+1 Card Draw at the start of your turn.',
-    icon: AppAssets.asImageIcon(AppAssets.relics.greedEye),
+    icon: Assets.asImageIcon(Assets.relics.greedEye),
     color: Colors.purpleAccent,
     effect: .addCardDraw,
   ),
@@ -97,7 +99,7 @@ final List<Relic> relicPool = [
     id: 'golden_ticket',
     name: 'Golden Ticket',
     description: 'Instantly draw 5 cards. (One-time use)',
-    icon: AppAssets.asImageIcon(AppAssets.relics.goldenTicket),
+    icon: Assets.asImageIcon(Assets.relics.goldenTicket),
     color: Colors.orange,
     effect: .immediateDraw5,
     types: {.singleUse},
@@ -106,7 +108,7 @@ final List<Relic> relicPool = [
     id: 'polymorph_staff',
     name: 'Staff of Polymorphism',
     description: 'Transform a card into a card of your choice. (-1 AP)',
-    icon: AppAssets.asImageIcon(AppAssets.relics.polymorphStaff),
+    icon: Assets.asImageIcon(Assets.relics.polymorphStaff),
     color: Colors.pinkAccent,
     effect: .polymorph,
     types: {.active},
@@ -116,7 +118,7 @@ final List<Relic> relicPool = [
     id: 'obliterator',
     name: 'The Obliterator',
     description: 'Dispose of up to 5 cards from your hand. (One-time use)',
-    icon: AppAssets.asImageIcon(AppAssets.relics.obliterator),
+    icon: Assets.asImageIcon(Assets.relics.obliterator),
     color: Colors.blueGrey,
     effect: .obliterate,
     types: {.singleUse, .active},
