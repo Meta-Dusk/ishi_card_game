@@ -9,6 +9,8 @@ import 'package:ishi/core/models/deck_event.dart';
 
 part 'events_manager.dart';
 
+typedef CanPlayRecord = ({bool canPlay, String? reason});
+
 enum DeckSortType { byColor, byType, byValue, unsorted }
 
 class _BoardKeys {
@@ -320,7 +322,7 @@ class GameManager {
     // If they have action points, check if ANY card in their hand is playable
     if (playerAP > 0) {
       for (IshiCard card in playerHands[playerIndex]) {
-        if (canPlay(card, playerIndex)) return true;
+        if (canPlay(card, playerIndex).canPlay) return true;
       }
     }
 
@@ -384,15 +386,18 @@ class GameManager {
   IshiCard get topCard => discardPile.last;
 
   /// RULE EVALUATION: Can this card be played?
-  bool canPlay(IshiCard card, int playerIndex) {
+  CanPlayRecord canPlay(IshiCard card, int playerIndex) {
+    final CanPlayRecord canPlayNoReason = (canPlay: true, reason: null);
     int apCost = 1;
     if (activeDeckEvent == .wildDoubleTrouble && card.color == .wild) {
       apCost = 2;
     }
-    if (actionPoints[playerIndex] < apCost) return false;
+    if (actionPoints[playerIndex] < apCost) {
+      return (canPlay: false, reason: "Insufficient Action Points (AP)!");
+    }
 
     if (pendingDrawCount > 0) {
-      if (card.type == topCard.type) return true;
+      if (card.type == topCard.type) return canPlayNoReason;
 
       // DEFLECTION MECHANICS
       bool isNaturalSkip = card.type == .skip;
@@ -401,36 +406,37 @@ class GameManager {
 
       if ((isNaturalSkip || isBlueFreezeSkip) &&
           (topCard.color == .wild || card.color == topCard.color)) {
-        return true;
+        return canPlayNoReason;
       }
-      return false;
+      return (canPlay: false, reason: "Card cannot deflect incoming attack!");
     }
 
-    if (actionPoints[playerIndex] <= 0) return false;
-
-    if (pendingDrawCount > 0) {
-      if (card.type == topCard.type) return true;
-
-      // You can DEFLECT with a Skip card,
-      // but it must match the color of the attack
-      // (If the top card is a Wild +4, we allow any color Skip to counter it)
-      if (card.type == .skip &&
-          (topCard.color == .wild || card.color == topCard.color)) {
-        return true;
-      }
-      return false; // Nothing else is allowed while under attack
+    if (actionPoints[playerIndex] <= 0) {
+      return (canPlay: false, reason: "Insufficient Action Points (AP)!");
     }
 
-    if (card.color == .wild) return true;
-    if (declaredColor != null) return card.color == declaredColor;
+    if (card.color == .wild) return canPlayNoReason;
+    if (declaredColor != null) {
+      final isSameColor = card.color == declaredColor;
+      return (
+        canPlay: isSameColor,
+        reason: isSameColor ? null : "Card color doesn't match!",
+      );
+    }
 
-    if (topCard.color == .wild) return true;
-    if (card.color == topCard.color) return true;
+    if (topCard.color == .wild) return canPlayNoReason;
+    if (card.color == topCard.color) return canPlayNoReason;
     if (card.type == topCard.type) {
-      if (card.type == .number) return card.number == topCard.number;
-      return true; // Skips, Reverses, etc. match type
+      if (card.type == .number) {
+        final isSameNumber = card.number == topCard.number;
+        return (
+          canPlay: isSameNumber,
+          reason: isSameNumber ? null : "Card number doesn't match!",
+        );
+      }
+      return canPlayNoReason; // Skips, Reverses, etc. match type
     }
-    return false;
+    return (canPlay: false, reason: "Invalid card!");
   }
 
   List<IshiCard> resolvePendingAttack({bool skipHandInsertion = false}) {

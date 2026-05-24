@@ -17,6 +17,7 @@ export '../../../components/gameplay/opponents_overlay/opponents_overlay.dart';
 export '../../../components/gameplay/turn_timeline.dart';
 export '../../../components/gameplay/turn_indicator.dart';
 export '../../../components/gameplay/animated_play_button.dart';
+export '../../../components/gameplay/relic_display.dart';
 
 export '../../../components/player_info/player_info.dart';
 

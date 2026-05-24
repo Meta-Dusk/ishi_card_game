@@ -178,12 +178,18 @@ extension GameScreenActions on GameScreenState {
   Future<void> playCardAction(IshiCard card) async {
     if (!isMyTurn) return;
 
-    if (!_manager.canPlay(card, _manager.localPlayerIndex)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("You cannot play this card right now!"),
+    final canPlayCheck = _manager.canPlay(card, _manager.localPlayerIndex);
+
+    if (!canPlayCheck.canPlay) {
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.removeCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            canPlayCheck.reason ?? "You cannot play this card right now!",
+          ),
           backgroundColor: Colors.redAccent,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
           behavior: .floating,
         ),
       );
@@ -422,15 +428,30 @@ extension GameScreenActions on GameScreenState {
 
     // POLYMORPH SPECIFIC
     if (relic.effect == .polymorph) {
+      if (_manager.actionPoints[_manager.localPlayerIndex] < 1) {
+        ScaffoldMessenger.of(context).removeCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Insufficient Action Points! Polymorph costs 1 AP."),
+            backgroundColor: Colors.redAccent,
+            duration: Duration(seconds: 1),
+          ),
+        );
+        return;
+      }
+
       chosenTemplate = await showDialog<IshiCard>(
         context: context,
         barrierDismissible: false,
-        builder: (_) => const PolymorphDialog(),
+        builder: (_) =>
+            PolymorphDialog(usedCardIds: _activeTargetingRelic!.memory),
       );
       if (chosenTemplate == null) return; // Player cancelled
     }
 
     updateUI(() {
+      _manager.actionPoints[_manager.localPlayerIndex] -= 1;
+      _activeTargetingRelic!.memory.add(chosenTemplate!.id);
       _activeTargetingRelic = null;
       _relicTargets.clear();
       _isViewingRelics = false;

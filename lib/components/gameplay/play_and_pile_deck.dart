@@ -74,8 +74,9 @@ class PlayCardsPileState extends State<PlayCardsPile>
 
   @override
   Widget build(BuildContext context) => DragTarget<IshiCard>(
-    onWillAcceptWithDetails: (details) =>
-        widget.manager.canPlay(details.data, widget.manager.currentPlayer - 1),
+    onWillAcceptWithDetails: (details) => widget.manager
+        .canPlay(details.data, widget.manager.currentPlayer - 1)
+        .canPlay,
     onAcceptWithDetails: (details) => widget.onPlayCard(details.data),
     builder: (_, candidateCards, rejectedCards) => _AnimatedHoverableCard(
       dropController: _dropController,

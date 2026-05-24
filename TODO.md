@@ -6,7 +6,8 @@
 - [ ] Improve the opponents overview by making it scrollable and stuff
 - [ ] Add a new view for "debuffs" in-game
 - [ ] Temporarily remove the local multiplayer option, and just make it be enabled through the dev console with `showLocalMultiplayer <true|false>`
-- [ ] Nerf the `Staff of Polymorphism` to require AP to polymorph a card, and also restrict choices to be unique cards only, which saves the already chosen cards to the entire match, per player
+- [ ] Add snackbar notifs in-game if players disconnect and stuff
+- [ ] Add doubling effect for the other wild cards (only `+4` is currently implemented)
 
 ## Gameplay Ideas
 

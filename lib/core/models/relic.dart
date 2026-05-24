@@ -22,6 +22,7 @@ class Relic {
   final Set<RelicEffectType> types;
   final int? maxUses;
   int? usesLeft;
+  final List<String> memory;
 
   Relic({
     required this.id,
@@ -33,11 +34,13 @@ class Relic {
     this.types = const {.passive},
     this.maxUses,
     this.usesLeft,
-  });
+    List<String>? memory,
+  }) : memory = memory ?? <String>[];
 
   StringDynamicMap toJson() => {
     'id': id,
     if (usesLeft != null) 'usesLeft': usesLeft,
+    'memory': memory,
   };
 
   Relic clone() => Relic(
@@ -50,6 +53,7 @@ class Relic {
     types: Set.from(types),
     maxUses: maxUses,
     usesLeft: maxUses ?? maxUses,
+    memory: List<String>.from(memory),
   );
 
   factory Relic.fromJson(StringDynamicMap json) {
@@ -68,6 +72,7 @@ class Relic {
       types: template.types,
       maxUses: template.maxUses,
       usesLeft: json['usesLeft'] as int? ?? template.maxUses,
+      memory: List<String>.from(json['memory'] ?? []),
     );
   }
 }
