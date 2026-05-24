@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:ishi/core/models/deck_event.dart';
 import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import 'package:ishi/services/network_service.dart';
 import 'imports/game_components.dart';
@@ -238,7 +237,17 @@ class GameScreenState extends State<GameScreen> {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade900,
-      body: SafeArea(child: Stack(children: stackedContent)),
+      body: AnimatedGradientBackground(
+        colors: [
+          Colors.grey,
+          Colors.grey.shade600,
+          Colors.grey.shade700,
+          Colors.grey.shade800,
+          Colors.grey.shade900,
+        ],
+        duration: const Duration(seconds: 12),
+        child: SafeArea(child: Stack(children: stackedContent)),
+      ),
     );
   }
 
@@ -261,13 +270,27 @@ class GameScreenState extends State<GameScreen> {
       borderRadius: .circular(16),
       border: .all(color: Colors.white24, width: 1),
     ),
-    child: Text(
-      "ROUND ${_manager.roundCount}",
-      style: const TextStyle(
-        color: Colors.amber,
-        fontWeight: .bold,
-        letterSpacing: 2,
-        fontSize: 16,
+    child: AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.5, 0.0),
+            end: Offset.zero,
+          ).animate(animation),
+          child: child,
+        ),
+      ),
+      child: Text(
+        "ROUND ${_manager.roundCount}",
+        key: ValueKey<int>(_manager.roundCount),
+        style: const TextStyle(
+          color: Colors.amber,
+          fontWeight: .bold,
+          letterSpacing: 2,
+          fontSize: 16,
+        ),
       ),
     ),
   );

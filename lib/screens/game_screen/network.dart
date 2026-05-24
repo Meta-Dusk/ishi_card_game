@@ -81,6 +81,17 @@ extension GameScreenNetwork on GameScreenState {
         _manager.addEvent(.deckEventTriggered);
         break;
 
+      case SystemNotificationMessage(:final text):
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(text, style: const TextStyle(fontWeight: .bold)),
+            backgroundColor: Colors.blueGrey.shade800,
+            duration: const Duration(seconds: 3),
+            behavior: .floating,
+          ),
+        );
+        break;
+
       default:
         break;
     }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/components/backgrounds/animated_gradient_background.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:ishi/components/text/app_version.dart';
 import 'package:ishi/components/text/game_subtitle.dart';
@@ -156,7 +157,20 @@ class _MenuHandler extends StatelessWidget {
     onPopInvokedWithResult: (didPop, _) => onPopInvoked(didPop),
     child: Scaffold(
       backgroundColor: Colors.grey.shade100,
-      body: SafeArea(child: Center(child: _scrollView())),
+      body: AnimatedGradientBackground(
+        colors: [
+          Colors.white,
+          Colors.white70,
+          Colors.grey.withValues(alpha: 0.5),
+          Colors.blueGrey.withValues(alpha: 0.25),
+          Colors.grey.withValues(alpha: 0.5),
+          Colors.white70,
+          Colors.white,
+        ],
+        animationType: .scroll,
+        duration: const Duration(seconds: 8),
+        child: SafeArea(child: Center(child: _scrollView())),
+      ),
     ),
   );
 

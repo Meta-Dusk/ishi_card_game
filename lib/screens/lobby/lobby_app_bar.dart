@@ -30,8 +30,26 @@ class LobbyAppBar extends StatelessWidget implements PreferredSizeWidget {
     ),
     centerTitle: true,
     actions: [
-      if (net.isHost) _PurgeButton(onPressed: () => net.purgeInvalidPlayers()),
+      if (net.isHost)
+        _PurgeButton(
+          onPressed: () {
+            final messenger = ScaffoldMessenger.of(context);
+            messenger.removeCurrentSnackBar();
+            messenger.showSnackBar(_purgeSnackBar());
+            net.purgeInvalidPlayers();
+          },
+        ),
     ],
+  );
+
+  SnackBar _purgeSnackBar() => SnackBar(
+    content: Text(
+      "Purging invalid players!",
+      style: TextStyle(fontWeight: .bold),
+    ),
+    backgroundColor: Colors.blueGrey.shade800,
+    duration: const Duration(seconds: 2),
+    behavior: .floating,
   );
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ishi/components/dialogs/menus/kick_confirmation_dialog.dart';
 import 'package:ishi/core/managers/profile_manager.dart';
 import 'package:ishi/core/network/network_messages.dart';
@@ -12,8 +13,17 @@ class VerbosePlayerList extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView.builder(
     itemCount: players.length,
-    itemBuilder: (_, index) =>
-        _PlayerListEntry(index: index, players: players, onKick: onKick),
+    itemBuilder: (_, index) {
+      final delay = 100.ms * (index + 1);
+      return _PlayerListEntry(index: index, players: players, onKick: onKick)
+          .animate()
+          .fadeIn(delay: delay, duration: 200.ms)
+          .slideY(
+            delay: delay + 200.ms,
+            begin: -0.5,
+            curve: Curves.easeOutCubic,
+          );
+    },
   );
 }
 
@@ -51,7 +61,12 @@ class _PlayerListEntry extends StatelessWidget {
     child: ListTile(
       leading: CircleAvatar(
         backgroundColor: playerAvatarColor,
-        child: Icon(isHost ? Icons.star : Icons.person, color: Colors.white),
+        child: Tooltip(
+          message: isHost ? "The host" : "You're not the host :)",
+          triggerMode: .tap,
+          preferBelow: true,
+          child: Icon(isHost ? Icons.star : Icons.person, color: Colors.white),
+        ),
       ),
       title: Text(
         player.playerName,
@@ -83,18 +98,15 @@ class _KickButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IconButton(
-    onPressed: () {
-      final controller = TextEditingController();
-      showDialog(
-        context: context,
-        builder: (_) => KickConfirmationDialog(
-          player: player,
-          textController: controller,
-          onKick: onKick,
-          playerIndex: index,
-        ),
-      );
-    },
+    onPressed: () => showDialog(
+      context: context,
+      builder: (_) => KickConfirmationDialog(
+        player: player,
+        textController: TextEditingController(),
+        onKick: onKick,
+        playerIndex: index,
+      ),
+    ),
     icon: const Icon(Icons.person_remove, color: Colors.redAccent),
     tooltip: "Kick ${player.playerName}",
   );

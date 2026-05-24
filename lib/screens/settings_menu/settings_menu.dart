@@ -5,7 +5,6 @@ import 'package:ishi/core/audio.dart';
 import 'package:ishi/core/managers/audio_manager.dart';
 import 'package:ishi/core/managers/profile_manager.dart';
 import 'package:ishi/screens/main_menu/buttons.dart';
-import 'package:ishi/screens/settings_menu/audio_settings_button.dart';
 import 'package:ishi/screens/settings_menu/settings_header.dart';
 
 class SettingsMenu extends StatelessWidget {
@@ -37,7 +36,7 @@ class SettingsMenu extends StatelessWidget {
     final mainContent = [
       const SettingsHeader(),
       const SizedBox(height: 24),
-      AudioSettingsButton(
+      _AudioSettingsButton(
         onShow: () => showDialog(
           context: context,
           builder: (_) => const SettingsDialog()
@@ -69,40 +68,38 @@ class _ConfirmationDialog extends StatelessWidget {
   const _ConfirmationDialog();
 
   @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: Colors.grey.shade900,
-      title: const Text(
-        "Reset Preferences?",
-        style: TextStyle(color: Colors.white, fontWeight: .bold),
+  Widget build(BuildContext context) => AlertDialog(
+    backgroundColor: Colors.grey.shade900,
+    title: const Text(
+      "Reset Preferences?",
+      style: TextStyle(color: Colors.white, fontWeight: .bold),
+    ),
+    content: const Text(
+      "This will reset your avatar color and "
+      "player name back to their default states.",
+      style: TextStyle(color: Colors.white70),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () {
+          AudioManager().playSFX(Audio.sfx.itemSelect);
+          Navigator.pop(context, false);
+        },
+        child: const Text("CANCEL", style: TextStyle(color: Colors.grey)),
       ),
-      content: const Text(
-        "This will reset your avatar color and "
-        "player name back to their default states.",
-        style: TextStyle(color: Colors.white70),
+      ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.redAccent,
+          foregroundColor: Colors.white,
+        ),
+        onPressed: () {
+          AudioManager().playSFX(Audio.sfx.itemSelect);
+          Navigator.pop(context, true);
+        },
+        child: const Text("RESET"),
       ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            AudioManager().playSFX(Audio.sfx.itemSelect);
-            Navigator.pop(context, false);
-          },
-          child: const Text("CANCEL", style: TextStyle(color: Colors.grey)),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.redAccent,
-            foregroundColor: Colors.white,
-          ),
-          onPressed: () {
-            AudioManager().playSFX(Audio.sfx.itemSelect);
-            Navigator.pop(context, true);
-          },
-          child: const Text("RESET"),
-        ),
-      ],
-    );
-  }
+    ],
+  );
 }
 
 class _ResetButton extends StatelessWidget {
@@ -111,23 +108,48 @@ class _ResetButton extends StatelessWidget {
   final VoidCallback onReset;
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 60,
-      child: OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.redAccent.shade700,
-          side: BorderSide(color: Colors.redAccent.shade700, width: 2),
-          shape: RoundedRectangleBorder(borderRadius: .circular(12)),
-        ),
-        icon: const Icon(Icons.delete_forever),
-        label: const Text(
-          "RESET ALL PREFERENCES",
-          style: TextStyle(fontSize: 18, fontWeight: .bold, letterSpacing: 1),
-        ),
-        onPressed: onReset,
+  Widget build(BuildContext context) => SizedBox(
+    width: double.infinity,
+    height: 60,
+    child: OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.redAccent.shade700,
+        side: BorderSide(color: Colors.redAccent.shade700, width: 2),
+        shape: RoundedRectangleBorder(borderRadius: .circular(12)),
       ),
-    );
-  }
+      icon: const Icon(Icons.delete_forever),
+      label: const Text(
+        "RESET ALL PREFERENCES",
+        style: TextStyle(fontSize: 18, fontWeight: .bold, letterSpacing: 1),
+      ),
+      onPressed: onReset,
+    ),
+  );
+}
+
+class _AudioSettingsButton extends StatelessWidget {
+  const _AudioSettingsButton({required this.onShow});
+
+  final VoidCallback onShow;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: double.infinity,
+    height: 60,
+    child: OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        side: const BorderSide(color: Colors.black, width: 2),
+        shape: RoundedRectangleBorder(borderRadius: .circular(12)),
+      ),
+      icon: const Icon(Icons.multitrack_audio_rounded),
+      label: const Text(
+        "AUDIO SETTINGS",
+        style: TextStyle(fontSize: 18, fontWeight: .bold, letterSpacing: 1),
+      ),
+      onPressed: onShow,
+    ),
+  );
 }

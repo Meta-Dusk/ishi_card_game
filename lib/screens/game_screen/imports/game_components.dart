@@ -19,7 +19,7 @@ export '../../../components/gameplay/turn_indicator.dart';
 export '../../../components/gameplay/animated_play_button.dart';
 export '../../../components/gameplay/relic_display.dart';
 
-export '../../../components/player_info/player_info.dart';
+export '../../../components/gameplay/player_info/player_info.dart';
 
 export '../../../components/animated_card_list/animated_card_list.dart';
 
@@ -31,3 +31,5 @@ export '../../../components/overlays/live_ping_panel.dart';
 export '../../../components/overlays/dev_console/dev_console_overlay.dart';
 
 export '../../../components/buttons/ping_toggle_button.dart';
+
+export '../../../components/backgrounds/animated_gradient_background.dart';
