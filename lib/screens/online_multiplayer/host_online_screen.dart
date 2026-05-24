@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import '../lobby/lobby_waiting_screen.dart';
 import 'package:ishi/services/webrtc_service.dart';
 
 class HostOnlineScreen extends StatefulWidget {
-  const HostOnlineScreen({super.key, required this.onBack});
+  const HostOnlineScreen({super.key, required this.onBack, required this.menu});
 
   final void Function(BuildContext) onBack;
+  final MainMenuScreenState menu;
 
   @override
   State<HostOnlineScreen> createState() => _HostOnlineScreenState();
@@ -34,7 +36,8 @@ class _HostOnlineScreenState extends State<HostOnlineScreen> {
         context,
         MaterialPageRoute(
           // Pass the WebRTC engine into the network contract!
-          builder: (_) => LobbyWaitingScreen(network: WebRTCService()),
+          builder: (_) =>
+              LobbyWaitingScreen(network: WebRTCService(), menu: widget.menu),
         ),
       );
     } else {

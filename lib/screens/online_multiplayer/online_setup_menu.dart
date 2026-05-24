@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import 'host_online_screen.dart';
 import 'join_online_screen.dart';
 import '../main_menu/buttons.dart';
@@ -9,11 +10,13 @@ import '../main_menu/section_header.dart';
 class OnlineSetupMenu extends StatelessWidget {
   final VoidCallback onPrimaryBack;
   final void Function(BuildContext) onSecondaryBack;
+  final MainMenuScreenState menu;
 
   const OnlineSetupMenu({
     super.key,
     required this.onPrimaryBack,
     required this.onSecondaryBack,
+    required this.menu,
   });
 
   @override
@@ -28,7 +31,8 @@ class OnlineSetupMenu extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => HostOnlineScreen(onBack: onSecondaryBack),
+            builder: (_) =>
+                HostOnlineScreen(onBack: onSecondaryBack, menu: menu),
           ),
         ),
       ),
@@ -40,7 +44,8 @@ class OnlineSetupMenu extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => JoinOnlineScreen(onBack: onSecondaryBack),
+            builder: (_) =>
+                JoinOnlineScreen(onBack: onSecondaryBack, menu: menu),
           ),
         ),
       ),

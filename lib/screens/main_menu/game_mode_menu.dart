@@ -9,6 +9,7 @@ class GameModeMenu extends StatelessWidget {
   final VoidCallback onLanTap;
   final VoidCallback onOnlineTap;
   final VoidCallback onBack;
+  final bool showLocalMultiplayer;
 
   const GameModeMenu({
     super.key,
@@ -16,19 +17,22 @@ class GameModeMenu extends StatelessWidget {
     required this.onLanTap,
     required this.onOnlineTap,
     required this.onBack,
+    required this.showLocalMultiplayer,
   });
 
   @override
   Widget build(BuildContext context) {
     final mainContent = [
       const SectionHeader(title: "SELECT GAME MODE"),
-      _buttonSpacer(),
-      MenuButton(
-        title: "LOCAL DEVICE CO-OP",
-        icon: Icons.devices,
-        color: Colors.deepPurple,
-        onTap: onLocalTap,
-      ),
+      if (showLocalMultiplayer) ...[
+        _buttonSpacer(),
+        MenuButton(
+          title: "LOCAL DEVICE CO-OP",
+          icon: Icons.devices,
+          color: Colors.deepPurple,
+          onTap: onLocalTap,
+        ),
+      ],
       _buttonSpacer(),
       MenuButton(
         title: "LAN MULTIPLAYER",

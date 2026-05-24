@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import 'game_screen/game_screen.dart';
 import 'main_menu/buttons.dart';
 import 'main_menu/menu_button.dart';
@@ -14,6 +15,7 @@ class LocalSetupMenu extends StatelessWidget {
   final ValueChanged<int> onPlayerCountChanged;
   final ValueChanged<int> onHandSizeChanged;
   final VoidCallback onBack;
+  final MainMenuScreenState menu;
 
   const LocalSetupMenu({
     super.key,
@@ -22,12 +24,36 @@ class LocalSetupMenu extends StatelessWidget {
     required this.onPlayerCountChanged,
     required this.onHandSizeChanged,
     required this.onBack,
+    required this.menu,
   });
 
   @override
   Widget build(BuildContext context) {
     final mainContent = [
       const SectionHeader(title: "LOCAL SETUP"),
+      const SizedBox(height: 8),
+      const Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: "WARNING: ",
+              style: TextStyle(
+                fontWeight: .bold,
+                letterSpacing: 2,
+                color: Colors.grey,
+              ),
+            ),
+            TextSpan(
+              text: "Deprecated Game Mode!",
+              style: TextStyle(
+                fontStyle: .italic,
+                fontWeight: .bold,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ),
       const SizedBox(height: 16),
       SettingPanel(
         title: "Players: $playerCount",
@@ -86,6 +112,7 @@ class LocalSetupMenu extends StatelessWidget {
         builder: (_) => GameScreen(
           manager: manager,
           network: OfflineNetworkService(currentPlayer: playerCount),
+          menu: menu,
         ),
       ),
     );

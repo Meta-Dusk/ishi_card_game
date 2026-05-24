@@ -5,7 +5,6 @@
 - [ ] Improve the UI/UX in-game, by reducing clutter and stuff.
 - [ ] Improve the opponents overview by making it scrollable and stuff.
 - [ ] Add a new view for "debuffs" in-game.
-- [ ] Temporarily remove the local multiplayer option, and just make it be enabled through the dev console with `showLocalMultiplayer <true|false>`.
 - [ ] Add snackbar notifs in-game if players disconnect and stuff.
 - [ ] Add doubling effect for the other wild cards (only `+4` is currently implemented).
 

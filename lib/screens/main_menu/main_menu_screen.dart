@@ -28,19 +28,24 @@ class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
 
   @override
-  State<MainMenuScreen> createState() => _MainMenuScreenState();
+  State<MainMenuScreen> createState() => MainMenuScreenState();
 }
 
-class _MainMenuScreenState extends State<MainMenuScreen> {
+class MainMenuScreenState extends State<MainMenuScreen> {
   int _playerCount = 2;
   int _startingHandSize = 7;
   MenuState _currentMenu = .root;
   String _appVersion = '';
+  bool showLocalMultiplayer = false;
 
   @override
   void initState() {
     super.initState();
     _fetchAppVersion();
+  }
+
+  void updateUI(VoidCallback fn) {
+    if (mounted) setState(fn);
   }
 
   Future<void> _fetchAppVersion() async {
@@ -114,8 +119,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           onPlayerCountChanged: (val) => setState(() => _playerCount = val),
           onHandSizeChanged: (val) => setState(() => _startingHandSize = val),
           onBack: () => _changeMenu(.playMode),
+          menu: this,
         ),
         onChangeMenu: _changeMenu,
+        showLocalMultiplayer: showLocalMultiplayer,
+        menu: this,
       ),
     ),
   ];
@@ -156,11 +164,15 @@ class _ActiveMenu extends StatelessWidget {
     required this.currentMenu,
     required this.onChangeMenu,
     required this.localSetupMenu,
+    required this.showLocalMultiplayer,
+    required this.menu,
   });
 
   final MenuState currentMenu;
   final void Function(MenuState) onChangeMenu;
   final Widget Function() localSetupMenu;
+  final bool showLocalMultiplayer;
+  final MainMenuScreenState menu;
 
   Widget _buildMenu(MenuState currentMenu) {
     switch (currentMenu) {
@@ -179,6 +191,7 @@ class _ActiveMenu extends StatelessWidget {
           onLanTap: () => onChangeMenu(.lanSetup),
           onOnlineTap: () => onChangeMenu(.onlineSetup),
           onBack: () => onChangeMenu(.root),
+          showLocalMultiplayer: showLocalMultiplayer,
         );
       case .localSetup:
         return localSetupMenu();
@@ -187,12 +200,14 @@ class _ActiveMenu extends StatelessWidget {
           key: const ValueKey('lanSetup'),
           onPrimaryBack: () => onChangeMenu(.playMode),
           onSecondaryBack: (context) => Navigator.pop(context),
+          menu: menu,
         );
       case .onlineSetup:
         return OnlineSetupMenu(
           key: const ValueKey('onlineSetup'),
           onPrimaryBack: () => onChangeMenu(.playMode),
           onSecondaryBack: (context) => Navigator.pop(context),
+          menu: menu,
         );
       case .profile:
         return ProfileMenu(
@@ -215,11 +230,15 @@ class _AnimatedMenuSwitcher extends StatelessWidget {
   final MenuState currentMenu;
   final void Function(MenuState) onChangeMenu;
   final Widget Function() localSetupMenu;
+  final bool showLocalMultiplayer;
+  final MainMenuScreenState menu;
 
   const _AnimatedMenuSwitcher({
     required this.currentMenu,
     required this.localSetupMenu,
     required this.onChangeMenu,
+    required this.showLocalMultiplayer,
+    required this.menu,
   });
 
   @override
@@ -238,6 +257,8 @@ class _AnimatedMenuSwitcher extends StatelessWidget {
       currentMenu: currentMenu,
       onChangeMenu: onChangeMenu,
       localSetupMenu: localSetupMenu,
+      showLocalMultiplayer: showLocalMultiplayer,
+      menu: menu,
     ),
   );
 }
