@@ -1,4 +1,4 @@
 {
-    "cmake.ignoreCMakeListsMissing": true,
-    "git.ignoreLimitWarning": true
+  "cmake.ignoreCMakeListsMissing": true,
+  "dart.flutterSdkPath": ".fvm/versions/stable"
 }

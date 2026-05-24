@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import '../lobby/lobby_waiting_screen.dart';
 import 'package:ishi/services/webrtc_service.dart';
 
 class JoinOnlineScreen extends StatefulWidget {
   final void Function(BuildContext) onBack;
+  final MainMenuScreenState menu;
 
-  const JoinOnlineScreen({super.key, required this.onBack});
+  const JoinOnlineScreen({super.key, required this.onBack, required this.menu});
 
   @override
   State<JoinOnlineScreen> createState() => _JoinOnlineScreenState();
@@ -48,7 +50,8 @@ class _JoinOnlineScreenState extends State<JoinOnlineScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => LobbyWaitingScreen(network: WebRTCService()),
+          builder: (_) =>
+              LobbyWaitingScreen(network: WebRTCService(), menu: widget.menu),
         ),
       );
     } else {

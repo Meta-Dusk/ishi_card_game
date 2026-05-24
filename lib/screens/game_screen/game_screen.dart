@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ishi/core/models/deck_event.dart';
+import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import 'package:ishi/services/network_service.dart';
 import 'imports/game_components.dart';
 import 'imports/game_core.dart';
@@ -15,8 +16,14 @@ part 'components.dart';
 class GameScreen extends StatefulWidget {
   final GameManager manager;
   final NetworkService network;
+  final MainMenuScreenState menu;
 
-  const GameScreen({super.key, required this.manager, required this.network});
+  const GameScreen({
+    super.key,
+    required this.manager,
+    required this.network,
+    required this.menu,
+  });
 
   @override
   State<GameScreen> createState() => GameScreenState();
@@ -120,7 +127,7 @@ class GameScreenState extends State<GameScreen> {
     _manager.onEvolvedTrigger = _onEvolvedTrigger;
     _manager.onFrozenTrigger = _onFrozenTrigger;
 
-    DevConsole().initialize(_manager, _net);
+    DevConsole().initialize(_manager, _net, widget.menu);
     DevConsole().onStateForceSynced = () {
       if (!mounted) return;
       setState(() {

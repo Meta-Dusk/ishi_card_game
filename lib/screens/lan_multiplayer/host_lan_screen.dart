@@ -1,14 +1,20 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:ishi/services/socket_service.dart';
 import '../lobby/lobby_waiting_screen.dart';
 
 class HostLANLobbyScreen extends StatefulWidget {
-  const HostLANLobbyScreen({super.key, required this.onBack});
+  const HostLANLobbyScreen({
+    super.key,
+    required this.onBack,
+    required this.menu,
+  });
 
   final void Function(BuildContext) onBack;
+  final MainMenuScreenState menu;
 
   @override
   State<HostLANLobbyScreen> createState() => _HostLANLobbyScreenState();
@@ -61,49 +67,48 @@ class _HostLANLobbyScreenState extends State<HostLANLobbyScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: BackButton(
-          color: Colors.white,
-          onPressed: () async {
-            await SocketService().disconnect();
-            if (context.mounted) widget.onBack(context);
-          },
-        ),
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      leading: BackButton(
+        color: Colors.white,
+        onPressed: () async {
+          await SocketService().disconnect();
+          if (context.mounted) widget.onBack(context);
+        },
       ),
-      backgroundColor: Colors.grey.shade900,
-      body: Center(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 250),
-          switchInCurve: Curves.easeOutBack,
-          switchOutCurve: Curves.easeIn,
-          transitionBuilder: (child, animation) => FadeTransition(
-            opacity: animation,
-            child: ScaleTransition(
-              scale: animation.drive(Tween<double>(begin: 0.9, end: 1.0)),
-              child: child,
-            ),
+    ),
+    backgroundColor: Colors.grey.shade900,
+    body: Center(
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeOutBack,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: animation.drive(Tween<double>(begin: 0.9, end: 1.0)),
+            child: child,
           ),
-          child: _webSocketUrl == null
-              ? const CircularProgressIndicator(
-                  key: ValueKey("loadingWebSocket"),
-                ).animate().fadeIn(delay: 600.ms)
-              : _webSocketUrl == 'error'
-              ? ErrorView(
-                  key: const ValueKey("errorView"),
-                  hostLanLobbyScreen: widget,
-                )
-              : JoinView(
-                  key: const ValueKey("joinView"),
-                  webSocketUrl: _webSocketUrl,
-                ),
         ),
+        child: _webSocketUrl == null
+            ? const CircularProgressIndicator(
+                key: ValueKey("loadingWebSocket"),
+              ).animate().fadeIn(delay: 600.ms)
+            : _webSocketUrl == 'error'
+            ? ErrorView(
+                key: const ValueKey("errorView"),
+                hostLanLobbyScreen: widget,
+              )
+            : JoinView(
+                key: const ValueKey("joinView"),
+                webSocketUrl: _webSocketUrl,
+                menu: widget.menu,
+              ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class ErrorView extends StatelessWidget {
@@ -139,9 +144,10 @@ class ErrorView extends StatelessWidget {
 }
 
 class JoinView extends StatelessWidget {
-  const JoinView({super.key, required this.webSocketUrl});
+  const JoinView({super.key, required this.webSocketUrl, required this.menu});
 
   final String? webSocketUrl;
+  final MainMenuScreenState menu;
 
   @override
   Widget build(BuildContext context) {
@@ -175,7 +181,8 @@ class JoinView extends StatelessWidget {
         onPressed: () => Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => LobbyWaitingScreen(network: SocketService()),
+            builder: (_) =>
+                LobbyWaitingScreen(network: SocketService(), menu: menu),
           ),
         ),
         child: const Text("ENTER LOBBY", style: TextStyle(fontWeight: .bold)),

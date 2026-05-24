@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:ishi/core/dev/dev_commands.dart';
 import 'package:ishi/core/managers/game_manager.dart';
 import 'package:ishi/core/models/deck_event.dart';
+import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import 'package:ishi/services/network_service.dart';
 
 class DevCommand {
@@ -48,7 +49,11 @@ class DevConsole {
   }
 
   /// Registers all the dev commands.
-  void initialize(GameManager manager, NetworkService net) {
+  void initialize(
+    GameManager manager,
+    NetworkService net,
+    MainMenuScreenState menu,
+  ) {
     _commands.clear();
     _commands.addAll(
       DevCommandRegistry.buildCommands(
@@ -56,6 +61,7 @@ class DevConsole {
         net: net,
         console: this,
         allCommandsRef: _commands,
+        menu: menu,
       ),
     );
   }
@@ -97,6 +103,10 @@ class DevConsole {
 
     final deckEvents = DeckEventEffect.values.map((e) => e.name);
     matches.addAll(_mapMatches(deckEvents, "deckEvent", query));
+
+    matches.addAll(
+      _mapMatches({"true", "false"}, "showLocalMultiplayer", query),
+    );
 
     return matches;
   }

@@ -2,6 +2,7 @@ import 'package:ishi/core/dev/dev_console.dart';
 import 'package:ishi/core/managers/game_manager.dart';
 import 'package:ishi/core/models/deck_event.dart';
 import 'package:ishi/services/network_service.dart';
+import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 
 class DevCommandRegistry {
   static List<DevCommand> buildCommands({
@@ -9,6 +10,7 @@ class DevCommandRegistry {
     required NetworkService net,
     required DevConsole console,
     required List<DevCommand> allCommandsRef,
+    required MainMenuScreenState menu,
   }) => [
     DevCommand(
       name: "help",
@@ -275,6 +277,21 @@ class DevCommandRegistry {
         } else {
           console.log("Error: Unknown deck event '$type'");
         }
+      },
+    ),
+    DevCommand(
+      name: "showLocalMultiplayer",
+      description: "Show the local multiplayer option in the main menu.",
+      usage: "showLocalMultiplayer <true|false>",
+      onExecute: (args, usage) {
+        if (args.isEmpty) {
+          return console.log("Error: Missing value. Usage: $usage");
+        }
+        bool value = bool.tryParse(args.first) ?? false;
+        menu.updateUI(() => menu.showLocalMultiplayer = value);
+        console.log(
+          "showLocalMultiplayer now set to: ${menu.showLocalMultiplayer}",
+        );
       },
     ),
   ];

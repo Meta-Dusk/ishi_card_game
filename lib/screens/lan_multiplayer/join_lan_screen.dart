@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:ishi/core/data_types.dart';
 import 'package:ishi/services/socket_service.dart';
 import '../lobby/lobby_waiting_screen.dart';
 
 class JoinLANGameScreen extends StatefulWidget {
-  const JoinLANGameScreen({super.key, required this.onBack});
+  const JoinLANGameScreen({
+    super.key,
+    required this.onBack,
+    required this.menu,
+  });
 
   final void Function(BuildContext) onBack;
+  final MainMenuScreenState menu;
 
   @override
   State<JoinLANGameScreen> createState() => _JoinLANGameScreenState();
@@ -48,7 +54,8 @@ class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => LobbyWaitingScreen(network: SocketService()),
+          builder: (_) =>
+              LobbyWaitingScreen(network: SocketService(), menu: widget.menu),
         ),
       );
     } else {

@@ -49,3 +49,6 @@ app.*.map.json
 
 # Obsidian
 .obsidian/
+
+# FVM Version Cache
+.fvm/

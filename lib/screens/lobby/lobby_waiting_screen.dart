@@ -5,6 +5,7 @@ import 'package:ishi/components/dialogs/menus/on_kicked_dialog.dart';
 import 'package:ishi/screens/lobby/loading_screen.dart';
 import 'package:ishi/screens/lobby/lobby_app_bar.dart';
 import 'package:ishi/screens/lobby/settings/lobby_settings.dart';
+import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import 'package:ishi/services/webrtc_service.dart';
 import 'package:ishi/services/network_service.dart';
 import 'package:ishi/core/managers/game_manager.dart';
@@ -17,8 +18,13 @@ import 'start_game_button.dart';
 
 class LobbyWaitingScreen extends StatefulWidget {
   final NetworkService network;
+  final MainMenuScreenState menu;
 
-  const LobbyWaitingScreen({super.key, required this.network});
+  const LobbyWaitingScreen({
+    super.key,
+    required this.network,
+    required this.menu,
+  });
 
   @override
   State<LobbyWaitingScreen> createState() => _LobbyWaitingScreenState();
@@ -123,7 +129,11 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => GameScreen(manager: localManager, network: _net),
+            builder: (_) => GameScreen(
+              manager: localManager,
+              network: _net,
+              menu: widget.menu,
+            ),
           ),
         );
         break;
@@ -162,7 +172,11 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => GameScreen(manager: masterManager, network: _net),
+        builder: (_) => GameScreen(
+          manager: masterManager,
+          network: _net,
+          menu: widget.menu,
+        ),
       ),
     );
   }
