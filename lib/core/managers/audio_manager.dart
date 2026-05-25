@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:ishi/core/managers/prefs_manager.dart';
 
 class AudioManager {
-  static final AudioManager _instance = AudioManager._internal();
+  static final AudioManager _instance = ._internal();
   factory AudioManager() => _instance;
   AudioManager._internal();
 
@@ -45,7 +45,7 @@ class AudioManager {
 
   // --- VOLUME MATH ---
 
-  /// Applies a logarithmic curve to the volume so it sounds natural to human ears
+  /// Applies a logarithmic curve to the volume so it sounds natural
   double _getRealVolume(double categoryVolume) {
     if (isMuted) return 0.0;
     double linearVolume = masterVolume * categoryVolume;
@@ -104,7 +104,7 @@ class AudioManager {
       await _bgmPlayer.play(AssetSource('audio/music/$filename'));
     } catch (e) {
       currentMusic = null;
-      debugPrint("Music PLayback Error: $e");
+      debugPrint("Music Playback Error: $e");
     }
   }
 
@@ -148,7 +148,7 @@ class AudioManager {
     }
   }
 
-  /// Dispose of all players when the app closes.
+  /// Dispose of all `audioPlayers` when the app closes.
   void dispose() {
     _bgmPlayer.dispose();
     for (AudioPlayer audioPlayer in _dedicatedSfxPlayers.values) {

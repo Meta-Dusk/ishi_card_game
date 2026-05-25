@@ -1,6 +1,6 @@
-import 'package:ishi/components/animated_card_list/animated_card_list.dart';
-import 'package:ishi/core/models/ishi_card.dart';
 import 'package:flutter/material.dart';
+import '../animated_card_list/animated_card_list.dart';
+import 'package:ishi/core/models/ishi_card.dart';
 import 'card_display.dart';
 
 class RemoveTransition extends StatelessWidget {
@@ -14,32 +14,30 @@ class RemoveTransition extends StatelessWidget {
   final Animation<double> animation;
 
   @override
-  Widget build(BuildContext context) {
-    final slideTransition = SlideTransition(
-      position: animation.drive(
-        Tween<Offset>(
-          begin: const Offset(0.2, -1.5),
-          end: const Offset(0, -0.4),
-        ).chain(CurveTween(curve: Curves.easeInExpo)),
+  Widget build(BuildContext context) => Align(
+    alignment: .bottomCenter,
+    widthFactor: animation.value * 0.7,
+    child: SizedBox(
+      width: itemWidth,
+      child: OverflowBox(
+        maxWidth: 160.0,
+        maxHeight: 300.0,
+        alignment: .bottomCenter,
+        child: _slideTransition,
       ),
-      child: FadeTransition(
-        opacity: animation,
-        child: CardFront(card: removedCard),
-      ),
-    );
+    ),
+  );
 
-    return Align(
-      alignment: .bottomCenter,
-      widthFactor: animation.value * 0.7,
-      child: SizedBox(
-        width: itemWidth,
-        child: OverflowBox(
-          maxWidth: 160.0,
-          maxHeight: 300.0,
-          alignment: .bottomCenter,
-          child: slideTransition,
-        ),
-      ),
-    );
-  }
+  SlideTransition get _slideTransition => SlideTransition(
+    position: animation.drive(
+      Tween<Offset>(
+        begin: const Offset(0.2, -1.5),
+        end: const Offset(0, -0.4),
+      ).chain(CurveTween(curve: Curves.easeInExpo)),
+    ),
+    child: FadeTransition(
+      opacity: animation,
+      child: CardFront(card: removedCard),
+    ),
+  );
 }

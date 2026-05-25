@@ -74,7 +74,10 @@ class _SequentialSplashAnimatorState extends State<SequentialSplashAnimator> {
           child: SizedBox(
             width: width,
             height: height,
-            child: Stack(children: stackedContent),
+            child: Padding(
+              padding: const .all(16.0),
+              child: Stack(children: stackedContent),
+            ),
           ),
         );
       },

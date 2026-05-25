@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ishi/components/cards/relic_choice_card.dart';
-import 'package:ishi/core/models/relic.dart';
+import 'package:ishi/core/models/relic/relic.dart';
 
 class ChestDialog extends StatefulWidget {
   const ChestDialog({super.key});

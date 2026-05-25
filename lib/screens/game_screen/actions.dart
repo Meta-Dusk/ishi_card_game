@@ -79,7 +79,7 @@ extension GameScreenActions on GameScreenState {
     if (!isMyTurn) return;
 
     if (_net.isHost) {
-      List<IshiCard> newlyDrawnCards = _manager.resolvePendingAttack(
+      final List<IshiCard> newlyDrawnCards = _manager.resolvePendingAttack(
         skipHandInsertion: true,
       );
       await _staggerDrawCards(newlyDrawnCards);
@@ -99,7 +99,7 @@ extension GameScreenActions on GameScreenState {
   }
 
   /// Animated card removal
-  void _removeCard(int cardIndex, IshiCard removedCard) {
+  void removeCard(int cardIndex, IshiCard removedCard) {
     getCurrentState?.removeItem(
       cardIndex,
       (_, animation) =>
@@ -139,7 +139,7 @@ extension GameScreenActions on GameScreenState {
         }
       }
 
-      if (removedCard != null) _removeCard(cardIndex, removedCard);
+      if (removedCard != null) removeCard(cardIndex, removedCard);
     });
 
     if (drawnCards.isNotEmpty) {
@@ -162,7 +162,7 @@ extension GameScreenActions on GameScreenState {
     updateUI(() {
       final removedCard = _manager.playerHands[playerIndex].removeAt(cardIndex);
       _manager.hasPlayedCard = true;
-      _removeCard(cardIndex, removedCard);
+      removeCard(cardIndex, removedCard);
     });
 
     _net.sendIntent(
@@ -258,22 +258,6 @@ extension GameScreenActions on GameScreenState {
     _evaluateSmartAutoEnd();
   }
 
-  void _showDeckEventDialog() {
-    final currentEventModel = deckEventPool.firstWhere(
-      (e) => e.effect == _manager.activeDeckEvent,
-      orElse: () => deckEventPool.first,
-    );
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => DeckEventDialog(
-        event: currentEventModel,
-        useEventTitleAsTitle: _manager.manualTriggerDeckEvent,
-      ),
-    );
-  }
-
   void flipAllCardsAction({bool onlyFlipIfFaceDown = false}) {
     final bool anyFaceDown = currentHand.any((card) => card.isFaceDown);
     if (onlyFlipIfFaceDown && !anyFaceDown) return;
@@ -334,33 +318,6 @@ extension GameScreenActions on GameScreenState {
       await Future.delayed(const Duration(milliseconds: 50));
       updateUI(() => currentHand[i].isFaceUp = true);
     }
-  }
-
-  void _showGameOverDialog() {
-    final int winner = _manager.winnerIndex!;
-    String winnerName = "Player ${winner + 1}";
-    final bool isWinner = winner == _manager.localPlayerIndex;
-
-    if (isWinner) {
-      winnerName = "You";
-    } else if (winner < _net.playersList.length) {
-      winnerName = _net.playersList[winner].playerName;
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => GameOverDialog(
-        winnerName: winnerName,
-        isWinner: isWinner,
-        onExit: () async {
-          // Disconnect from WebRTC/LAN and pop back to the Root Menu
-          await _net.disconnect();
-          if (!context.mounted) return;
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        },
-      ),
-    );
   }
 
   void _triggerAutoSortIfNeeded() {
@@ -426,147 +383,5 @@ extension GameScreenActions on GameScreenState {
         !_manager.hasValidMoves(_manager.localPlayerIndex)) {
       endTurnAction();
     }
-  }
-
-  Future<void> _executeActiveRelic() async {
-    final relic = _activeTargetingRelic!;
-    final targets = List<IshiCard>.from(_relicTargets);
-    final playerIndex = _manager.localPlayerIndex;
-
-    IshiCard? chosenTemplate;
-
-    // POLYMORPH SPECIFIC
-    if (relic.effect == .polymorph) {
-      if (_manager.actionPoints[_manager.localPlayerIndex] < 1) {
-        ScaffoldMessenger.of(context).removeCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Insufficient Action Points! Polymorph costs 1 AP."),
-            backgroundColor: Colors.redAccent,
-            duration: Duration(seconds: 1),
-          ),
-        );
-        return;
-      }
-
-      chosenTemplate = await showDialog<IshiCard>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) =>
-            PolymorphDialog(usedCardIds: _activeTargetingRelic!.memory),
-      );
-      if (chosenTemplate == null) return; // Player cancelled
-    }
-
-    updateUI(() {
-      _manager.actionPoints[_manager.localPlayerIndex] -= 1;
-      _activeTargetingRelic!.memory.add(chosenTemplate!.id);
-      _activeTargetingRelic = null;
-      _relicTargets.clear();
-      _isViewingRelics = false;
-    });
-
-    _applyRelicEffectLocally(
-      playerIndex: playerIndex,
-      relic: relic,
-      targets: targets,
-      chosenTemplate: chosenTemplate,
-    );
-
-    if (_net.isHost) {
-      broadcastGameState();
-      _evaluateSmartAutoEnd();
-    } else {
-      _net.sendIntent(
-        PlayIntentMessage(
-          action: .activateRelic,
-          playerIndex: playerIndex,
-          relicId: relic.id,
-          targetCardIds: targets.map((c) => c.id).toList(),
-          polymorphTemplate: chosenTemplate?.toJson(),
-        ),
-      );
-      _evaluateSmartAutoEnd();
-    }
-  }
-
-  /// Helper method to process the arrays and trigger UI animations
-  void _applyRelicEffectLocally({
-    required int playerIndex,
-    required Relic relic,
-    required List<IshiCard> targets,
-    IshiCard? chosenTemplate,
-  }) {
-    updateUI(() {
-      if (relic.effect == .obliterate) {
-        for (IshiCard target in targets) {
-          int index = _manager.playerHands[playerIndex].indexOf(target);
-          if (index == -1) continue;
-          // Remove from logic
-          _manager.playerHands[playerIndex].removeAt(index);
-
-          if (playerIndex == _manager.localPlayerIndex) {
-            _removeCard(index, target);
-          }
-        }
-      } else if (relic.effect == .polymorph && chosenTemplate != null) {
-        int lastModifiedIndex = 0;
-
-        for (IshiCard target in targets) {
-          final currentPlayer = _manager.playerHands[playerIndex];
-          int index = currentPlayer.indexOf(target);
-          if (index == -1) continue;
-          lastModifiedIndex = index;
-          IshiCard polymorphedCard = IshiCard(
-            id: target.id,
-            color: chosenTemplate.color,
-            type: chosenTemplate.type,
-            number: chosenTemplate.number,
-          );
-          currentPlayer[index] = polymorphedCard;
-        }
-        // Force the AnimatedList to rebuild so the new colors instantly show
-        listKeys[localUIIndex] = GlobalKey<AnimatedListState>();
-
-        if (playerIndex == _manager.localPlayerIndex) {
-          final controller = scrollControllers[localUIIndex];
-          if (controller != null && controller.hasClients) {
-            final targetOffset = lastModifiedIndex * itemWidth;
-            Future.delayed(const Duration(milliseconds: 100), () {
-              controller.animateTo(
-                targetOffset,
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeOutCubic,
-              );
-            });
-          }
-        }
-      }
-
-      // CONSUMPTION: Remove single-use relics or decrease durability!
-      try {
-        final inventoryRelic = _manager.playerRelics[playerIndex].firstWhere(
-          (r) => r.id == relic.id,
-        );
-
-        if (inventoryRelic.maxUses != null) {
-          inventoryRelic.usesLeft =
-              (inventoryRelic.usesLeft ?? inventoryRelic.maxUses!) - 1;
-
-          if (inventoryRelic.usesLeft! <= 0) {
-            _manager.playerRelics[playerIndex].remove(inventoryRelic);
-          }
-        } else if (inventoryRelic.types.contains(RelicEffectType.singleUse)) {
-          _manager.playerRelics[playerIndex].remove(inventoryRelic);
-        }
-      } catch (e) {
-        // Fallback safety in case the relic was already removed
-      }
-    });
-
-    Future.delayed(
-      const Duration(milliseconds: 400),
-      () => flipAllCardsAction(onlyFlipIfFaceDown: true),
-    );
   }
 }

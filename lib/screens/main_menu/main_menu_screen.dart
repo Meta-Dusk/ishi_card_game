@@ -1,15 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:ishi/components/backgrounds/animated_gradient_background.dart';
-import 'package:ishi/components/overlays/sequential_splash_animator.dart';
-import 'package:ishi/core/assets.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:ishi/components/text/app_version.dart';
-import 'package:ishi/components/text/game_subtitle.dart';
-import 'package:ishi/components/text/game_title.dart';
-import 'package:ishi/core/audio.dart';
-import 'package:ishi/core/managers/audio_manager.dart';
+import 'imports.dart';
 import '../settings_menu/settings_menu.dart';
 import '../online_multiplayer/online_setup_menu.dart';
 import '../profile_menu/profile_menu.dart';
@@ -47,7 +40,9 @@ class MainMenuScreenState extends State<MainMenuScreen> {
   void initState() {
     super.initState();
     _fetchAppVersion();
-    AudioManager().playMusic(Audio.music.menuLoop);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => AudioManager().playMusic(Audio.music.menuLoop),
+    );
   }
 
   void updateUI(VoidCallback fn) {
@@ -240,31 +235,39 @@ class MainMenuScreenState extends State<MainMenuScreen> {
   }
 }
 
-class _MenuHandler extends StatelessWidget {
-  const _MenuHandler({
+class _AnimatedMenuSwitcher extends StatelessWidget {
+  final MenuState currentMenu;
+  final void Function(MenuState) onChangeMenu;
+  final Widget Function() localSetupMenu;
+  final bool showLocalMultiplayer;
+  final MainMenuScreenState menu;
+
+  const _AnimatedMenuSwitcher({
     required this.currentMenu,
-    required this.mainContent,
-    required this.onPopInvoked,
+    required this.localSetupMenu,
+    required this.onChangeMenu,
+    required this.showLocalMultiplayer,
+    required this.menu,
   });
 
-  final MenuState currentMenu;
-  final List<Widget> mainContent;
-  final void Function(bool) onPopInvoked;
-
   @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: currentMenu == .root, // Only exit app if on Root
-    onPopInvokedWithResult: (didPop, _) => onPopInvoked(didPop),
-    child: SafeArea(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const .symmetric(vertical: 24, horizontal: 16),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Column(mainAxisAlignment: .center, children: mainContent),
-          ),
-        ),
+  Widget build(BuildContext context) => AnimatedSwitcher(
+    duration: const Duration(milliseconds: 250),
+    switchInCurve: Curves.easeOutBack,
+    switchOutCurve: Curves.easeIn,
+    transitionBuilder: (child, animation) => FadeTransition(
+      opacity: animation,
+      child: ScaleTransition(
+        scale: animation.drive(Tween<double>(begin: 0.9, end: 1.0)),
+        child: child,
       ),
+    ),
+    child: _ActiveMenu(
+      currentMenu: currentMenu,
+      onChangeMenu: onChangeMenu,
+      localSetupMenu: localSetupMenu,
+      showLocalMultiplayer: showLocalMultiplayer,
+      menu: menu,
     ),
   );
 }
@@ -335,39 +338,31 @@ class _ActiveMenu extends StatelessWidget {
   Widget build(BuildContext context) => _buildMenu(currentMenu);
 }
 
-class _AnimatedMenuSwitcher extends StatelessWidget {
-  final MenuState currentMenu;
-  final void Function(MenuState) onChangeMenu;
-  final Widget Function() localSetupMenu;
-  final bool showLocalMultiplayer;
-  final MainMenuScreenState menu;
-
-  const _AnimatedMenuSwitcher({
+class _MenuHandler extends StatelessWidget {
+  const _MenuHandler({
     required this.currentMenu,
-    required this.localSetupMenu,
-    required this.onChangeMenu,
-    required this.showLocalMultiplayer,
-    required this.menu,
+    required this.mainContent,
+    required this.onPopInvoked,
   });
 
+  final MenuState currentMenu;
+  final List<Widget> mainContent;
+  final void Function(bool) onPopInvoked;
+
   @override
-  Widget build(BuildContext context) => AnimatedSwitcher(
-    duration: const Duration(milliseconds: 250),
-    switchInCurve: Curves.easeOutBack,
-    switchOutCurve: Curves.easeIn,
-    transitionBuilder: (child, animation) => FadeTransition(
-      opacity: animation,
-      child: ScaleTransition(
-        scale: animation.drive(Tween<double>(begin: 0.9, end: 1.0)),
-        child: child,
+  Widget build(BuildContext context) => PopScope(
+    canPop: currentMenu == .root, // Only exit app if on Root
+    onPopInvokedWithResult: (didPop, _) => onPopInvoked(didPop),
+    child: SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const .symmetric(vertical: 24, horizontal: 16),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(mainAxisAlignment: .center, children: mainContent),
+          ),
+        ),
       ),
-    ),
-    child: _ActiveMenu(
-      currentMenu: currentMenu,
-      onChangeMenu: onChangeMenu,
-      localSetupMenu: localSetupMenu,
-      showLocalMultiplayer: showLocalMultiplayer,
-      menu: menu,
     ),
   );
 }
