@@ -147,6 +147,7 @@ extension GameScreenActions on GameScreenState {
       if (playerIndex == _manager.localPlayerIndex) _triggerAutoSortIfNeeded();
     }
 
+    AudioManager().playSFX(Audio.sfx.cards.place);
     triggerCombatMessages(_manager.topCard);
     broadcastGameState();
   }
@@ -211,22 +212,24 @@ extension GameScreenActions on GameScreenState {
     switch (card.type) {
       case .chooseColor:
       case .draw4:
+        if (!mounted) return;
         final CardColor? chosenColor = await showDialog<CardColor>(
           context: context,
           barrierDismissible: false,
           builder: (_) => const ColorPickerDialog(),
         );
-        if (chosenColor == null) return;
+        if (chosenColor == null) break;
         declaredColorIndex = chosenColor.index;
         break;
 
       case .chest:
+        if (!mounted) return;
         chosenRelic = await showDialog<Relic>(
           context: context,
           barrierDismissible: false,
           builder: (_) => const ChestDialog(),
         );
-        if (chosenRelic == null) return;
+        if (chosenRelic == null) break;
 
       default:
         break;
@@ -272,13 +275,16 @@ extension GameScreenActions on GameScreenState {
   }
 
   void flipAllCardsAction({bool onlyFlipIfFaceDown = false}) {
+    final bool anyFaceDown = currentHand.any((card) => card.isFaceDown);
+    if (onlyFlipIfFaceDown && !anyFaceDown) return;
+
     updateUI(() {
-      final bool anyFaceDown = currentHand.any((card) => card.isFaceDown);
-      if (onlyFlipIfFaceDown && !anyFaceDown) return;
       for (IshiCard card in currentHand) {
         card.isFaceUp = anyFaceDown;
       }
     });
+
+    AudioManager().playSFX(Audio.sfx.cards.mix, allowOverlap: true);
   }
 
   void sortHandAction(bool byColor) {
@@ -312,7 +318,9 @@ extension GameScreenActions on GameScreenState {
     });
 
     /// Wait for the 3D flip animation to physically finish
+    AudioManager().playSFX(Audio.sfx.cards.mix, allowOverlap: true);
     await Future.delayed(const Duration(milliseconds: 300));
+    AudioManager().playSFX(Audio.sfx.cards.mix, allowOverlap: true);
 
     updateUI(() {
       _manager.sortHand(_manager.localPlayerIndex, sortType);
@@ -400,6 +408,7 @@ extension GameScreenActions on GameScreenState {
         );
       }
 
+      AudioManager().playSFX(Audio.sfx.cards.take, allowOverlap: true);
       await Future.delayed(const Duration(milliseconds: 300));
     }
     if (flipAllCardsAfter) {

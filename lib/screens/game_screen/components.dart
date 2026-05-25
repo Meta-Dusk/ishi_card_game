@@ -225,31 +225,63 @@ extension GameComponents on GameScreenState {
     );
   }
 
-  Row _topRightButtonRow(BuildContext context) {
-    final buttons = [
-      IconButton(
-        onPressed: () => showDialog(
-          context: context,
-          builder: (_) => const SettingsDialog()
-              .animate()
-              .fadeIn(duration: 200.ms)
-              .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
-        ),
-        icon: const Icon(Icons.settings, color: Colors.white70, size: 30),
-        tooltip: "Show Settings",
+  IconButton _settingsButton(BuildContext context) => IconButton(
+    icon: const Icon(Icons.settings, color: Colors.white),
+    tooltip: "Show Settings",
+    onPressed: () => showDialog(
+      context: context,
+      builder: (_) => GameSettingsDialog(
+        onExitGame: _promptLeaveGame,
+        onDevConsoleToggle: () {
+          Navigator.pop(context);
+          updateUI(() => _showDevConsole = !_showDevConsole);
+        },
+        showDevConsoleToggle: _showDevConsoleToggle,
       ),
-      if (_showDevConsoleToggle)
-        IconButton(
-          onPressed: () => updateUI(() => _showDevConsole = !_showDevConsole),
-          icon: const Icon(Icons.terminal, color: Colors.greenAccent),
-          tooltip: "Show Developer Console",
-        ),
-      IconButton(
-        onPressed: _promptLeaveGame,
-        icon: const Icon(Icons.exit_to_app, color: Colors.redAccent, size: 30),
-        tooltip: "Exit Match",
+    ),
+  );
+
+  PingToggleButton get _pingToggleButton => PingToggleButton(
+    showPingOverlay: _showPingOverlay,
+    onToggle: () => updateUI(() => _showPingOverlay = !_showPingOverlay),
+    onLongPress: () => showDialog(
+      context: context,
+      builder: (_) => DevConsoleToggleDialog(
+        showDevConsole: _showDevConsoleToggle,
+        onToggle: (val) => updateUI(() => _showDevConsoleToggle = val),
       ),
-    ];
-    return Row(mainAxisSize: .min, children: buttons);
-  }
+    ),
+  );
+
+  Container get _roundIndicator => Container(
+    padding: const .symmetric(horizontal: 16, vertical: 8),
+    decoration: BoxDecoration(
+      color: Colors.black.withValues(alpha: 0.6),
+      borderRadius: .circular(16),
+      border: .all(color: Colors.white24, width: 1),
+    ),
+    child: AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.5, 0.0),
+            end: Offset.zero,
+          ).animate(animation),
+          child: child,
+        ),
+      ),
+      child: Text(
+        "ROUND ${_manager.roundCount}",
+        key: ValueKey<int>(_manager.roundCount),
+        style: const TextStyle(
+          color: Colors.amber,
+          fontWeight: .bold,
+          letterSpacing: 2,
+          fontSize: 16,
+        ),
+      ),
+    ),
+  );
 }

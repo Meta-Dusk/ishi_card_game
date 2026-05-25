@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:ishi/components/dialogs/menus/settings_dialog.dart';
+import 'package:ishi/components/dialogs/menus/audio_settings_dialog.dart';
 import 'package:ishi/core/audio.dart';
 import 'package:ishi/core/managers/audio_manager.dart';
 import 'package:ishi/core/managers/profile_manager.dart';
@@ -39,16 +39,13 @@ class SettingsMenu extends StatelessWidget {
       _AudioSettingsButton(
         onShow: () => showDialog(
           context: context,
-          builder: (_) => const SettingsDialog()
-              .animate()
-              .fadeIn(duration: 200.ms)
-              .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
+          builder: (_) => const AudioSettingsDialog(),
         ),
       ),
       const SizedBox(height: 24),
       _ResetButton(
         onReset: () {
-          AudioManager().playSFX(Audio.sfx.itemSelect);
+          AudioManager().playSFX(Audio.sfx.ui.itemSelect);
           _resetPreferences(context);
         },
       ),
@@ -82,7 +79,7 @@ class _ConfirmationDialog extends StatelessWidget {
     actions: [
       TextButton(
         onPressed: () {
-          AudioManager().playSFX(Audio.sfx.itemSelect);
+          AudioManager().playSFX(Audio.sfx.ui.itemSelect);
           Navigator.pop(context, false);
         },
         child: const Text("CANCEL", style: TextStyle(color: Colors.grey)),
@@ -93,7 +90,7 @@ class _ConfirmationDialog extends StatelessWidget {
           foregroundColor: Colors.white,
         ),
         onPressed: () {
-          AudioManager().playSFX(Audio.sfx.itemSelect);
+          AudioManager().playSFX(Audio.sfx.ui.itemSelect);
           Navigator.pop(context, true);
         },
         child: const Text("RESET"),

@@ -42,4 +42,5 @@ class _CardIcons {
 class _OtherIcons {
   const _OtherIcons();
   final String ishiIcon = "assets/images/ishi_transparent.png";
+  final String flutterLogo = "assets/images/flutter_logo.png";
 }
