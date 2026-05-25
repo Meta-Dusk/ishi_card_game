@@ -5,3 +5,5 @@ export '../../../core/network/network_messages.dart';
 export '../../../core/managers/game_manager.dart';
 export '../../../core/models/relic.dart';
 export '../../../core/models/ishi_card.dart';
+export '../../../core/models/deck_event.dart';
+export '../../../core/assets.dart';

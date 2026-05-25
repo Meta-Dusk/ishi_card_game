@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:ishi/core/models/deck_event.dart';
 import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import 'package:ishi/services/network_service.dart';
 import 'imports/game_components.dart';
@@ -57,6 +56,7 @@ class GameScreenState extends State<GameScreen> {
   bool _showDevConsole = false;
   bool _showDevConsoleToggle = false;
   bool _isViewingRelics = false;
+  bool _showSplash = true;
 
   Relic? _activeTargetingRelic;
   final List<IshiCard> _relicTargets = [];
@@ -138,11 +138,7 @@ class GameScreenState extends State<GameScreen> {
       if (_net.isHost) broadcastGameState();
     };
 
-    AudioManager().playMusic(Audio.music.gameLoop1);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startOpeningSequence();
-    });
+    AudioManager().playMusic(Audio.music.gameLoop);
   }
 
   @override
@@ -155,128 +151,167 @@ class GameScreenState extends State<GameScreen> {
       controller.dispose();
     }
     super.dispose();
-    AudioManager().playMusic(Audio.music.menuLoop1);
+    AudioManager().playMusic(Audio.music.menuLoop);
   }
 
   @override
   Widget build(BuildContext context) {
-    final stackedContent = [
-      // Ping
-      Positioned(top: 16, left: 16, child: _pingToggleButton),
+    Widget currentContent;
 
-      // Round Indicator
-      Positioned(
-        top: 24,
-        left: 0,
-        right: 0,
-        child: Center(child: _roundIndicator),
-      ),
+    if (_showSplash) {
+      final splashImage = Image.asset(
+        Assets.otherIcons.ishiIcon,
+        width: MediaQuery.of(context).size.width * 0.5,
+      );
+      final animatedSplash = splashImage
+          .animate(
+            onComplete: (_) {
+              updateUI(() => _showSplash = false);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _startOpeningSequence();
+              });
+            },
+          )
+          .fadeIn(duration: 600.ms, curve: Curves.easeOut)
+          .then(delay: 800.ms)
+          .fadeOut(duration: 400.ms);
 
-      // Top Right Settings
-      Positioned(top: 16, right: 16, child: _topRightButtonRow(context)),
+      currentContent = Center(child: animatedSplash);
+    } else {
+      // THE GAME BOARD
+      final turnIndicator = TurnIndicator(
+        isMyTurn: isMyTurn,
+        turnDeadlineEpoch: _manager.turnDeadlineEpoch,
+      );
 
-      // Opponent Hands Overlay
-      Positioned(
-        top: 64,
-        right: 16,
-        child: OpponentsOverlay(
-          manager: _manager,
-          net: _net,
-          listKeys: listKeys,
-        ),
-      ),
+      final opponentsOverlay = OpponentsOverlay(
+        manager: _manager,
+        net: _net,
+        listKeys: listKeys,
+      );
 
-      // Game Board
-      Positioned(
-        top: (MediaQuery.of(context).size.height / 2) - 128,
-        left: 0,
-        right: 0,
-        child: _playPileAndDeck(),
-      ),
-
-      // Turn Indicator
-      Positioned(
-        top: 194,
-        left: 0,
-        right: 0,
-        child: TurnIndicator(
-          isMyTurn: isMyTurn,
-          turnDeadlineEpoch: _manager.turnDeadlineEpoch,
-        ),
-      ),
-
-      // Local Hand
-      Align(alignment: .bottomCenter, child: _lowerPanel()),
-
-      // Turn Timeline
-      Positioned(
-        left: 0,
-        right: 0,
-        bottom: 32,
-        child: TurnTimeline(manager: _manager, net: _net),
-      ),
-
-      // Overlays
-      Positioned(
-        top: 40,
-        left: 0,
-        right: 0,
-        child: PlayerInfo(manager: _manager, network: _net),
-      ),
-      if (_showPingOverlay)
-        Positioned(top: 64, left: 16, child: LivePingPanel(network: _net)),
-      if (_showDevConsole)
+      final playBoardElements = [
+        // BACKGROUND HUD (Lowest Z-Index)
         Positioned(
-          top: 0,
+          top: 194,
           left: 0,
           right: 0,
-          child: DevConsoleOverlay(
-            onClose: () => setState(() => _showDevConsole = false),
+          child: turnIndicator
+              .animate()
+              .fadeIn(delay: 0.ms, duration: 400.ms)
+              .scale(begin: const Offset(0.9, 0.9)),
+        ),
+        Positioned(
+          top: 40,
+          left: 0,
+          right: 0,
+          child: PlayerInfo(
+            manager: _manager,
+            network: _net,
+          ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 32,
+          child: TurnTimeline(manager: _manager, net: _net)
+              .animate()
+              .fadeIn(delay: 200.ms, duration: 400.ms)
+              .scale(begin: const Offset(0.9, 0.9)),
+        ),
+
+        // CORNER BUTTONS
+        Positioned(
+          top: 16,
+          left: 16,
+          child: _pingToggleButton.animate().fadeIn(
+            delay: 300.ms,
+            duration: 400.ms,
           ),
         ),
-    ];
+        Positioned(
+          top: 24,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: _roundIndicator,
+          ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
+        ),
+        Positioned(
+          top: 16,
+          right: 16,
+          child: _settingsButton(
+            context,
+          ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
+        ),
+
+        // MID-GROUND (Opponents & Play Pile)
+        Positioned(
+          top: 64,
+          right: 16,
+          child: opponentsOverlay
+              .animate()
+              .fadeIn(delay: 600.ms, duration: 400.ms)
+              .scale(begin: const Offset(0.9, 0.9)),
+        ),
+        Positioned(
+          top: (MediaQuery.of(context).size.height / 2) - 128,
+          left: 0,
+          right: 0,
+          child: _playPileAndDeck()
+              .animate()
+              .fadeIn(delay: 700.ms, duration: 400.ms)
+              .scale(begin: const Offset(0.9, 0.9)),
+        ),
+
+        // FOREGROUND: Local Player Hand (Highest standard Z-Index)
+        Align(
+          alignment: .bottomCenter,
+          child: _lowerPanel()
+              .animate()
+              .fadeIn(delay: 800.ms, duration: 400.ms)
+              .scale(begin: const Offset(0.9, 0.9), curve: Curves.easeOutBack),
+        ),
+
+        // CONDITIONAL OVERLAYS (Absolute Top Layer)
+        if (_showPingOverlay)
+          Positioned(
+            top: 64,
+            left: 16,
+            child: LivePingPanel(network: _net).animate().fadeIn(),
+          ),
+        if (_showDevConsole)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: DevConsoleOverlay(
+              onClose: () => setState(() => _showDevConsole = false),
+            ).animate().fadeIn(),
+          ),
+      ];
+
+      currentContent = SafeArea(child: Stack(children: playBoardElements));
+    }
 
     return Scaffold(
       backgroundColor: Colors.grey.shade900,
-      body: SafeArea(child: Stack(children: stackedContent)),
+      body: AnimatedGradientBackground(
+        colors: [
+          Colors.grey,
+          Colors.grey.shade600,
+          Colors.grey.shade700,
+          Colors.grey.shade800,
+          Colors.grey.shade900,
+        ],
+        duration: const Duration(seconds: 12),
+        child: currentContent,
+      ),
     );
   }
 
-  PingToggleButton get _pingToggleButton => PingToggleButton(
-    showPingOverlay: _showPingOverlay,
-    onToggle: () => setState(() => _showPingOverlay = !_showPingOverlay),
-    onLongPress: () => showDialog(
-      context: context,
-      builder: (_) => DevConsoleToggleDialog(
-        showDevConsole: _showDevConsoleToggle,
-        onToggle: (val) => setState(() => _showDevConsoleToggle = val),
-      ),
-    ),
-  );
-
-  Container get _roundIndicator => Container(
-    padding: const .symmetric(horizontal: 16, vertical: 8),
-    decoration: BoxDecoration(
-      color: Colors.black.withValues(alpha: 0.6),
-      borderRadius: .circular(16),
-      border: .all(color: Colors.white24, width: 1),
-    ),
-    child: Text(
-      "ROUND ${_manager.roundCount}",
-      style: const TextStyle(
-        color: Colors.amber,
-        fontWeight: .bold,
-        letterSpacing: 2,
-        fontSize: 16,
-      ),
-    ),
-  );
-
   void _promptLeaveGame() => showDialog(
     context: context,
-    builder: (_) => LeaveGameDialog(network: _net)
-        .animate()
-        .fadeIn(duration: 200.ms)
-        .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack),
+    builder: (_) => LeaveGameDialog(network: _net),
   );
 }

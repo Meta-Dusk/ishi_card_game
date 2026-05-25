@@ -6,15 +6,13 @@ class AppVersion extends StatelessWidget {
   final String appVersion;
 
   @override
-  Widget build(BuildContext context) {
-    return Text(
-      appVersion,
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: .w300,
-        color: Colors.grey.shade500,
-        letterSpacing: 4,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Text(
+    appVersion,
+    style: const TextStyle(
+      fontSize: 16,
+      fontWeight: .w300,
+      color: Colors.blueGrey,
+      letterSpacing: 4,
+    ),
+  );
 }

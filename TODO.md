@@ -2,11 +2,9 @@
 
 ## Important
 
-- [ ] Improve the UI/UX in-game, by reducing clutter and stuff.
-- [ ] Improve the opponents overview by making it scrollable and stuff.
 - [ ] Add a new view for "debuffs" in-game.
-- [ ] Add snackbar notifs in-game if players disconnect and stuff.
 - [ ] Add doubling effect for the other wild cards (only `+4` is currently implemented).
+- [ ] Try refactoring the relic model to also support callbacks (cleanup?)
 
 ## Gameplay Ideas
 

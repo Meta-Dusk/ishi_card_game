@@ -1,7 +1,7 @@
 name: ishi
 description: "A Roguelike Card Game Made with Flutter."
 publish_to: "none"
-version: 0.13.4+1
+version: 0.14.0+1
 
 environment:
     sdk: ^3.11.3
@@ -34,4 +34,6 @@ flutter:
         - assets/images/
         - assets/audio/
         - assets/audio/sfx/
+        - assets/audio/sfx/cards/
+        - assets/audio/sfx/ui/
         - assets/audio/music/

@@ -19,12 +19,15 @@ class DevConsoleToggleDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _animatedDialog(
     AlertDialog(
-      title: const Text("Dev Console"),
-      content: const Text("You can enable/disable the console here."),
+      title: const Text("Dev Console", style: TextStyle(color: Colors.black)),
+      content: const Text(
+        "You can enable/disable the console here.",
+        style: TextStyle(color: Colors.blueGrey),
+      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text("Close"),
+          child: const Text("Close", style: TextStyle(color: Colors.black)),
         ),
         FilledButton(
           onPressed: () {

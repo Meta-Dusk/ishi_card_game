@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ishi/components/dialogs/menus/on_kicked_dialog.dart';
+import 'package:ishi/screens/game_screen/imports/game_components.dart';
 import 'package:ishi/screens/lobby/loading_screen.dart';
 import 'package:ishi/screens/lobby/lobby_app_bar.dart';
 import 'package:ishi/screens/lobby/settings/lobby_settings.dart';
@@ -51,7 +52,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     _connectedPlayers = getConnectedPlayerCount;
 
     _netSubscription = _net.messages.listen(
-      (message) => _processNetMessage(message),
+      (message) => _processNetworkMessage(message),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -60,7 +61,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     });
   }
 
-  void _processNetMessage(NetMessage message) async {
+  void _processNetworkMessage(NetMessage message) async {
     if (!mounted) return;
 
     switch (message) {
@@ -192,7 +193,12 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
     child: Scaffold(
       backgroundColor: Colors.grey.shade900,
       appBar: LobbyAppBar(net: _net),
-      body: Stack(children: _stackedContent(_getMainContent(players))),
+      body: AnimatedGradientBackground(
+        colors: [Colors.grey.shade800, Colors.grey.shade900, Colors.black],
+        duration: const Duration(seconds: 120),
+        animationType: .spin,
+        child: Stack(children: _stackedContent(_getMainContent(players))),
+      ),
     ),
   );
 

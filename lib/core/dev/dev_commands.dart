@@ -249,8 +249,10 @@ class DevCommandRegistry {
           return console.log("Error: Missing seconds. Usage: $usage");
         }
         int value = int.tryParse(args.first) ?? 0;
-        console.log("Setting current running turn timer to: $value");
-        manager.turnDeadlineEpoch = value;
+        console.log("Setting current running turn timer to: ${value}s");
+        manager.turnDeadlineEpoch =
+            DateTime.now().millisecondsSinceEpoch + (value * 1000);
+        console.onStateForceSynced?.call();
       },
     ),
     DevCommand(
@@ -273,7 +275,9 @@ class DevCommandRegistry {
           manager.manualTriggerDeckEvent = true;
           manager.addEvent(.deckEventTriggered);
           console.onStateForceSynced?.call();
-          manager.manualTriggerDeckEvent = false;
+          Future.delayed(const Duration(milliseconds: 150), () {
+            manager.manualTriggerDeckEvent = false;
+          });
         } else {
           console.log("Error: Unknown deck event '$type'");
         }

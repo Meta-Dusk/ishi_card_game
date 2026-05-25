@@ -13,9 +13,14 @@ class OpponentStats extends StatelessWidget {
   final int index;
   final int handSize;
 
+  SizedBox get _iconSpacer => const SizedBox(width: 2);
+  TextStyle get _defaultTextStyle =>
+      const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: .bold);
+
   @override
   Widget build(BuildContext context) {
     final actionPoints = manager.actionPoints;
+    final cardDraws = manager.cardDraws;
     final mainContent = [
       Tooltip(
         message: "Their remaining Action Points",
@@ -24,14 +29,26 @@ class OpponentStats extends StatelessWidget {
         child: Row(
           children: [
             const Icon(Icons.bolt, color: Colors.amber, size: 14),
-            const SizedBox(width: 4),
+            _iconSpacer,
             Text(
               "${actionPoints.length > index ? actionPoints[index] : 0}",
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-                fontWeight: .bold,
-              ),
+              style: _defaultTextStyle,
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(width: 8),
+      Tooltip(
+        message: "Their remaining Card Draws",
+        triggerMode: .tap,
+        preferBelow: true,
+        child: Row(
+          children: [
+            const Icon(Icons.style, color: Colors.blueAccent, size: 14),
+            _iconSpacer,
+            Text(
+              "${cardDraws.length > index ? cardDraws[index] : 0}",
+              style: _defaultTextStyle,
             ),
           ],
         ),
@@ -43,20 +60,9 @@ class OpponentStats extends StatelessWidget {
         preferBelow: true,
         child: Row(
           children: [
-            Icon(
-              Icons.front_hand_rounded,
-              color: Colors.blue.shade800,
-              size: 14,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              "$handSize",
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-                fontWeight: .bold,
-              ),
-            ),
+            const Icon(Icons.front_hand_rounded, color: Colors.green, size: 14),
+            _iconSpacer,
+            Text("$handSize", style: _defaultTextStyle),
           ],
         ),
       ),

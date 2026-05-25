@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/components/backgrounds/animated_gradient_background.dart';
+import 'package:ishi/components/overlays/sequential_splash_animator.dart';
+import 'package:ishi/core/assets.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:ishi/components/text/app_version.dart';
 import 'package:ishi/components/text/game_subtitle.dart';
@@ -36,12 +40,14 @@ class MainMenuScreenState extends State<MainMenuScreen> {
   int _startingHandSize = 7;
   MenuState _currentMenu = .root;
   String _appVersion = '';
-  bool showLocalMultiplayer = false;
+  bool showLocalMultiplayer = kDebugMode;
+  bool _showSplash = true;
 
   @override
   void initState() {
     super.initState();
     _fetchAppVersion();
+    AudioManager().playMusic(Audio.music.menuLoop);
   }
 
   void updateUI(VoidCallback fn) {
@@ -55,7 +61,7 @@ class MainMenuScreenState extends State<MainMenuScreen> {
   }
 
   Future<void> _changeMenu(MenuState newState) async {
-    await AudioManager().playSFX(Audio.sfx.itemSelect);
+    await AudioManager().playSFX(Audio.sfx.ui.itemSelect);
     setState(() => _currentMenu = newState);
   }
 
@@ -81,52 +87,157 @@ class MainMenuScreenState extends State<MainMenuScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => _MenuHandler(
-    currentMenu: _currentMenu,
-    mainContent: _mainContent,
-    onPopInvoked: _onPopInvoked,
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.grey.shade100,
+    body: AnimatedGradientBackground(
+      colors: [
+        Colors.white,
+        Colors.white70,
+        Colors.grey.withValues(alpha: 0.5),
+        Colors.blueGrey.withValues(alpha: 0.25),
+        Colors.grey.withValues(alpha: 0.5),
+        Colors.white70,
+        Colors.white,
+      ],
+      animationType: .scroll,
+      duration: const Duration(seconds: 8),
+
+      child: _showSplash
+          ? SequentialSplashAnimator(
+              splashes: _splashes,
+              onComplete: () {
+                if (mounted) setState(() => _showSplash = false);
+              },
+            )
+          : _MenuHandler(
+              currentMenu: _currentMenu,
+              mainContent: _mainContent,
+              onPopInvoked: _onPopInvoked,
+            ),
+    ),
   );
 
-  List<Widget> get _mainContent => [
-    const GameTitle()
-        .animate(onPlay: (controller) => controller.repeat(reverse: true))
-        .moveY(begin: -5, end: 5, duration: 2.seconds, curve: Curves.easeInOut)
-        .tint(color: Colors.black, end: 0.2),
-
-    const GameSubtitle(),
-
-    if (_appVersion.isNotEmpty) ...[
-      const SizedBox(height: 16),
-      AppVersion(appVersion: _appVersion)
-          .animate()
-          .fadeIn(delay: 600.ms)
-          .slideY(begin: 1.0, curve: Curves.easeOut),
-    ],
-
-    const SizedBox(height: 40),
-
-    // THE GAME MENU ANIMATION ENGINE
-    AnimatedSize(
-      duration: const Duration(seconds: 1),
-      curve: Curves.easeOutCubic,
-      alignment: .topCenter,
-      child: _AnimatedMenuSwitcher(
-        currentMenu: _currentMenu,
-        localSetupMenu: () => LocalSetupMenu(
-          key: const ValueKey('localSetup'),
-          playerCount: _playerCount,
-          startingHandSize: _startingHandSize,
-          onPlayerCountChanged: (val) => setState(() => _playerCount = val),
-          onHandSizeChanged: (val) => setState(() => _startingHandSize = val),
-          onBack: () => _changeMenu(.playMode),
-          menu: this,
-        ),
-        onChangeMenu: _changeMenu,
-        showLocalMultiplayer: showLocalMultiplayer,
-        menu: this,
+  List<Widget> get _splashes => [
+    Image.asset(Assets.otherIcons.ishiIcon, width: 200),
+    const Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: "AN "),
+          TextSpan(
+            text: "UNOLIKE ",
+            style: TextStyle(color: Colors.purple),
+          ),
+          TextSpan(
+            text: "ROGUELIKE ",
+            style: TextStyle(color: Colors.purpleAccent),
+          ),
+          TextSpan(
+            text: "CARD GAME ",
+            style: TextStyle(color: Colors.blueGrey),
+          ),
+        ],
       ),
+      style: TextStyle(color: Colors.black, fontSize: 24, letterSpacing: 4),
+      textAlign: .center,
+    ),
+    Column(
+      mainAxisAlignment: .center,
+      mainAxisSize: .min,
+      children: [
+        const Text(
+          "MADE POSSIBLE WITH",
+          style: TextStyle(color: Colors.black, fontSize: 24, letterSpacing: 4),
+          textAlign: .center,
+        ),
+        const SizedBox(height: 8),
+        Image.asset(Assets.otherIcons.flutterLogo, width: 200),
+      ],
+    ),
+    const Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: "A GAME BY "),
+          TextSpan(
+            text: "METADUSK",
+            style: TextStyle(color: Colors.deepPurple),
+          ),
+        ],
+      ),
+      style: TextStyle(color: Colors.black, fontSize: 28, letterSpacing: 4),
+      textAlign: .center,
     ),
   ];
+
+  List<Widget> get _mainContent {
+    final title = const GameTitle()
+        .animate(
+          delay: 100.ms,
+          onPlay: (controller) => controller.repeat(reverse: true),
+        )
+        .moveY(begin: -5, end: 5, duration: 2.seconds, curve: Curves.easeInOut)
+        .tint(color: Colors.black, end: 0.2);
+
+    return [
+      title
+          .animate()
+          .fadeIn(duration: 800.ms, curve: Curves.easeOut)
+          .slideY(
+            begin: -0.2,
+            end: 0,
+            duration: 800.ms,
+            curve: Curves.easeOutBack,
+          ),
+
+      const GameSubtitle()
+          .animate(delay: 200.ms)
+          .fadeIn(duration: 400.ms)
+          .slideY(delay: 100.ms, begin: -0.5, curve: Curves.easeOutCubic),
+
+      if (_appVersion.isNotEmpty) ...[
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: .center,
+          children: [
+            AppVersion(appVersion: _appVersion)
+                .animate(delay: 300.ms)
+                .fadeIn(duration: 400.ms)
+                .slideY(begin: 1.0, curve: Curves.easeOut),
+            if (kDebugMode) ...[
+              const SizedBox(width: 8),
+              const Text("(debug)", style: TextStyle(color: Colors.blueGrey))
+                  .animate(delay: 400.ms)
+                  .fadeIn(duration: 400.ms)
+                  .slideX(begin: -0.5, end: 0.0, curve: Curves.easeOut),
+            ],
+          ],
+        ),
+      ],
+
+      const SizedBox(height: 40),
+
+      // THE GAME MENU ANIMATION ENGINE
+      AnimatedSize(
+        duration: const Duration(seconds: 1),
+        curve: Curves.easeOutCubic,
+        alignment: .topCenter,
+        child: _AnimatedMenuSwitcher(
+          currentMenu: _currentMenu,
+          localSetupMenu: () => LocalSetupMenu(
+            key: const ValueKey('localSetup'),
+            playerCount: _playerCount,
+            startingHandSize: _startingHandSize,
+            onPlayerCountChanged: (val) => setState(() => _playerCount = val),
+            onHandSizeChanged: (val) => setState(() => _startingHandSize = val),
+            onBack: () => _changeMenu(.playMode),
+            menu: this,
+          ),
+          onChangeMenu: _changeMenu,
+          showLocalMultiplayer: showLocalMultiplayer,
+          menu: this,
+        ),
+      ).animate(delay: 500.ms).fadeIn(duration: 400.ms),
+    ];
+  }
 }
 
 class _MenuHandler extends StatelessWidget {
@@ -144,17 +255,16 @@ class _MenuHandler extends StatelessWidget {
   Widget build(BuildContext context) => PopScope(
     canPop: currentMenu == .root, // Only exit app if on Root
     onPopInvokedWithResult: (didPop, _) => onPopInvoked(didPop),
-    child: Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      body: SafeArea(child: Center(child: _scrollView())),
-    ),
-  );
-
-  SingleChildScrollView _scrollView() => SingleChildScrollView(
-    padding: const .symmetric(vertical: 24, horizontal: 16),
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 400),
-      child: Column(mainAxisAlignment: .center, children: mainContent),
+    child: SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const .symmetric(vertical: 24, horizontal: 16),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(mainAxisAlignment: .center, children: mainContent),
+          ),
+        ),
+      ),
     ),
   );
 }
@@ -177,7 +287,6 @@ class _ActiveMenu extends StatelessWidget {
   Widget _buildMenu(MenuState currentMenu) {
     switch (currentMenu) {
       case .root:
-        AudioManager().playMusic(Audio.music.menuLoop1);
         return RootMenu(
           key: const ValueKey('root'),
           onPlay: () => onChangeMenu(.playMode),

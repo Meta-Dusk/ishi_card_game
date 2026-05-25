@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ishi/core/managers/audio_manager.dart';
 
-class SettingsDialog extends StatefulWidget {
-  const SettingsDialog({super.key});
+class AudioSettingsDialog extends StatefulWidget {
+  const AudioSettingsDialog({super.key});
 
   @override
-  State<SettingsDialog> createState() => _SettingsDialogState();
+  State<AudioSettingsDialog> createState() => _AudioSettingsDialogState();
 }
 
-class _SettingsDialogState extends State<SettingsDialog> {
+class _AudioSettingsDialogState extends State<AudioSettingsDialog> {
   late double _masterVol;
   late double _bgmVol;
   late double _sfxVol;

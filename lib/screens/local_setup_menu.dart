@@ -32,28 +32,7 @@ class LocalSetupMenu extends StatelessWidget {
     final mainContent = [
       const SectionHeader(title: "LOCAL SETUP"),
       const SizedBox(height: 8),
-      const Text.rich(
-        TextSpan(
-          children: [
-            TextSpan(
-              text: "WARNING: ",
-              style: TextStyle(
-                fontWeight: .bold,
-                letterSpacing: 2,
-                color: Colors.grey,
-              ),
-            ),
-            TextSpan(
-              text: "Deprecated Game Mode!",
-              style: TextStyle(
-                fontStyle: .italic,
-                fontWeight: .bold,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      ),
+      const _WarningLabel(),
       const SizedBox(height: 16),
       SettingPanel(
         title: "Players: $playerCount",
@@ -117,4 +96,40 @@ class LocalSetupMenu extends StatelessWidget {
       ),
     );
   }
+}
+
+class _WarningLabel extends StatelessWidget {
+  const _WarningLabel();
+
+  @override
+  Widget build(BuildContext context) => const Row(
+    mainAxisAlignment: .center,
+    mainAxisSize: .min,
+    children: [
+      Icon(Icons.warning, color: Colors.redAccent),
+      SizedBox(width: 8),
+      Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: "WARNING: ",
+              style: TextStyle(
+                fontWeight: .bold,
+                letterSpacing: 2,
+                color: Colors.redAccent,
+              ),
+            ),
+            TextSpan(
+              text: "Deprecated Game Mode!",
+              style: TextStyle(
+                fontStyle: .italic,
+                fontWeight: .bold,
+                color: Colors.redAccent,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
 }

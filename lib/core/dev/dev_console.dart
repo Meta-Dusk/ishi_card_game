@@ -26,7 +26,7 @@ class DevConsole {
   DevConsole._internal();
 
   final List<String> logs = [
-    "Ishi Dev Console v2.0",
+    "Ishi Dev Console v3.0",
     "Type 'help' for commands.",
   ];
   final List<DevCommand> _commands = [];
