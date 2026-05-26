@@ -105,11 +105,13 @@ class SocketService implements NetworkService {
         broadcast(PlayerJoinedMessage(currentPlayer));
         break;
 
-      case SetProfileMessage(:final playerName):
+      case SetProfileMessage(:final playerName, :final avatarColorName):
         // Update the name when the client officially connects!
         int clientIndex = _clients.indexOf(socket) + 1;
         if (clientIndex > 0 && clientIndex < playersList.length) {
-          playersList[clientIndex].playerName = playerName;
+          final player = playersList[clientIndex];
+          player.playerName = playerName;
+          player.avatarColorName = avatarColorName;
         }
         broadcast(LobbyStateMessage(playersList));
         break;

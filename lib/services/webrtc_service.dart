@@ -291,10 +291,12 @@ class WebRTCService implements NetworkService {
           broadcast(LobbyStateMessage(listOfPlayers));
           broadcast(PlayerJoinedMessage(currentPlayer));
           break;
-        case SetProfileMessage(:final playerName):
+        case SetProfileMessage(:final playerName, :final avatarColorName):
           int clientIndex = _clientIds.indexOf(peerId) + 1;
           if (clientIndex > 0 && clientIndex < listOfPlayers.length) {
-            listOfPlayers[clientIndex].playerName = playerName;
+            final player = listOfPlayers[clientIndex];
+            player.playerName = playerName;
+            player.avatarColorName = avatarColorName;
           }
           broadcast(LobbyStateMessage(listOfPlayers));
           break;

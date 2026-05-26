@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:ishi/core/managers/prefs_manager.dart';
 
 class AudioManager {
-  static final AudioManager _instance = AudioManager._internal();
+  static final AudioManager _instance = ._internal();
   factory AudioManager() => _instance;
   AudioManager._internal();
 
@@ -29,11 +29,20 @@ class AudioManager {
 
   /// Initializes the BGM release mode and pre-warms the SFX pool.
   Future<void> init({int poolSize = 5}) async {
+    AudioPlayer.global.setAudioContext(
+      AudioContextConfig(respectSilence: true, focus: .mixWithOthers).build(),
+    );
+
     await _bgmPlayer.setReleaseMode(.loop);
+    await _bgmPlayer.setPlayerMode(.mediaPlayer);
 
     // Pre-warm the overlapping pool so there is no delay on first play
     for (int i = 0; i < poolSize; i++) {
-      _sfxPool.add(AudioPlayer()..setReleaseMode(.stop));
+      _sfxPool.add(
+        AudioPlayer()
+          ..setReleaseMode(.stop)
+          ..setPlayerMode(.lowLatency),
+      );
     }
 
     masterVolume = await PrefsManager.getDouble(.masterVolume) ?? 1.0;
@@ -45,7 +54,7 @@ class AudioManager {
 
   // --- VOLUME MATH ---
 
-  /// Applies a logarithmic curve to the volume so it sounds natural to human ears
+  /// Applies a logarithmic curve to the volume so it sounds natural
   double _getRealVolume(double categoryVolume) {
     if (isMuted) return 0.0;
     double linearVolume = masterVolume * categoryVolume;
@@ -104,7 +113,7 @@ class AudioManager {
       await _bgmPlayer.play(AssetSource('audio/music/$filename'));
     } catch (e) {
       currentMusic = null;
-      debugPrint("Music PLayback Error: $e");
+      debugPrint("Music Playback Error: $e");
     }
   }
 
@@ -124,9 +133,10 @@ class AudioManager {
 
     if (!allowOverlap) {
       // DEDICATED INSTANCING
-      // Fetch the dedicated player for this exact file, or create it if missing
       if (!_dedicatedSfxPlayers.containsKey(filename)) {
-        _dedicatedSfxPlayers[filename] = AudioPlayer()..setReleaseMode(.stop);
+        _dedicatedSfxPlayers[filename] = AudioPlayer()
+          ..setReleaseMode(.stop)
+          ..setPlayerMode(.lowLatency);
       }
 
       final player = _dedicatedSfxPlayers[filename]!;
@@ -136,7 +146,6 @@ class AudioManager {
       await player.play(source);
     } else {
       // ROUND-ROBIN POOLING
-      // Grab the next available player in the polyphony array
       final player = _sfxPool[_poolIndex];
 
       await player.setVolume(actualVolume);
@@ -148,7 +157,7 @@ class AudioManager {
     }
   }
 
-  /// Dispose of all players when the app closes.
+  /// Dispose of all `audioPlayers` when the app closes.
   void dispose() {
     _bgmPlayer.dispose();
     for (AudioPlayer audioPlayer in _dedicatedSfxPlayers.values) {

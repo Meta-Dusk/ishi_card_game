@@ -203,7 +203,7 @@ extension GameComponents on GameScreenState {
           const SizedBox(width: 16),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            onPressed: () => _executeActiveRelic(),
+            onPressed: _executeActiveRelic,
             child: const Text(
               "CONFIRM",
               style: TextStyle(color: Colors.white, fontWeight: .bold),

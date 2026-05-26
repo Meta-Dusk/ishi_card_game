@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart' show debugPrint, VoidCallback;
 import 'package:ishi/core/data_types.dart';
-import 'package:ishi/core/models/relic.dart';
+import 'package:ishi/core/models/relic/relic.dart';
 import 'package:ishi/core/models/ishi_card.dart';
 import 'package:ishi/core/models/deck_event.dart';
 

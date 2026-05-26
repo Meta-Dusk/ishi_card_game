@@ -1,6 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:ishi/components/animated_card_list/animated_card_list.dart';
+import 'package:ishi/components/dialogs/gameplay/polymorph_dialog.dart';
 import 'package:ishi/core/assets.dart';
-import '../data_types.dart';
+import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/core/models/ishi_card.dart';
+import 'package:ishi/screens/game_screen/game_screen.dart';
+import '../../data_types.dart';
+
+part 'relic_functions.dart';
+part 'relics.dart';
+
+typedef RelicCallback =
+    Future<IshiCard?> Function({
+      GameManager? manager,
+      GameScreenState? gameState,
+      Relic? relic,
+      List<IshiCard>? targets,
+      IshiCard? card,
+    })?;
+
+typedef RelicUsageDialog =
+    Future<IshiCard?> Function({
+      required BuildContext context,
+      GameManager? manager,
+      Relic? relic,
+    })?;
 
 enum RelicEffect {
   addActionPoint,
@@ -23,6 +47,9 @@ class Relic {
   final int? maxUses;
   int? usesLeft;
   final List<String> memory;
+  final RelicCallback onUse;
+  final RelicUsageDialog onUseDialog;
+  final int? useCost;
 
   Relic({
     required this.id,
@@ -35,7 +62,18 @@ class Relic {
     this.maxUses,
     this.usesLeft,
     List<String>? memory,
+    this.onUse,
+    this.onUseDialog,
+    this.useCost,
   }) : memory = memory ?? <String>[];
+
+  @override
+  String toString() {
+    final usage = types.contains(RelicEffectType.singleUse)
+        ? "singleUse"
+        : "$usesLeft/$maxUses uses left";
+    return "'$name': $effect ($usage)";
+  }
 
   StringDynamicMap toJson() => {
     'id': id,
@@ -54,6 +92,9 @@ class Relic {
     maxUses: maxUses,
     usesLeft: maxUses ?? maxUses,
     memory: List<String>.from(memory),
+    onUse: onUse,
+    onUseDialog: onUseDialog,
+    useCost: useCost,
   );
 
   factory Relic.fromJson(StringDynamicMap json) {
@@ -73,54 +114,9 @@ class Relic {
       maxUses: template.maxUses,
       usesLeft: json['usesLeft'] as int? ?? template.maxUses,
       memory: List<String>.from(json['memory'] ?? []),
+      onUse: template.onUse,
+      onUseDialog: template.onUseDialog,
+      useCost: template.useCost,
     );
   }
 }
-
-/// The master pool of relics the chest can pull from.
-final List<Relic> relicPool = [
-  Relic(
-    id: 'might_ring',
-    name: 'Ring of Might',
-    description: '+1 Action Point at the start of your turn.',
-    icon: Assets.asImageIcon(Assets.relics.mightRing, color: Colors.amber),
-    color: Colors.amber,
-    effect: .addActionPoint,
-  ),
-  Relic(
-    id: 'greed_eye',
-    name: "Eye of Greed",
-    description: '+1 Card Draw at the start of your turn.',
-    icon: Assets.asImageIcon(Assets.relics.greedEye),
-    color: Colors.purpleAccent,
-    effect: .addCardDraw,
-  ),
-  Relic(
-    id: 'golden_ticket',
-    name: 'Golden Ticket',
-    description: 'Instantly draw 5 cards. (One-time use)',
-    icon: Assets.asImageIcon(Assets.relics.goldenTicket),
-    color: Colors.orange,
-    effect: .immediateDraw5,
-    types: {.singleUse},
-  ),
-  Relic(
-    id: 'polymorph_staff',
-    name: 'Staff of Polymorphism',
-    description: 'Transform a card into a card of your choice. (-1 AP)',
-    icon: Assets.asImageIcon(Assets.relics.polymorphStaff),
-    color: Colors.pinkAccent,
-    effect: .polymorph,
-    types: {.active},
-    maxUses: 3,
-  ),
-  Relic(
-    id: 'obliterator',
-    name: 'The Obliterator',
-    description: 'Dispose of up to 5 cards from your hand. (One-time use)',
-    icon: Assets.asImageIcon(Assets.relics.obliterator),
-    color: Colors.blueGrey,
-    effect: .obliterate,
-    types: {.singleUse, .active},
-  ),
-];
