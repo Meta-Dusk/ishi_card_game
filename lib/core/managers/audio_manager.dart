@@ -29,11 +29,20 @@ class AudioManager {
 
   /// Initializes the BGM release mode and pre-warms the SFX pool.
   Future<void> init({int poolSize = 5}) async {
+    AudioPlayer.global.setAudioContext(
+      AudioContextConfig(respectSilence: true, focus: .mixWithOthers).build(),
+    );
+
     await _bgmPlayer.setReleaseMode(.loop);
+    await _bgmPlayer.setPlayerMode(.mediaPlayer);
 
     // Pre-warm the overlapping pool so there is no delay on first play
     for (int i = 0; i < poolSize; i++) {
-      _sfxPool.add(AudioPlayer()..setReleaseMode(.stop));
+      _sfxPool.add(
+        AudioPlayer()
+          ..setReleaseMode(.stop)
+          ..setPlayerMode(.lowLatency),
+      );
     }
 
     masterVolume = await PrefsManager.getDouble(.masterVolume) ?? 1.0;
@@ -124,9 +133,10 @@ class AudioManager {
 
     if (!allowOverlap) {
       // DEDICATED INSTANCING
-      // Fetch the dedicated player for this exact file, or create it if missing
       if (!_dedicatedSfxPlayers.containsKey(filename)) {
-        _dedicatedSfxPlayers[filename] = AudioPlayer()..setReleaseMode(.stop);
+        _dedicatedSfxPlayers[filename] = AudioPlayer()
+          ..setReleaseMode(.stop)
+          ..setPlayerMode(.lowLatency);
       }
 
       final player = _dedicatedSfxPlayers[filename]!;
@@ -136,7 +146,6 @@ class AudioManager {
       await player.play(source);
     } else {
       // ROUND-ROBIN POOLING
-      // Grab the next available player in the polyphony array
       final player = _sfxPool[_poolIndex];
 
       await player.setVolume(actualVolume);

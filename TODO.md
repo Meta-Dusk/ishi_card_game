@@ -25,7 +25,7 @@
 
 #### Relics
 
-- [ ] **Orb of Singularity**: Sacrifice 50 cards in hand to transform this relic into a card. Once played, all cards played after (up to 20) will become _assimilated_. These cards will make the **Orb** change its color, and if a player doesn't play anything, it will _punish_ them, by giving them all the cards _assimilated_ up until that point. Once the limit has been reached, it will simply vanish.
+- [ ] **Orb of Singularity**: Sacrifice the first 50 cards in hand to transform this relic into a card. Once played, all cards played after (up to 20) will become _assimilated_. These cards will make the **Orb** change its color, and if a player doesn't play anything, it will _punish_ them, by giving them all the cards _assimilated_ up until that point. Once the limit has been reached, it will simply vanish.
 - [ ] **Rod of Discord**: Swap decks of all players to each other randomly, excluding the caster, unless they choose to swap with a specific player.
 - [ ] **Beretta 92FS**: Shoot a player. Shot players gets their turn skipped for 3 rounds.
 - [ ] **Pill of Convalescence**: Removes all current debuffs.

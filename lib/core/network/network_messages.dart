@@ -266,8 +266,8 @@ class LobbyPlayer {
   };
 
   factory LobbyPlayer.fromJson(Map<String, dynamic> json) => LobbyPlayer(
-    playerName: json[_NetKey.playerName] as String,
-    pingMs: json[_NetKey.pingMs] as int,
-    avatarColorName: json[_NetKey.avatarColorName] as String,
+    playerName: json[_NetKey.playerName] as String? ?? "Player",
+    pingMs: json[_NetKey.pingMs] as int? ?? 0,
+    avatarColorName: json[_NetKey.avatarColorName] as String? ?? "blue",
   );
 }
