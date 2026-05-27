@@ -57,7 +57,6 @@ extension GameScreenActions on GameScreenState {
         playerIndex: _manager.localPlayerIndex,
       ),
     );
-    _evaluateSmartAutoEnd();
   }
 
   void endTurnAction() {
@@ -95,7 +94,6 @@ extension GameScreenActions on GameScreenState {
         playerIndex: _manager.localPlayerIndex,
       ),
     );
-    _evaluateSmartAutoEnd();
   }
 
   /// Animated card removal
@@ -255,7 +253,6 @@ extension GameScreenActions on GameScreenState {
       chosenRelic: chosenRelic,
       card: card,
     );
-    _evaluateSmartAutoEnd();
   }
 
   void flipAllCardsAction({bool onlyFlipIfFaceDown = false}) {
