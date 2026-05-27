@@ -77,7 +77,6 @@ They must be played in a specific order, or the **Mark 77** will not become play
 
 #### Deck
 
-- [x] **Butterfly Effect**: The played card changes once per round.
 - [ ] **Black Friday**: All sold items in the **Ishi Store** are discounted at 50% off.
 
 ### Concepts
@@ -89,8 +88,6 @@ They must be played in a specific order, or the **Mark 77** will not become play
 
 ## Bugs
 
-- [ ] **Polymorph Staff** not working properly on non-host clients (morphed cards doesn't get registered, nor the data, which also includes the 1 AP cost).
 - [ ] Red skips not skipping during a red card event.
 - [ ] Natural deck events not triggering properly after manually triggering a deck event through commands.
-- [ ] Smart auto-end doesn't work properly for non-host clients (auto-ending after taking a penalty, and after having 0 AP and 0 CD)
 - [ ] **Touchscreen Priority**: laptop issue, where interactivity only works for the touchscreen [_low priority_].

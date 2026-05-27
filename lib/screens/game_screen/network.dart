@@ -33,6 +33,8 @@ extension GameScreenNetwork on GameScreenState {
       await _staggerDrawCards(newlyDealtCards);
       _triggerAutoSortIfNeeded();
     }
+
+    _evaluateSmartAutoEnd();
   }
 
   void initializeNetworkSync() {
@@ -206,7 +208,9 @@ extension GameScreenNetwork on GameScreenState {
   }
 
   void _onActivateRelic(int playerIndex, PlayIntentMessage message) {
-    final relic = relicPool.firstWhere((r) => r.id == message.relicId);
+    final relic = _manager.playerRelics[playerIndex].firstWhere(
+      (r) => r.id == message.relicId,
+    );
 
     // Find the actual physical cards in the Host's master array
     List<IshiCard> targetCards = [];
@@ -220,6 +224,13 @@ extension GameScreenNetwork on GameScreenState {
     IshiCard? template = message.polymorphTemplate != null
         ? IshiCard.fromJson(message.polymorphTemplate!)
         : null;
+
+    if (relic.useCost != null) {
+      _manager.actionPoints[playerIndex] -= relic.useCost!;
+    }
+    if (template != null) {
+      relic.memory.add(template.id);
+    }
 
     // Apply it on the master state and broadcast!
     _applyRelicEffectLocally(

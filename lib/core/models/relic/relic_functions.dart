@@ -37,8 +37,8 @@ Future<IshiCard?> _onPolymorph({
   required GameScreenState gameState,
   required List<IshiCard> targets,
   required IshiCard chosenTemplate,
+  required int playerIndex,
 }) async {
-  final playerIndex = manager.localPlayerIndex;
   final localUIindex = gameState.localUIIndex;
   int lastModifiedIndex = 0;
 

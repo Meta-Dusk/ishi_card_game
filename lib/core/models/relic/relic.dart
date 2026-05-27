@@ -17,6 +17,7 @@ typedef RelicCallback =
       Relic? relic,
       List<IshiCard>? targets,
       IshiCard? card,
+      int? playerIndex,
     })?;
 
 typedef RelicUsageDialog =

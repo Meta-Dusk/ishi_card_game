@@ -76,17 +76,18 @@ extension RelicsHandler on GameScreenState {
             manager: _manager,
             gameState: this,
             targets: targets,
+            playerIndex: playerIndex,
           );
           break;
 
         default:
           if (relic.onUse == null) break;
           relic.onUse!(
-            card: null,
             gameState: this,
             manager: _manager,
             relic: relic,
             targets: targets,
+            playerIndex: playerIndex,
           );
           break;
       }
