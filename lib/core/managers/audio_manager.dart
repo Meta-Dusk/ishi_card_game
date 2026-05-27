@@ -30,7 +30,15 @@ class AudioManager {
   /// Initializes the BGM release mode and pre-warms the SFX pool.
   Future<void> init({int poolSize = 5}) async {
     AudioPlayer.global.setAudioContext(
-      AudioContextConfig(respectSilence: true, focus: .mixWithOthers).build(),
+      AudioContext(
+        android: const AudioContextAndroid(
+          isSpeakerphoneOn: false,
+          stayAwake: false,
+          contentType: .sonification,
+          usageType: .game,
+          audioFocus: .gainTransientMayDuck,
+        ),
+      ),
     );
 
     await _bgmPlayer.setReleaseMode(.loop);
