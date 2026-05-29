@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'imports.dart';
@@ -76,7 +77,32 @@ class MainMenuScreenState extends State<MainMenuScreen> {
         await _changeMenu(.playMode);
         break;
 
-      default:
+      case .root:
+        final bool? shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text("Exit the app?"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text(
+                  "Cancel",
+                  style: TextStyle(color: Colors.black),
+                ),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: FilledButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(borderRadius: .circular(12)),
+                ),
+                child: Text("Exit"),
+              ),
+            ],
+          ),
+        );
+        if (shouldExit == true) SystemNavigator.pop();
         break;
     }
   }
@@ -117,11 +143,7 @@ class MainMenuScreenState extends State<MainMenuScreen> {
     const Text.rich(
       TextSpan(
         children: [
-          TextSpan(text: "AN "),
-          TextSpan(
-            text: "UNOLIKE ",
-            style: TextStyle(color: Colors.purple),
-          ),
+          TextSpan(text: "A "),
           TextSpan(
             text: "ROGUELIKE ",
             style: TextStyle(color: Colors.purpleAccent),
@@ -237,7 +259,7 @@ class MainMenuScreenState extends State<MainMenuScreen> {
 
 class _AnimatedMenuSwitcher extends StatelessWidget {
   final MenuState currentMenu;
-  final void Function(MenuState) onChangeMenu;
+  final void Function(MenuState menuState) onChangeMenu;
   final Widget Function() localSetupMenu;
   final bool showLocalMultiplayer;
   final MainMenuScreenState menu;
@@ -347,11 +369,11 @@ class _MenuHandler extends StatelessWidget {
 
   final MenuState currentMenu;
   final List<Widget> mainContent;
-  final void Function(bool) onPopInvoked;
+  final void Function(bool isPopped) onPopInvoked;
 
   @override
   Widget build(BuildContext context) => PopScope(
-    canPop: currentMenu == .root, // Only exit app if on Root
+    canPop: false,
     onPopInvokedWithResult: (didPop, _) => onPopInvoked(didPop),
     child: SafeArea(
       child: Center(

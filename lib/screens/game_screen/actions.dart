@@ -47,7 +47,7 @@ extension GameScreenActions on GameScreenState {
       await _staggerDrawCards([drawnCard]);
       _triggerAutoSortIfNeeded();
       broadcastGameState();
-      _evaluateSmartAutoEnd();
+      await _evaluateSmartAutoEnd();
       return;
     }
 
@@ -84,7 +84,7 @@ extension GameScreenActions on GameScreenState {
       await _staggerDrawCards(newlyDrawnCards);
       _triggerAutoSortIfNeeded();
       broadcastGameState();
-      _evaluateSmartAutoEnd();
+      await _evaluateSmartAutoEnd();
       return;
     }
 
@@ -127,10 +127,11 @@ extension GameScreenActions on GameScreenState {
         final freshRelic = chosenRelic.clone();
         _manager.playerRelics[playerIndex].add(freshRelic);
 
-        if (freshRelic.effect == .immediateDraw5) {
+        if (freshRelic.effects.containsKey(RelicEffect.immediateDraw)) {
+          final drawCount = freshRelic.effects[RelicEffect.immediateDraw]!;
           drawnCards = _manager.forceDraw(
             playerIndex,
-            count: 5,
+            count: drawCount,
             skipHandInsertion: true,
           );
           _manager.playerRelics[playerIndex].remove(freshRelic);
@@ -241,7 +242,7 @@ extension GameScreenActions on GameScreenState {
         chosenRelic: chosenRelic,
         card: card,
       );
-      _evaluateSmartAutoEnd();
+      await _evaluateSmartAutoEnd();
       return;
     }
 
@@ -335,14 +336,13 @@ extension GameScreenActions on GameScreenState {
     final controller = scrollControllers[localUIIndex];
 
     for (IshiCard card in incomingCards) {
-      final currentPlayer = _manager.playerHands[_manager.localPlayerIndex];
+      final currentPlayer = currentHand;
 
       updateUI(() => currentPlayer.add(card));
 
       final newIndex = currentPlayer.length - 1;
 
-      // Fetch the list state DYNAMICALLY inside the loop!
-      final listState = listKeys[localUIIndex]?.currentState;
+      final listState = getCurrentState;
 
       // Only animate if the list has successfully mounted
       if (listState != null) {
@@ -372,13 +372,22 @@ extension GameScreenActions on GameScreenState {
   }
 
   /// Checks if the local player is out of moves, and if so,
-  /// automatically presses "End Turn"
-  void _evaluateSmartAutoEnd() {
-    if (!isMyTurn) return;
-    if (mounted &&
-        isMyTurn &&
-        !_manager.hasValidMoves(_manager.localPlayerIndex)) {
-      endTurnAction();
+  /// automatically attempts to take a penalty, draw a card, or press "End Turn"
+  Future<void> _evaluateSmartAutoEnd() async {
+    if (!isMyTurn || !mounted) return;
+
+    if (_manager.hasValidMoves(_manager.localPlayerIndex)) return;
+
+    if (_manager.pendingDrawCount > 0) {
+      await takePenaltyAction();
+      return;
     }
+
+    if (_manager.cardDraws[_manager.localPlayerIndex] > 0) {
+      await drawCardAction();
+      return;
+    }
+
+    endTurnAction();
   }
 }

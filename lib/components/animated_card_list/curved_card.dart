@@ -16,6 +16,7 @@ class CurvedCard extends StatelessWidget {
     required this.isMyTurn,
     required this.isSelected,
     required this.event,
+    required this.isPlayable,
   });
 
   final int index;
@@ -23,10 +24,11 @@ class CurvedCard extends StatelessWidget {
   final IshiCard card;
   final Animation<double> animation;
   final ScrollController? scrollController;
-  final void Function(IshiCard) onTapCard;
+  final void Function(IshiCard card) onTapCard;
   final bool isMyTurn;
   final bool isSelected;
   final DeckEventEffect event;
+  final bool isPlayable;
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
@@ -56,6 +58,7 @@ class CurvedCard extends StatelessWidget {
       isMyTurn: isMyTurn,
       isSelected: isSelected,
       event: event,
+      isPlayable: isPlayable,
     ),
   );
 }

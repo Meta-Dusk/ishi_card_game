@@ -9,7 +9,7 @@ import '../main_menu/section_header.dart';
 
 class LanSetupMenu extends StatelessWidget {
   final VoidCallback onPrimaryBack;
-  final void Function(BuildContext) onSecondaryBack;
+  final void Function(BuildContext context) onSecondaryBack;
   final MainMenuScreenState menu;
 
   const LanSetupMenu({

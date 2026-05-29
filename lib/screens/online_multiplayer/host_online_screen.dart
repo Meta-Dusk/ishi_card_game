@@ -7,7 +7,7 @@ import 'package:ishi/services/webrtc_service.dart';
 class HostOnlineScreen extends StatefulWidget {
   const HostOnlineScreen({super.key, required this.onBack, required this.menu});
 
-  final void Function(BuildContext) onBack;
+  final void Function(BuildContext context) onBack;
   final MainMenuScreenState menu;
 
   @override

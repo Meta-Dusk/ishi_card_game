@@ -4,8 +4,8 @@ import 'package:ishi/components/dialogs/gameplay/polymorph_dialog.dart';
 import 'package:ishi/core/assets.dart';
 import 'package:ishi/core/managers/game_manager.dart';
 import 'package:ishi/core/models/ishi_card.dart';
+import 'package:ishi/core/data_types.dart';
 import 'package:ishi/screens/game_screen/game_screen.dart';
-import '../../data_types.dart';
 
 part 'relic_functions.dart';
 part 'relics.dart';
@@ -28,11 +28,11 @@ typedef RelicUsageDialog =
     })?;
 
 enum RelicEffect {
-  addActionPoint,
-  addCardDraw,
-  immediateDraw5,
+  addActionPoints,
+  addCardDraws,
+  immediateDraw,
   polymorph,
-  obliterate,
+  immediateDiscard,
 }
 
 enum RelicEffectType { active, passive, singleUse }
@@ -43,7 +43,7 @@ class Relic {
   final String description;
   final Widget icon;
   final Color color;
-  final RelicEffect effect;
+  final Map<RelicEffect, int?> effects;
   final Set<RelicEffectType> types;
   final int? maxUses;
   int? usesLeft;
@@ -58,7 +58,7 @@ class Relic {
     required this.description,
     required this.icon,
     required this.color,
-    required this.effect,
+    required this.effects,
     this.types = const {.passive},
     this.maxUses,
     this.usesLeft,
@@ -73,7 +73,7 @@ class Relic {
     final usage = types.contains(RelicEffectType.singleUse)
         ? "singleUse"
         : "$usesLeft/$maxUses uses left";
-    return "'$name': $effect ($usage)";
+    return "'$name': $effects ($usage)";
   }
 
   StringDynamicMap toJson() => {
@@ -88,7 +88,7 @@ class Relic {
     description: description,
     icon: icon,
     color: color,
-    effect: effect,
+    effects: Map.from(effects),
     types: Set.from(types),
     maxUses: maxUses,
     usesLeft: maxUses ?? maxUses,
@@ -110,7 +110,7 @@ class Relic {
       description: template.description,
       icon: template.icon,
       color: template.color,
-      effect: template.effect,
+      effects: template.effects,
       types: template.types,
       maxUses: template.maxUses,
       usesLeft: json['usesLeft'] as int? ?? template.maxUses,

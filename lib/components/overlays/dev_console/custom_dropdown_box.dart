@@ -7,31 +7,29 @@ class CustomDropdownBox extends StatelessWidget {
     required this.options,
   });
 
-  final void Function(String) onSelected;
+  final void Function(String selectedOption) onSelected;
   final Iterable<String> options;
 
   @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: .topLeft,
-      child: Material(
-        color: Colors.grey.shade900,
-        child: SizedBox(
-          width: 250,
-          child: ListView.builder(
-            padding: .zero,
-            shrinkWrap: true,
-            itemCount: options.length,
-            itemBuilder: (_, index) => _DropdownOption(
-              options: options,
-              index: index,
-              onSelected: onSelected,
-            ),
+  Widget build(BuildContext context) => Align(
+    alignment: .topLeft,
+    child: Material(
+      color: Colors.grey.shade900,
+      child: SizedBox(
+        width: 250,
+        child: ListView.builder(
+          padding: .zero,
+          shrinkWrap: true,
+          itemCount: options.length,
+          itemBuilder: (_, index) => _DropdownOption(
+            options: options,
+            index: index,
+            onSelected: onSelected,
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _DropdownOption extends StatelessWidget {
@@ -43,7 +41,7 @@ class _DropdownOption extends StatelessWidget {
 
   final Iterable<String> options;
   final int index;
-  final void Function(String) onSelected;
+  final void Function(String selectedOption) onSelected;
 
   @override
   Widget build(BuildContext context) {

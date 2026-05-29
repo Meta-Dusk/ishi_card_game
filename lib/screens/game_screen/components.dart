@@ -1,7 +1,7 @@
 part of 'game_screen.dart';
 
 extension GameComponents on GameScreenState {
-  Widget _buildRelicDisplay() => RelicDisplay(
+  Widget get _buildRelicDisplay => RelicDisplay(
     relics: _manager.playerRelics[_manager.localPlayerIndex],
     onTapRelic: (isActiveRelic, relic) {
       if (!isMyTurn || !isActiveRelic) return;
@@ -18,31 +18,42 @@ extension GameComponents on GameScreenState {
     },
   );
 
-  /// THE PLAY PILE (Center)
-  Stack _playPileAndDeck() => Stack(
-    alignment: .center,
-    clipBehavior: .none,
-    children: [
-      PlayAndPileDeck(
-        manager: _manager,
-        onDrawCard: drawCardAction,
-        onPlayCard: playCardAction,
-        playPileKey: playPileKey,
-      ),
-      if (_currentCombatMessages.isNotEmpty)
-        Positioned(
-          top: -20,
-          child: FloatingCombatTextGroup(
-            key: _combatMessagesKey,
-            interval: const Duration(milliseconds: 500),
-            messages: _currentCombatMessages,
-          ),
+  Widget _playPileAndDeck({required double scale}) => Transform(
+    alignment: FractionalOffset.center,
+    transform: .identity()
+      ..setEntry(3, 2, 0.002)
+      ..rotateX(-0.5)
+      ..scaleByVector3(.all(scale)),
+    child: Stack(
+      alignment: .center,
+      clipBehavior: .none,
+      children: [
+        PlayAndPileDeck(
+          manager: _manager,
+          onDrawCard: drawCardAction,
+          onPlayCard: playCardAction,
+          playPileKey: playPileKey,
         ),
-    ],
+        if (_currentCombatMessages.isNotEmpty) _combatMessages,
+      ],
+    ),
+  );
+
+  Positioned get _combatMessages => Positioned(
+    top: -20,
+    child: Transform(
+      alignment: .center,
+      transform: .identity()..rotateX(0.5),
+      child: FloatingCombatTextGroup(
+        key: _combatMessagesKey,
+        interval: const Duration(milliseconds: 500),
+        messages: _currentCombatMessages,
+      ),
+    ),
   );
 
   /// LOCAL PLAYER DASHBOARD (Bottom)
-  Column _lowerPanel() {
+  Column get _lowerPanel {
     final animatedCardList = AnimatedCardList(
       animatedListKey: listKeys[localUIIndex],
       currentHand: currentHand,
@@ -57,13 +68,10 @@ extension GameComponents on GameScreenState {
             if (_relicTargets.contains(card)) {
               _relicTargets.remove(card); // Deselect target
             } else {
-              // Select target/s
-              int maxTargets = _activeTargetingRelic!.effect == .obliterate
-                  ? 5
-                  : 1;
-              if (_relicTargets.length < maxTargets) {
-                _relicTargets.add(card);
-              }
+              final relicEffects = _activeTargetingRelic!.effects;
+              final int maxTargets =
+                  relicEffects[RelicEffect.immediateDiscard] ?? 1;
+              if (_relicTargets.length < maxTargets) _relicTargets.add(card);
             }
             return;
           }
@@ -74,6 +82,10 @@ extension GameComponents on GameScreenState {
       scrollController: scrollControllers[localUIIndex],
       isMyTurn: isMyTurn,
       event: _manager.activeDeckEvent,
+      isPlayable: (card) {
+        if (_activeTargetingRelic != null) return true;
+        return _manager.canPlay(card, _manager.localPlayerIndex).canPlay;
+      },
     );
 
     final cardViewSwapButton = ElevatedButton.icon(
@@ -91,7 +103,6 @@ extension GameComponents on GameScreenState {
     final cardsDisplay = RawScrollbar(
       key: ValueKey(scrollControllers[localUIIndex]),
       controller: scrollControllers[localUIIndex],
-      thumbVisibility: true,
       thumbColor: Colors.black26,
       radius: const .circular(8),
       thickness: 6,
@@ -102,9 +113,7 @@ extension GameComponents on GameScreenState {
 
     Widget? targetingBanner;
     if (_activeTargetingRelic != null) {
-      targetingBanner = _targetingBanner().animate().fadeIn().slideY(
-        begin: 0.5,
-      );
+      targetingBanner = _targetingBanner.animate().fadeIn().slideY(begin: 0.5);
     }
 
     return Column(
@@ -125,19 +134,16 @@ extension GameComponents on GameScreenState {
           targetingBanner!,
         ],
         if (_activeTargetingRelic == null && !_isViewingRelics) ...[
-          Opacity(
-            opacity: isMyTurn ? 1.0 : 0.5,
-            child: HandControls(
-              onEndTurn: endTurnAction,
-              onFlipAllCard: flipAllCardsAction,
-              onSortHand: animatedSort,
-              onTakePenalty: takePenaltyAction,
-              onToggleAutoSort: () => updateUI(
-                () => _manager.isAutoSortEnabled = !_manager.isAutoSortEnabled,
-              ),
-              manager: _manager,
-              isMyTurn: isMyTurn,
+          HandControls(
+            onEndTurn: endTurnAction,
+            onFlipAllCard: flipAllCardsAction,
+            onSortHand: animatedSort,
+            onTakePenalty: takePenaltyAction,
+            onToggleAutoSort: () => updateUI(
+              () => _manager.isAutoSortEnabled = !_manager.isAutoSortEnabled,
             ),
+            manager: _manager,
+            isMyTurn: isMyTurn,
           ),
           AnimatedPlayButton(
             selectedCard: _selectedCard,
@@ -159,7 +165,7 @@ extension GameComponents on GameScreenState {
             child: _isViewingRelics
                 ? SizedBox(
                     key: const ValueKey('relics_view'),
-                    child: _buildRelicDisplay(),
+                    child: _buildRelicDisplay,
                   )
                 : cardsDisplay,
           ),
@@ -169,8 +175,9 @@ extension GameComponents on GameScreenState {
     );
   }
 
-  Container _targetingBanner() {
-    int maxTargets = _activeTargetingRelic!.effect == .obliterate ? 5 : 1;
+  Container get _targetingBanner {
+    final relicEffects = _activeTargetingRelic!.effects;
+    final int maxTargets = relicEffects[RelicEffect.immediateDiscard] ?? 1;
 
     final usingRelicIndicator = Row(
       mainAxisSize: .min,
@@ -284,4 +291,43 @@ extension GameComponents on GameScreenState {
       ),
     ),
   );
+
+  Widget _tableSurface({required Size size, required double responsiveScale}) {
+    final double tableWidth = size.width * 0.95;
+    final double tableHeight = tableWidth;
+
+    return Transform(
+      alignment: FractionalOffset.center,
+      transform: .identity()
+        ..setEntry(3, 2, 0.0015)
+        ..translateByVector3(.new(0.0, 0.0, -150.0))
+        ..rotateX(-0.85),
+      child: Container(
+        width: tableWidth,
+        height: tableHeight,
+        decoration: BoxDecoration(
+          shape: .circle,
+          gradient: const RadialGradient(
+            center: .center,
+            radius: 0.8,
+            colors: [Color(0xFF3D566E), Color(0xFF2C3E50), Color(0xFF121A22)],
+            stops: [0.1, 0.5, 1.0],
+          ),
+          border: .all(color: Colors.black87, width: 4),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.6),
+              blurRadius: 40,
+              offset: const Offset(0, 60),
+            ),
+            BoxShadow(
+              color: const Color(0xFF1A252F),
+              offset: const Offset(0, 16),
+              spreadRadius: -2,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -123,7 +123,7 @@ class _ColorSelections extends StatelessWidget {
   });
 
   final String selectedColorName;
-  final void Function(MapEntry<String, Color>) onSelect;
+  final void Function(MapEntry<String, Color> selectedColorMap) onSelect;
 
   @override
   Widget build(BuildContext context) {

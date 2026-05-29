@@ -1,188 +1,246 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/core/managers/profile_manager.dart';
 import 'package:ishi/services/network_service.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'animated_card_fan.dart';
 import 'animated_turn_arrow.dart';
 import 'opponent_stats.dart';
 
-class OpponentsOverlay extends StatefulWidget {
+class OpponentsOverlay extends StatelessWidget {
   const OpponentsOverlay({
     super.key,
     required this.manager,
     required this.net,
     required this.listKeys,
+    required this.scale,
   });
 
   final GameManager manager;
   final NetworkService net;
   final Map<int, GlobalKey<AnimatedListState>> listKeys;
-
-  @override
-  State<OpponentsOverlay> createState() => _OpponentsOverlayState();
-}
-
-class _OpponentsOverlayState extends State<OpponentsOverlay> {
-  final ScrollController _scrollController = ScrollController();
-  int _lastTurn = -1;
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant OpponentsOverlay oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    // Auto-Scroll Logic: Check if the turn has changed!
-    if (widget.manager.currentPlayer != _lastTurn) {
-      _lastTurn = widget.manager.currentPlayer;
-
-      // Wait for the frame to render before calculating the scroll position
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToCurrentPlayer();
-      });
-    }
-  }
-
-  void _scrollToCurrentPlayer() {
-    if (!_scrollController.hasClients) return;
-
-    int opponentIndex = -1;
-    int drawnIndex = 0;
-
-    // Find out which slot the current player occupies in the UI list
-    for (int i = 0; i < widget.manager.playerCount; i++) {
-      if (i == widget.manager.localPlayerIndex) continue;
-      if ((i + 1) == widget.manager.currentPlayer) {
-        opponentIndex = drawnIndex;
-        break;
-      }
-      drawnIndex++;
-    }
-
-    if (opponentIndex != -1) {
-      double targetOffset = opponentIndex * 61.0;
-      final maxScroll = _scrollController.position.maxScrollExtent;
-
-      if (targetOffset > maxScroll) targetOffset = maxScroll;
-
-      _scrollController.animateTo(
-        targetOffset,
-        duration: const Duration(milliseconds: 600),
-        curve: Curves.easeOutCubic,
-      );
-    }
-  }
+  final double scale;
 
   @override
   Widget build(BuildContext context) {
-    // Collect valid opponent indices (skipping the local player)
-    List<int> opponentIndices = [];
-    for (int i = 0; i < widget.manager.playerCount; i++) {
-      if (i == widget.manager.localPlayerIndex) continue;
-      opponentIndices.add(i);
+    final size = MediaQuery.of(context).size;
+
+    final centerX = size.width / 2;
+    final centerY = (size.height / 2) - (80 * scale);
+
+    final radiusX = size.width * 0.42;
+    final radiusY = size.height * 0.28;
+
+    List<Widget> positionedOpponents = [];
+    final totalPlayers = manager.playerCount;
+
+    for (int i = 0; i < totalPlayers; i++) {
+      if (i == manager.localPlayerIndex) continue;
+
+      int relativeSeat = (i - manager.localPlayerIndex) % totalPlayers;
+      if (relativeSeat < 0) relativeSeat += totalPlayers;
+
+      double angleStep = (2 * pi) / totalPlayers;
+      double angle = (pi / 2) + (relativeSeat * angleStep);
+
+      // The specific angle this seat needs to rotate to face the center
+      double facingAngle = relativeSeat * angleStep;
+
+      double x = centerX + radiusX * cos(angle);
+      double y = centerY + radiusY * sin(angle);
+
+      double normalizedY = (sin(angle) + 1) / 2;
+      double depthScale = (0.6 + (0.4 * normalizedY)) * scale;
+
+      String name = "Player ${i + 1}";
+      Color color = ProfileManager().avatarColor;
+      if (i < net.playersList.length) {
+        final player = net.playersList[i];
+        name = player.playerName;
+        color = ProfileManager().getAvatarColor(player.avatarColorName);
+      }
+
+      final int opponentHandSize = manager.opponentHandSizes.length > i
+          ? manager.opponentHandSizes[i]
+          : 0;
+      final int currentHandSize = net.isHost
+          ? manager.playerHands[i].length
+          : opponentHandSize;
+
+      final bool isTurn = manager.currentPlayer == (i + 1);
+
+      final positionedOpponent = _PositionedOpponent(
+        yCoord: y,
+        child: Positioned(
+          left: x - 120,
+          top: y - 120,
+          width: 240,
+          height: 240,
+          child: Transform.scale(
+            scale: depthScale,
+            child: _OpponentSeat(
+              isTurn: isTurn,
+              name: name,
+              color: color,
+              manager: manager,
+              playerIndex: i,
+              handSize: currentHandSize,
+              listKeys: listKeys,
+              facingAngle: facingAngle,
+            ),
+          ),
+        ),
+      );
+      positionedOpponents.add(positionedOpponent);
     }
 
-    return Container(
-      width: 300,
-      height: 120,
-      margin: const .only(right: 16, top: 16, bottom: 16),
-      alignment: .centerRight,
-      child: ListView.builder(
-        controller: _scrollController,
-        scrollDirection: .vertical,
-        shrinkWrap: true,
-        physics: const BouncingScrollPhysics(),
-        itemExtent: 61.0,
-        itemCount: opponentIndices.length,
-        itemBuilder: (context, listIndex) {
-          int i = opponentIndices[listIndex];
+    positionedOpponents.sort(
+      (a, b) => (a as _PositionedOpponent).yCoord.compareTo(
+        (b as _PositionedOpponent).yCoord,
+      ),
+    );
 
-          String name = "Player ${i + 1}";
-          if (i < widget.net.playersList.length) {
-            name = widget.net.playersList[i].playerName;
-          }
-
-          // Safe hand count
-          int handSize = 0;
-          if (widget.net.isHost) {
-            handSize = widget.manager.playerHands[i].length;
-          } else if (widget.manager.opponentHandSizes.length > i) {
-            handSize = widget.manager.opponentHandSizes[i];
-          }
-
-          bool isTurn = widget.manager.currentPlayer == (i + 1);
-
-          return Padding(
-            padding: const .only(bottom: 16.0),
-            child: Row(
-              mainAxisSize: .min,
-              mainAxisAlignment: .end,
-              children: [
-                _OpponentStatsColumn(
-                  isTurn: isTurn,
-                  name: name,
-                  manager: widget.manager,
-                  playerIndex: i,
-                  handSize: handSize,
-                ),
-                const SizedBox(width: 12),
-                AnimatedCardFan(
-                  listKeys: widget.listKeys,
-                  index: i,
-                  handSize: handSize,
-                ),
-              ],
-            ),
-          );
-        },
+    return SizedBox(
+      width: size.width,
+      height: size.height,
+      child: Stack(
+        clipBehavior: .none,
+        children: positionedOpponents
+            .map((e) => (e as _PositionedOpponent).child)
+            .toList(),
       ),
     );
   }
 }
 
-class _OpponentStatsColumn extends StatelessWidget {
-  const _OpponentStatsColumn({
+class _PositionedOpponent extends StatelessWidget {
+  final double yCoord;
+  final Widget child;
+  const _PositionedOpponent({required this.yCoord, required this.child});
+  @override
+  Widget build(BuildContext context) => child;
+}
+
+class _OpponentSeat extends StatelessWidget {
+  const _OpponentSeat({
     required this.isTurn,
     required this.name,
+    required this.color,
     required this.manager,
     required this.playerIndex,
     required this.handSize,
+    required this.listKeys,
+    required this.facingAngle,
   });
 
   final bool isTurn;
   final String name;
+  final Color color;
   final GameManager manager;
   final int playerIndex;
   final int handSize;
+  final Map<int, GlobalKey<AnimatedListState>> listKeys;
+  final double facingAngle;
 
   @override
   Widget build(BuildContext context) {
-    final mainContent = [
-      Row(
-        children: [
-          if (isTurn) const AnimatedTurnArrow(),
-          if (isTurn) const SizedBox(width: 4),
-          Text(
-            name,
-            style: TextStyle(
-              color: isTurn ? Colors.orangeAccent : Colors.white,
-              fontWeight: .bold,
-              fontSize: 16,
+    // Trigonometry for radial positioning
+    double dx = sin(facingAngle);
+    double dy = -cos(facingAngle);
+
+    // Cards pushed INTO the table center
+    double cardsX = dx * 55;
+    double cardsY = dy * 55;
+
+    // Coaster pushed OUT towards the edge
+    double coasterX = -dx * 45;
+    double coasterY = -dy * 45;
+
+    // Stats hover safely ABOVE the coaster (North in 2D screen space)
+    double textY = coasterY - 55;
+
+    return Stack(
+      alignment: .center,
+      clipBehavior: .none,
+      children: [
+        // THE 3D CARDS
+        Transform.translate(
+          offset: Offset(cardsX, cardsY),
+          child: AnimatedCardFan(
+            listKeys: listKeys,
+            index: playerIndex,
+            handSize: handSize,
+            facingAngle: facingAngle,
+          ),
+        ),
+
+        // THE 3D COASTER BASE
+        Transform.translate(
+          offset: Offset(coasterX, coasterY),
+          child: Transform(
+            alignment: FractionalOffset.center,
+            transform: .identity()
+              ..setEntry(3, 2, 0.002)
+              ..rotateX(-0.85)
+              ..rotateZ(facingAngle),
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: .circle,
+                color: color.withValues(alpha: 0.3),
+                border: .all(color: color, width: 2),
+              ),
             ),
           ),
-        ],
-      ),
-      const SizedBox(height: 4),
-      OpponentStats(manager: manager, index: playerIndex, handSize: handSize),
-    ];
+        ),
 
-    return Column(
-      mainAxisSize: .min,
-      crossAxisAlignment: .end,
-      children: mainContent,
+        // THE 2D HOLOGRAM ICON
+        Transform.translate(
+          offset: Offset(coasterX, coasterY),
+          child: const Icon(Icons.person, color: Colors.white, size: 24)
+              .animate(onPlay: (controller) => controller.repeat(reverse: true))
+              .moveY(
+                duration: 2.seconds,
+                begin: 0.0,
+                end: -4.0,
+                curve: Curves.easeInOut,
+              ),
+        ),
+
+        // THE 2D STATS BILLBOARD
+        Transform.translate(
+          offset: Offset(coasterX, textY),
+          child: Column(
+            mainAxisSize: .min,
+            children: [
+              _nameAndTurnIndicator,
+              const SizedBox(height: 4),
+              OpponentStats(
+                manager: manager,
+                index: playerIndex,
+                handSize: handSize,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
+
+  Row get _nameAndTurnIndicator => Row(
+    mainAxisSize: .min,
+    children: [
+      if (isTurn) ...const [AnimatedTurnArrow(), SizedBox(width: 4)],
+      Text(
+        name,
+        style: TextStyle(
+          color: isTurn ? Colors.orangeAccent : Colors.white,
+          fontWeight: .bold,
+          fontSize: 16,
+        ),
+      ),
+    ],
+  );
 }

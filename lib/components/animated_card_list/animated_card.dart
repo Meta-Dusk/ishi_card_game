@@ -16,16 +16,18 @@ class AnimatedCard extends StatelessWidget {
     required this.isMyTurn,
     required this.isSelected,
     required this.event,
+    required this.isPlayable,
   });
 
   final ScrollController? scrollController;
   final IshiCard card;
   final int index;
   final int totalCards;
-  final void Function(IshiCard) onTapCard;
+  final void Function(IshiCard card) onTapCard;
   final bool isMyTurn;
   final bool isSelected;
   final DeckEventEffect event;
+  final bool isPlayable;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +51,7 @@ class AnimatedCard extends StatelessWidget {
       isMyTurn: isMyTurn,
       isSelected: isSelected,
       event: event,
+      isPlayable: isPlayable,
     ),
   );
 }

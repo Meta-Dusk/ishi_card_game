@@ -1,4 +1,4 @@
-# Ishi: The 'Uno-like' Roguelike
+# Ishi: A Roguelike Card Game
 
 <!-- markdownlint-disable no-inline-html -->
 <p align="center">
@@ -14,8 +14,6 @@
     <a href="https://github.com/Meta-Dusk/ishi_card_game/wiki" alt="GitHub Wiki for Ishi Card Game">
         <img src="https://img.shields.io/badge/wiki-lightgrey?style=for-the-badge&logo=github&color=inactive" alt="GitHub Wiki Badge" /></a>
 </p>
-<!-- markdownlint-enable -->
-<!-- markdownlint-disable line-length -->
 
 ***
 
@@ -25,8 +23,8 @@ It's basically a roguelike card game, that is heavily inspired from the game mec
 ## Feature List
 
 | Feature | Description | Version |
-| -------- | -------------- | -------- |
-| **Uno-Inspired Game Mechanics** | Game rules contains classic Uno rules. | v0.1.0 |
+| ------- | ----------- | ------- |
+| **Classic Matching Rules** | Game rules contains references to the classic _Uno_ rules. | v0.1.0 |
 | **LAN Multiplayer** | Players can join other players locally (via QR code, or manual IP input). Supports cross-play. | v0.4.0 |
 | **Online Multiplayer** | Players can also join other players _online_ (via room codes). The server is situated in **Southeast Asia**, in **Singapore**. Supports cross-play. | v0.6.0 |
 | **Relics** | Items that are obtained through the _chest card_, which has varying effects on the game. | v0.12.0 |
@@ -35,7 +33,7 @@ It's basically a roguelike card game, that is heavily inspired from the game mec
 ## Supported Platforms
 
 | Platform | Support | Version |
-| ---------- | :-------: | :-------: |
+| -------- | :-----: | :-----: |
 | **Windows** | ✅ | v0.1.0 |
 | **Android** | ✅ | v0.4.0 |
 | **Linux** | ❌ | - |

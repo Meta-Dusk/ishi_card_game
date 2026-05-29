@@ -13,7 +13,7 @@ class HostLANLobbyScreen extends StatefulWidget {
     required this.menu,
   });
 
-  final void Function(BuildContext) onBack;
+  final void Function(BuildContext context) onBack;
   final MainMenuScreenState menu;
 
   @override

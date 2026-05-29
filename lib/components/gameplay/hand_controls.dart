@@ -16,7 +16,7 @@ class HandControls extends StatelessWidget {
 
   final VoidCallback onFlipAllCard;
   final VoidCallback onEndTurn;
-  final void Function(DeckSortType) onSortHand;
+  final void Function(DeckSortType sortType) onSortHand;
   final VoidCallback onTakePenalty;
   final VoidCallback onToggleAutoSort;
   final GameManager manager;
@@ -32,7 +32,7 @@ class HandControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const .symmetric(horizontal: 16.0, vertical: 8.0),
-    child: Row(mainAxisAlignment: .spaceBetween, children: _mainContent),
+    child: Row(mainAxisAlignment: .center, children: _mainContent),
   );
 
   List<Widget> get _mainContent => [
@@ -58,12 +58,16 @@ class HandControls extends StatelessWidget {
         ),
       ],
     ),
+    const SizedBox(width: 8),
     TextButton.icon(
       onPressed: onFlipAllCard,
       icon: const Icon(Icons.flip, color: Colors.white),
       label: const Text("Flip Hand", style: TextStyle(color: Colors.white)),
     ),
-    if (isMyTurn) _getTurnButton(isUnderAttack, hasActed),
+    if (isMyTurn) ...[
+      const SizedBox(width: 8),
+      _getTurnButton(isUnderAttack, hasActed),
+    ],
   ];
 
   StatelessWidget _getTurnButton(bool isUnderAttack, bool hasActed) =>
