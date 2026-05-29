@@ -35,6 +35,9 @@ class OpponentsOverlay extends StatelessWidget {
     List<Widget> positionedOpponents = [];
     final totalPlayers = manager.playerCount;
 
+    double crowdScale = 1.0 + ((8 - totalPlayers) * 0.08);
+    crowdScale = crowdScale.clamp(0.6, 1.6);
+
     for (int i = 0; i < totalPlayers; i++) {
       if (i == manager.localPlayerIndex) continue;
 
@@ -50,8 +53,14 @@ class OpponentsOverlay extends StatelessWidget {
       double x = centerX + radiusX * cos(angle);
       double y = centerY + radiusY * sin(angle);
 
+      // Horizontal Edge Spread
+      double edgeProximity = cos(angle).abs();
+      double verticalSpread = sin(angle) * edgeProximity * (90 * scale);
+
+      y += verticalSpread;
+
       double normalizedY = (sin(angle) + 1) / 2;
-      double depthScale = (0.6 + (0.4 * normalizedY)) * scale;
+      double depthScale = (0.6 + (0.4 * normalizedY)) * scale * crowdScale;
 
       String name = "Player ${i + 1}";
       Color color = ProfileManager().avatarColor;

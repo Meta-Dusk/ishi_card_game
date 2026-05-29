@@ -129,18 +129,6 @@ class AnimatedCardBuilder extends StatelessWidget {
         ),
       ),
     );
-
-    // Optional 3D transform
-    // return Transform(
-    //   alignment: FractionalOffset.center,
-    //   transform: .identity()
-    //     ..setEntry(3, 2, 0.002)
-    //     ..rotateX(-0.4)
-    //     ..rotateZ(rotation)
-    //     ..translateByVector3(.new(offsetX, offsetY, 0.0))
-    //     ..scaleByVector3(.all(scale)),
-    //   child: cardView,
-    // );
   }
 
   Animate _applySelectionEffect(Widget child) => child

@@ -161,6 +161,16 @@ extension GameScreenActions on GameScreenState {
     updateUI(() {
       final removedCard = _manager.playerHands[playerIndex].removeAt(cardIndex);
       _manager.hasPlayedCard = true;
+
+      bool isStandardReverse = card.type == .reverse;
+      bool isYellowUnflux =
+          _manager.activeDeckEvent == .yellowCardsUnflux &&
+          card.color == .yellow;
+
+      if ((isStandardReverse || isYellowUnflux) && _manager.playerCount > 2) {
+        _manager.isClockwise = !_manager.isClockwise;
+      }
+
       removeCard(cardIndex, removedCard);
     });
 

@@ -9,7 +9,12 @@ import 'package:ishi/core/models/deck_event.dart';
 
 part 'events_manager.dart';
 
-typedef CanPlayRecord = ({bool canPlay, String? reason});
+class CanPlayData {
+  CanPlayData({required this.canPlay, this.reason});
+
+  bool canPlay;
+  String? reason;
+}
 
 enum DeckSortType { byColor, byType, byValue, unsorted }
 
@@ -386,18 +391,30 @@ class GameManager {
   IshiCard get topCard => discardPile.last;
 
   /// RULE EVALUATION: Can this card be played?
-  CanPlayRecord canPlay(IshiCard card, int playerIndex) {
-    final CanPlayRecord canPlayNoReason = (canPlay: true, reason: null);
+  CanPlayData canPlay(IshiCard card, int playerIndex) {
+    final CanPlayData canPlayNoReason = .new(canPlay: true);
+
     int apCost = 1;
     if (activeDeckEvent == .wildDoubleTrouble && card.color == .wild) {
       apCost = 2;
     }
     if (actionPoints[playerIndex] < apCost) {
-      return (canPlay: false, reason: "Insufficient Action Points (AP)!");
+      return .new(canPlay: false, reason: "Insufficient Action Points (AP)!");
     }
 
     if (pendingDrawCount > 0) {
-      if (card.type == topCard.type) return canPlayNoReason;
+      if (card.type == topCard.type) {
+        if (card.type == .number) {
+          // If a number card caused the attack (like in redCardsBurn),
+          // the deflection MUST still be a valid match!
+          if (card.color == topCard.color || card.number == topCard.number) {
+            return canPlayNoReason;
+          }
+        } else {
+          // +2s and +4s can still stack freely on their own types!
+          return canPlayNoReason;
+        }
+      }
 
       // DEFLECTION MECHANICS
       bool isNaturalSkip = card.type == .skip;
@@ -408,17 +425,25 @@ class GameManager {
           (topCard.color == .wild || card.color == topCard.color)) {
         return canPlayNoReason;
       }
-      return (canPlay: false, reason: "Card cannot deflect incoming attack!");
+      return .new(
+        canPlay: false,
+        reason: "Card cannot deflect incoming attack!",
+      );
     }
 
     if (actionPoints[playerIndex] <= 0) {
-      return (canPlay: false, reason: "Insufficient Action Points (AP)!");
+      return .new(canPlay: false, reason: "Insufficient Action Points (AP)!");
     }
 
     if (card.color == .wild) return canPlayNoReason;
+
+    if (activeDeckEvent == .redCardsBurn && card.color == .red) {
+      return canPlayNoReason;
+    }
+
     if (declaredColor != null) {
       final isSameColor = card.color == declaredColor;
-      return (
+      return .new(
         canPlay: isSameColor,
         reason: isSameColor ? null : "Card color doesn't match!",
       );
@@ -426,17 +451,18 @@ class GameManager {
 
     if (topCard.color == .wild) return canPlayNoReason;
     if (card.color == topCard.color) return canPlayNoReason;
+
     if (card.type == topCard.type) {
       if (card.type == .number) {
         final isSameNumber = card.number == topCard.number;
-        return (
+        return .new(
           canPlay: isSameNumber,
           reason: isSameNumber ? null : "Card number doesn't match!",
         );
       }
       return canPlayNoReason; // Skips, Reverses, etc. match type
     }
-    return (canPlay: false, reason: "Invalid card!");
+    return .new(canPlay: false, reason: "Invalid card!");
   }
 
   List<IshiCard> resolvePendingAttack({bool skipHandInsertion = false}) {
@@ -523,6 +549,10 @@ class GameManager {
           _playersToSkip++;
         } else {
           isClockwise = !isClockwise;
+          debugPrint(
+            "Turn Direction reversed: "
+            "${isClockwise ? "clockwise" : "counter-clockwise"}",
+          );
         }
         break;
       case .skip:
@@ -530,9 +560,11 @@ class GameManager {
           //? DEFENSIVE SKIP: The player successfully deflected!
           // We DO NOT increment _playersToSkip, because we want the VERY NEXT player
           // to face the pendingDrawCount bomb. The stack size stays exactly the same.
+          debugPrint("Player has deflected!");
         } else {
           //? OFFENSIVE SKIP: Normal play, the next player loses their turn.
           _playersToSkip++;
+          debugPrint("Player has skipped the next player!");
         }
         break;
       case .draw2:

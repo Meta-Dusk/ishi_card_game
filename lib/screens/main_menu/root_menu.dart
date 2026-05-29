@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/core/data_types.dart' show isPcPlatform;
 import 'package:ishi/screens/main_menu/menu_button.dart';
 
 class RootMenu extends StatelessWidget {
@@ -15,11 +15,6 @@ class RootMenu extends StatelessWidget {
     required this.onSettings,
     required this.onProfile,
   });
-
-  bool get isDesktop =>
-      defaultTargetPlatform == .windows ||
-      defaultTargetPlatform == .macOS ||
-      defaultTargetPlatform == .linux;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +40,7 @@ class RootMenu extends StatelessWidget {
         color: Colors.grey.shade800,
         onTap: onProfile,
       ),
-      if (isDesktop) ...[
+      if (isPcPlatform()) ...[
         const SizedBox(height: 8),
         MenuButton(
           title: "EXIT",

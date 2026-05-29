@@ -36,16 +36,18 @@ final List<Relic> relicPool = [
     effects: {.polymorph: 1},
     types: {.active},
     maxUses: 3,
-    onUseDialog: ({required context, manager, relic}) =>
-        _onPolymorphDialog(context: context, manager: manager!, relic: relic!),
-    onUse: ({gameState, manager, relic, targets, card, playerIndex}) =>
-        _onPolymorph(
-          manager: manager!,
-          gameState: gameState!,
-          targets: targets!,
-          chosenTemplate: card!,
-          playerIndex: playerIndex!,
-        ),
+    onUseDialog: (params) => _onPolymorphDialog(
+      context: params.context,
+      manager: params.manager!,
+      relic: params.relic!,
+    ),
+    onUse: (params) => _onPolymorph(
+      manager: params.manager!,
+      gameState: params.gameState!,
+      targets: params.targets!,
+      chosenTemplate: params.card!,
+      playerIndex: params.playerIndex!,
+    ),
     useCost: 1,
   ),
   Relic(
@@ -56,11 +58,11 @@ final List<Relic> relicPool = [
     color: Colors.blueGrey,
     effects: {.immediateDiscard: 5},
     types: {.singleUse, .active},
-    onUse: ({manager, gameState, relic, targets, card, playerIndex}) =>
-        _onObliterate(
-          manager: manager!,
-          gameState: gameState!,
-          targets: targets!,
-        ),
+    onUse: (params) => _onObliterate(
+      manager: params.manager!,
+      gameState: params.gameState!,
+      targets: params.targets!,
+      playerIndex: params.playerIndex!,
+    ),
   ),
 ];

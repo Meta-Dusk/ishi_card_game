@@ -127,7 +127,11 @@ extension EventsManager on GameManager {
         playedCard.type != .reverse &&
         pendingDrawCount == 0 &&
         playedCard.color == .yellow) {
-      isClockwise = !isClockwise;
+      if (playerCount == 2) {
+        _playersToSkip++; // In 1v1, it acts as a Skip
+      } else {
+        isClockwise = !isClockwise; // In 3+ players, it acts as a Reverse
+      }
     }
 
     // WILDS DOUBLE EFFECT

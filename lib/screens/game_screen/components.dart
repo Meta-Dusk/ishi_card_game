@@ -291,43 +291,4 @@ extension GameComponents on GameScreenState {
       ),
     ),
   );
-
-  Widget _tableSurface({required Size size, required double responsiveScale}) {
-    final double tableWidth = size.width * 0.95;
-    final double tableHeight = tableWidth;
-
-    return Transform(
-      alignment: FractionalOffset.center,
-      transform: .identity()
-        ..setEntry(3, 2, 0.0015)
-        ..translateByVector3(.new(0.0, 0.0, -150.0))
-        ..rotateX(-0.85),
-      child: Container(
-        width: tableWidth,
-        height: tableHeight,
-        decoration: BoxDecoration(
-          shape: .circle,
-          gradient: const RadialGradient(
-            center: .center,
-            radius: 0.8,
-            colors: [Color(0xFF3D566E), Color(0xFF2C3E50), Color(0xFF121A22)],
-            stops: [0.1, 0.5, 1.0],
-          ),
-          border: .all(color: Colors.black87, width: 4),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.6),
-              blurRadius: 40,
-              offset: const Offset(0, 60),
-            ),
-            BoxShadow(
-              color: const Color(0xFF1A252F),
-              offset: const Offset(0, 16),
-              spreadRadius: -2,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

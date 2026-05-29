@@ -41,7 +41,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
   int get getConnectedPlayerCount => _net.currentPlayer;
 
   int _startingHandSize = 7;
-  int _maxPlayers = 10;
+  int _maxPlayers = 4;
   bool _isStartingGame = false;
 
   List<LobbyPlayer> get players => _net.playersList;

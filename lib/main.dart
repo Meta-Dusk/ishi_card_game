@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode;
-import 'package:ishi/core/managers/audio_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 import 'core/managers/profile_manager.dart';
+import 'core/data_types.dart' show isPcPlatform;
+import 'core/managers/audio_manager.dart';
 import 'screens/main_menu/main_menu_screen.dart';
 
 void main() async {
@@ -22,12 +23,14 @@ void main() async {
     .landscapeRight,
   ]);
 
-  await windowManager.ensureInitialized();
-  final windowOptions = WindowOptions(center: true, fullScreen: kReleaseMode);
-  windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.show();
-    await windowManager.focus();
-  });
+  if (isPcPlatform()) {
+    await windowManager.ensureInitialized();
+    final windowOptions = WindowOptions(center: true, fullScreen: kReleaseMode);
+    windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  }
 
   runApp(const MainApp());
 }

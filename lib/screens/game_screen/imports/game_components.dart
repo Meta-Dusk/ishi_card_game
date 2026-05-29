@@ -13,12 +13,15 @@ export '../../../components/dialogs/menus/game_settings_dialog.dart';
 export '../../../components/gameplay/floating_combat_text.dart';
 export '../../../components/gameplay/hand_controls.dart';
 export '../../../components/gameplay/card_counter.dart';
-export '../../../components/gameplay/play_and_pile_deck.dart';
-export '../../../components/gameplay/opponents_overlay/opponents_overlay.dart';
 export '../../../components/gameplay/turn_timeline.dart';
 export '../../../components/gameplay/turn_indicator.dart';
 export '../../../components/gameplay/animated_play_button.dart';
 export '../../../components/gameplay/relic_display.dart';
+
+export '../../../components/gameplay/opponents_overlay/opponents_overlay.dart';
+
+export '../../../components/gameplay/game_board/play_and_pile_deck.dart';
+export '../../../components/gameplay/game_board/holographic_track.dart';
 
 export '../../../components/gameplay/player_info/player_info.dart';
 

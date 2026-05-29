@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/core/data_types.dart' show isPcPlatform;
 
 class SequentialSplashAnimator extends StatefulWidget {
   final List<Widget> splashes;
@@ -88,14 +88,9 @@ class _SequentialSplashAnimatorState extends State<SequentialSplashAnimator> {
 class _DismissText extends StatelessWidget {
   const _DismissText();
 
-  bool get isDesktop =>
-      defaultTargetPlatform == .windows ||
-      defaultTargetPlatform == .macOS ||
-      defaultTargetPlatform == .linux;
-
   @override
   Widget build(BuildContext context) => Text(
-    "${isDesktop ? "Click" : "Tap"} anywhere to skip.",
+    "${isPcPlatform() ? "Click" : "Tap"} anywhere to skip.",
     style: const TextStyle(
       color: Colors.blueGrey,
       fontStyle: .italic,

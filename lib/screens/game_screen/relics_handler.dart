@@ -17,9 +17,7 @@ extension RelicsHandler on GameScreenState {
     );
     if (relic.onUseDialog != null) {
       chosenTemplate = await relic.onUseDialog!(
-        context: context,
-        manager: _manager,
-        relic: relic,
+        .new(context: context, manager: _manager, relic: relic),
       );
       if (chosenTemplate == null) return; // Game cancels the usage
     }
@@ -72,20 +70,24 @@ extension RelicsHandler on GameScreenState {
       if (relicEffects.contains(RelicEffect.polymorph) &&
           chosenTemplate != null) {
         relic.onUse!(
-          card: chosenTemplate,
-          manager: _manager,
-          gameState: this,
-          targets: targets,
-          playerIndex: playerIndex,
+          .new(
+            card: chosenTemplate,
+            manager: _manager,
+            gameState: this,
+            targets: targets,
+            playerIndex: playerIndex,
+          ),
         );
       } else {
         if (relic.onUse != null) {
           relic.onUse!(
-            gameState: this,
-            manager: _manager,
-            relic: relic,
-            targets: targets,
-            playerIndex: playerIndex,
+            .new(
+              gameState: this,
+              manager: _manager,
+              relic: relic,
+              targets: targets,
+              playerIndex: playerIndex,
+            ),
           );
         }
       }
