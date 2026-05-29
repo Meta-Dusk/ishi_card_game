@@ -15,7 +15,7 @@ class PlayAndPileDeck extends StatelessWidget {
 
   final GameManager manager;
   final VoidCallback onDrawCard;
-  final void Function(IshiCard) onPlayCard;
+  final void Function(IshiCard card) onPlayCard;
   final GlobalKey<PlayCardsPileState>? playPileKey;
 
   @override
@@ -44,7 +44,7 @@ class PlayCardsPile extends StatefulWidget {
   });
 
   final GameManager manager;
-  final void Function(IshiCard) onPlayCard;
+  final void Function(IshiCard card) onPlayCard;
 
   @override
   State<PlayCardsPile> createState() => PlayCardsPileState();

@@ -8,7 +8,7 @@ final List<Relic> relicPool = [
     description: '+1 Action Point at the start of your turn.',
     icon: Assets.asImageIcon(Assets.relics.mightRing, color: Colors.amber),
     color: Colors.amber,
-    effect: .addActionPoint,
+    effects: {.addActionPoints: 1},
   ),
   Relic(
     id: 'greed_eye',
@@ -16,7 +16,7 @@ final List<Relic> relicPool = [
     description: '+1 Card Draw at the start of your turn.',
     icon: Assets.asImageIcon(Assets.relics.greedEye),
     color: Colors.purpleAccent,
-    effect: .addCardDraw,
+    effects: {.addCardDraws: 1},
   ),
   Relic(
     id: 'golden_ticket',
@@ -24,7 +24,7 @@ final List<Relic> relicPool = [
     description: 'Instantly draw 5 cards (One-time use).',
     icon: Assets.asImageIcon(Assets.relics.goldenTicket),
     color: Colors.orange,
-    effect: .immediateDraw5,
+    effects: {.immediateDraw: 5},
     types: {.singleUse},
   ),
   Relic(
@@ -33,7 +33,7 @@ final List<Relic> relicPool = [
     description: 'Transform a card into a card of your choice (-1 AP).',
     icon: Assets.asImageIcon(Assets.relics.polymorphStaff),
     color: Colors.pinkAccent,
-    effect: .polymorph,
+    effects: {.polymorph: 1},
     types: {.active},
     maxUses: 3,
     onUseDialog: ({required context, manager, relic}) =>
@@ -54,7 +54,7 @@ final List<Relic> relicPool = [
     description: 'Dispose of up to 5 cards from your hand (One-time use).',
     icon: Assets.asImageIcon(Assets.relics.obliterator),
     color: Colors.blueGrey,
-    effect: .obliterate,
+    effects: {.immediateDiscard: 5},
     types: {.singleUse, .active},
     onUse: ({manager, gameState, relic, targets, card, playerIndex}) =>
         _onObliterate(

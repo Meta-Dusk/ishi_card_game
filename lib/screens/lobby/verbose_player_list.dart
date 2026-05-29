@@ -8,7 +8,7 @@ class VerbosePlayerList extends StatelessWidget {
   const VerbosePlayerList({super.key, required this.players, this.onKick});
 
   final List<LobbyPlayer> players;
-  final void Function(int, {String? reason})? onKick;
+  final void Function(int playerIndex, {String? reason})? onKick;
 
   @override
   Widget build(BuildContext context) => ListView.builder(
@@ -36,7 +36,7 @@ class _PlayerListEntry extends StatelessWidget {
 
   final int index;
   final List<LobbyPlayer> players;
-  final void Function(int, {String? reason})? onKick;
+  final void Function(int playerIndex, {String? reason})? onKick;
 
   LobbyPlayer get player => players[index];
   bool get isHost => index == 0;
@@ -92,7 +92,7 @@ class _KickButton extends StatelessWidget {
     required this.player,
   });
 
-  final void Function(int, {String? reason})? onKick;
+  final void Function(int playerIndex, {String? reason})? onKick;
   final int index;
   final LobbyPlayer player;
 

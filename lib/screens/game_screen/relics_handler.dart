@@ -45,7 +45,7 @@ extension RelicsHandler on GameScreenState {
 
     if (_net.isHost) {
       broadcastGameState();
-      _evaluateSmartAutoEnd();
+      await _evaluateSmartAutoEnd();
     } else {
       _net.sendIntent(
         PlayIntentMessage(
@@ -56,7 +56,7 @@ extension RelicsHandler on GameScreenState {
           polymorphTemplate: chosenTemplate?.toJson(),
         ),
       );
-      _evaluateSmartAutoEnd();
+      await _evaluateSmartAutoEnd();
     }
   }
 
@@ -67,21 +67,19 @@ extension RelicsHandler on GameScreenState {
     required List<IshiCard> targets,
     IshiCard? chosenTemplate,
   }) async {
+    final relicEffects = relic.effects.entries.map((e) => e.key).toList();
     updateUI(() {
-      switch (relic.effect) {
-        case .polymorph:
-          if (chosenTemplate == null) break;
-          relic.onUse!(
-            card: chosenTemplate,
-            manager: _manager,
-            gameState: this,
-            targets: targets,
-            playerIndex: playerIndex,
-          );
-          break;
-
-        default:
-          if (relic.onUse == null) break;
+      if (relicEffects.contains(RelicEffect.polymorph) &&
+          chosenTemplate != null) {
+        relic.onUse!(
+          card: chosenTemplate,
+          manager: _manager,
+          gameState: this,
+          targets: targets,
+          playerIndex: playerIndex,
+        );
+      } else {
+        if (relic.onUse != null) {
           relic.onUse!(
             gameState: this,
             manager: _manager,
@@ -89,7 +87,7 @@ extension RelicsHandler on GameScreenState {
             targets: targets,
             playerIndex: playerIndex,
           );
-          break;
+        }
       }
 
       // CONSUMPTION: Remove single-use relics or decrease durability!

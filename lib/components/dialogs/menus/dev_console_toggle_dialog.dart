@@ -9,7 +9,7 @@ class DevConsoleToggleDialog extends StatelessWidget {
   });
 
   final bool showDevConsole;
-  final void Function(bool) onToggle;
+  final void Function(bool isToggled) onToggle;
 
   Widget _animatedDialog(AlertDialog dialog) => dialog
       .animate()

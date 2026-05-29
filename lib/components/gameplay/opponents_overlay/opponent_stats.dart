@@ -67,6 +67,10 @@ class OpponentStats extends StatelessWidget {
         ),
       ),
     ];
-    return Row(children: mainContent);
+    return Row(
+      mainAxisAlignment: .center,
+      mainAxisSize: .min,
+      children: mainContent,
+    );
   }
 }

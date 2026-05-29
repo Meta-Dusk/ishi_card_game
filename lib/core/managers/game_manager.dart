@@ -602,15 +602,23 @@ class GameManager {
       if (onRoundEnd != null) onRoundEnd!();
     }
 
-    int playerIndex = currentPlayer - 1;
+    final int playerIndex = currentPlayer - 1;
 
     // Calculate base economies + relic bonuses
-    int bonusAP = playerRelics[playerIndex]
-        .where((r) => r.effect == .addActionPoint)
-        .length;
-    int bonusCD = playerRelics[playerIndex]
-        .where((r) => r.effect == .addCardDraw)
-        .length;
+    final int bonusAP = playerRelics[playerIndex]
+        .where((r) => r.effects[RelicEffect.addActionPoints] != null)
+        .fold<int>(
+          0,
+          (previous, current) =>
+              previous + current.effects[RelicEffect.addActionPoints]!,
+        );
+    final int bonusCD = playerRelics[playerIndex]
+        .where((r) => r.effects[RelicEffect.addCardDraws] != null)
+        .fold<int>(
+          0,
+          (previous, current) =>
+              previous + current.effects[RelicEffect.addCardDraws]!,
+        );
 
     actionPoints[currentPlayer - 1] = 1 + bonusAP;
     cardDraws[currentPlayer - 1] = 1 + bonusCD;

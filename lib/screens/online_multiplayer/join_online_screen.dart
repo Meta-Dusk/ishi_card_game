@@ -6,7 +6,7 @@ import '../lobby/lobby_waiting_screen.dart';
 import 'package:ishi/services/webrtc_service.dart';
 
 class JoinOnlineScreen extends StatefulWidget {
-  final void Function(BuildContext) onBack;
+  final void Function(BuildContext context) onBack;
   final MainMenuScreenState menu;
 
   const JoinOnlineScreen({super.key, required this.onBack, required this.menu});
@@ -127,7 +127,7 @@ class _JoinOnlineLobbyContent extends StatelessWidget {
 
   final TextEditingController codeController;
   final bool isConnecting;
-  final void Function(String?) onConnect;
+  final void Function(String? address) onConnect;
 
   @override
   Widget build(BuildContext context) {

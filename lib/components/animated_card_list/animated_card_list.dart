@@ -15,15 +15,17 @@ class AnimatedCardList extends StatelessWidget {
     required this.isMyTurn,
     this.selectedCards = const [],
     required this.event,
+    required this.isPlayable,
   });
 
-  final void Function(IshiCard) onTapCard;
+  final void Function(IshiCard card) onTapCard;
   final Key? animatedListKey;
   final ScrollController? scrollController;
   final List<IshiCard> currentHand;
   final bool isMyTurn;
   final List<IshiCard> selectedCards;
   final DeckEventEffect event;
+  final bool Function(IshiCard card) isPlayable;
 
   bool _onScrollNotification(ScrollNotification notification) {
     if (notification is ScrollEndNotification) {
@@ -73,6 +75,7 @@ class AnimatedCardList extends StatelessWidget {
             isMyTurn: isMyTurn,
             isSelected: selectedCards.contains(card),
             event: event,
+            isPlayable: isPlayable(card),
           );
         },
       ),

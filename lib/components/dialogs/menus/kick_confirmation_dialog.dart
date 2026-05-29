@@ -13,7 +13,7 @@ class KickConfirmationDialog extends StatelessWidget {
 
   final LobbyPlayer player;
   final TextEditingController textController;
-  final void Function(int, {String? reason})? onKick;
+  final void Function(int playerIndex, {String? reason})? onKick;
   final int playerIndex;
 
   Widget _animatedDialog(AlertDialog dialog) => dialog

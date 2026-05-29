@@ -161,24 +161,43 @@ class GameScreenState extends State<GameScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.grey.shade900,
-    body: AnimatedGradientBackground(
-      colors: [
-        Colors.grey,
-        Colors.grey.shade600,
-        Colors.grey.shade700,
-        Colors.grey.shade800,
-        Colors.grey.shade900,
-      ],
-      duration: const Duration(seconds: 12),
-      child: _showSplash
-          ? Center(child: _splashContent(context))
-          : SafeArea(child: Stack(children: _mainGameComponents(context))),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final double responsiveScale = (size.height / 400.0).clamp(0.5, 1.25);
 
-  List<Widget> _mainGameComponents(BuildContext context) {
+    final mainGameComponents = SafeArea(
+      child: Stack(children: _mainGameComponents(size: size)),
+    );
+
+    return Scaffold(
+      backgroundColor: Colors.grey.shade900,
+      body: AnimatedGradientBackground(
+        colors: [
+          Colors.grey,
+          Colors.grey.shade600,
+          Colors.grey.shade700,
+          Colors.grey.shade800,
+          Colors.grey.shade900,
+        ],
+        duration: const Duration(seconds: 12),
+        child: _showSplash
+            ? Center(child: _splashContent(scale: responsiveScale))
+            : mainGameComponents,
+      ),
+    );
+  }
+
+  List<Widget> _mainGameComponents({required Size size}) {
+    int animationIndex = 0;
+
+    Duration getAnimationDelay({int interval = 100, int delayAmount = 100}) {
+      final currentDelay = delayAmount + (interval * animationIndex);
+      animationIndex++;
+      return Duration(milliseconds: currentDelay);
+    }
+
+    final double responsiveScale = (size.height / 400.0).clamp(0.5, 1.25);
+
     final turnIndicator = TurnIndicator(
       isMyTurn: isMyTurn,
       turnDeadlineEpoch: _manager.turnDeadlineEpoch,
@@ -188,17 +207,48 @@ class GameScreenState extends State<GameScreen> {
       manager: _manager,
       net: _net,
       listKeys: listKeys,
+      scale: responsiveScale,
     );
 
     final playBoardElements = [
       // BACKGROUND HUD (Lowest Z-Index)
       Positioned(
-        top: 194,
+        top: (size.height / 2) - (80 * responsiveScale) - (size.width / 2),
+        left: 0,
+        right: 0,
+        child: Center(
+          child: _tableSurface(size: size, responsiveScale: responsiveScale)
+              .animate()
+              .fadeIn(duration: 800.ms)
+              .slideY(begin: 0.15, curve: Curves.easeOutCubic),
+        ),
+      ),
+
+      // MID-GROUND (Opponents & Play Pile)
+      Positioned.fill(
+        child: opponentsOverlay
+            .animate()
+            .fadeIn(delay: getAnimationDelay(), duration: 400.ms)
+            .scale(begin: const Offset(0.9, 0.9)),
+      ),
+      Positioned(
+        top: (size.height / 2) - (128 * responsiveScale),
+        left: 0,
+        right: 0,
+        child: _playPileAndDeck(scale: responsiveScale)
+            .animate()
+            .fadeIn(delay: getAnimationDelay(), duration: 400.ms)
+            .scale(begin: const Offset(0.9, 0.9)),
+      ),
+
+      // FOREGROUND: Local Player Hand (Highest standard Z-Index)
+      Positioned(
+        top: (size.height / 2) - (128 * responsiveScale) - 96,
         left: 0,
         right: 0,
         child: turnIndicator
             .animate()
-            .fadeIn(delay: 0.ms, duration: 400.ms)
+            .fadeIn(delay: getAnimationDelay(), duration: 400.ms)
             .scale(begin: const Offset(0.9, 0.9)),
       ),
       Positioned(
@@ -208,7 +258,27 @@ class GameScreenState extends State<GameScreen> {
         child: PlayerInfo(
           manager: _manager,
           network: _net,
-        ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
+        ).animate().fadeIn(delay: getAnimationDelay(), duration: 400.ms),
+      ),
+      Align(
+        alignment: .bottomCenter,
+        child: Transform.scale(
+          scale: responsiveScale.clamp(0.5, 1),
+          alignment: .bottomCenter,
+          child: _lowerPanel
+              .animate()
+              .fadeIn(delay: getAnimationDelay(), duration: 400.ms)
+              .scale(begin: const Offset(0.9, 0.9), curve: Curves.easeOutBack),
+        ),
+      ),
+      Positioned(
+        left: 0,
+        right: 0,
+        bottom: 32,
+        child: TurnTimeline(manager: _manager, net: _net)
+            .animate()
+            .fadeIn(delay: getAnimationDelay(), duration: 400.ms)
+            .scale(begin: const Offset(0.9, 0.9)),
       ),
 
       // CORNER BUTTONS
@@ -216,7 +286,7 @@ class GameScreenState extends State<GameScreen> {
         top: 16,
         left: 16,
         child: _pingToggleButton.animate().fadeIn(
-          delay: 300.ms,
+          delay: getAnimationDelay(),
           duration: 400.ms,
         ),
       ),
@@ -226,51 +296,14 @@ class GameScreenState extends State<GameScreen> {
         right: 0,
         child: Center(
           child: _roundIndicator,
-        ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
+        ).animate().fadeIn(delay: getAnimationDelay(), duration: 400.ms),
       ),
       Positioned(
         top: 16,
         right: 16,
         child: _settingsButton(
           context,
-        ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
-      ),
-
-      // MID-GROUND (Opponents & Play Pile)
-      Positioned(
-        top: 64,
-        right: 16,
-        child: opponentsOverlay
-            .animate()
-            .fadeIn(delay: 600.ms, duration: 400.ms)
-            .scale(begin: const Offset(0.9, 0.9)),
-      ),
-      Positioned(
-        top: (MediaQuery.of(context).size.height / 2) - 128,
-        left: 0,
-        right: 0,
-        child: _playPileAndDeck()
-            .animate()
-            .fadeIn(delay: 700.ms, duration: 400.ms)
-            .scale(begin: const Offset(0.9, 0.9)),
-      ),
-
-      // FOREGROUND: Local Player Hand (Highest standard Z-Index)
-      Align(
-        alignment: .bottomCenter,
-        child: _lowerPanel()
-            .animate()
-            .fadeIn(delay: 800.ms, duration: 400.ms)
-            .scale(begin: const Offset(0.9, 0.9), curve: Curves.easeOutBack),
-      ),
-      Positioned(
-        left: 0,
-        right: 0,
-        bottom: 32,
-        child: TurnTimeline(manager: _manager, net: _net)
-            .animate()
-            .fadeIn(delay: 200.ms, duration: 400.ms)
-            .scale(begin: const Offset(0.9, 0.9)),
+        ).animate().fadeIn(delay: getAnimationDelay(), duration: 400.ms),
       ),
 
       // CONDITIONAL OVERLAYS (Absolute Top Layer)
@@ -293,10 +326,10 @@ class GameScreenState extends State<GameScreen> {
     return playBoardElements;
   }
 
-  Animate _splashContent(BuildContext context) {
+  Animate _splashContent({required double scale}) {
     final splashImage = Image.asset(
       Assets.otherIcons.ishiIcon,
-      width: MediaQuery.of(context).size.width * 0.5,
+      width: 400 * scale.clamp(0.5, 1.0),
     );
     final animatedSplash = splashImage
         .animate(

@@ -19,27 +19,27 @@ class AnimatedCardBuilder extends StatelessWidget {
     required this.isMyTurn,
     required this.isSelected,
     required this.event,
+    required this.isPlayable,
   });
 
   final ScrollController scrollController;
   final int index;
   final int totalCards;
   final IshiCard card;
-  final void Function(IshiCard) onTapCard;
+  final void Function(IshiCard card) onTapCard;
   final bool isMyTurn;
   final bool isSelected;
   final DeckEventEffect event;
+  final bool isPlayable;
 
   @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      key: ValueKey('${card.id}_tween'),
-      tween: Tween<double>(end: index.toDouble()),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
-      builder: (_, value, _) => _animatedCardBuilder(animatedIndex: value),
-    );
-  }
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    key: ValueKey('${card.id}_tween'),
+    tween: Tween<double>(end: index.toDouble()),
+    duration: const Duration(milliseconds: 300),
+    curve: Curves.easeOutCubic,
+    builder: (_, value, _) => _animatedCardBuilder(animatedIndex: value),
+  );
 
   Widget _animatedCardBuilder({required double animatedIndex}) {
     double offset = 0.0;
@@ -75,8 +75,11 @@ class AnimatedCardBuilder extends StatelessWidget {
     double scale = 1.15 - (distFromCenter.abs() * 0.15);
     scale = scale.clamp(0.7, 1.25);
 
-    double opacity = 1.0 - (distFromCenter.abs() * 0.35);
-    opacity = opacity.clamp(0.4, 1.0);
+    double baseOpacity = 1.0 - (distFromCenter.abs() * 0.35);
+    baseOpacity = baseOpacity.clamp(0.4, 1.0);
+
+    double targetOpacity = baseOpacity;
+    if (isMyTurn && !isPlayable) targetOpacity = baseOpacity * 0.3;
 
     final Widget cardUI = FlipCard(
       key: ValueKey('${card.id}_flip'),
@@ -99,10 +102,7 @@ class AnimatedCardBuilder extends StatelessWidget {
           curve: Curves.easeOutCubic,
         );
       },
-      child: Opacity(
-        opacity: opacity,
-        child: AbsorbPointer(child: cardUI),
-      ),
+      child: AbsorbPointer(child: cardUI),
     );
 
     final draggableCard = DraggableCard(
@@ -119,9 +119,28 @@ class AnimatedCardBuilder extends StatelessWidget {
       offset: Offset(offsetX, offsetY),
       child: Transform.rotate(
         angle: rotation,
-        child: Transform.scale(scale: scale, child: cardView),
+        child: Transform.scale(
+          scale: scale,
+          child: AnimatedOpacity(
+            opacity: targetOpacity,
+            duration: const Duration(milliseconds: 250),
+            child: cardView,
+          ),
+        ),
       ),
     );
+
+    // Optional 3D transform
+    // return Transform(
+    //   alignment: FractionalOffset.center,
+    //   transform: .identity()
+    //     ..setEntry(3, 2, 0.002)
+    //     ..rotateX(-0.4)
+    //     ..rotateZ(rotation)
+    //     ..translateByVector3(.new(offsetX, offsetY, 0.0))
+    //     ..scaleByVector3(.all(scale)),
+    //   child: cardView,
+    // );
   }
 
   Animate _applySelectionEffect(Widget child) => child

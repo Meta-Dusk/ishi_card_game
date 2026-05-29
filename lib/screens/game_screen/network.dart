@@ -34,7 +34,7 @@ extension GameScreenNetwork on GameScreenState {
       _triggerAutoSortIfNeeded();
     }
 
-    _evaluateSmartAutoEnd();
+    await _evaluateSmartAutoEnd();
   }
 
   void initializeNetworkSync() {
@@ -201,8 +201,9 @@ extension GameScreenNetwork on GameScreenState {
 
     _manager.playerRelics[playerIndex].add(freshRelic);
 
-    if (freshRelic.effect == .immediateDraw5) {
-      _manager.forceDraw(playerIndex, count: 5);
+    if (freshRelic.effects.containsKey(RelicEffect.immediateDraw)) {
+      final drawCount = freshRelic.effects[RelicEffect.immediateDraw]!;
+      _manager.forceDraw(playerIndex, count: drawCount);
       _manager.playerRelics[playerIndex].remove(freshRelic);
     }
   }

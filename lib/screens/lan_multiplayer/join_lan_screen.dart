@@ -13,7 +13,7 @@ class JoinLANGameScreen extends StatefulWidget {
     required this.menu,
   });
 
-  final void Function(BuildContext) onBack;
+  final void Function(BuildContext context) onBack;
   final MainMenuScreenState menu;
 
   @override
@@ -227,7 +227,7 @@ class _ManualEntryDialog extends StatelessWidget {
   const _ManualEntryDialog({required this.ipController, required this.onJoin});
 
   final TextEditingController ipController;
-  final void Function(String?) onJoin;
+  final void Function(String? address) onJoin;
 
   @override
   Widget build(BuildContext context) => AlertDialog(
