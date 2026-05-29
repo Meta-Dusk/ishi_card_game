@@ -57,30 +57,35 @@ class _PolymorphDialogState extends State<PolymorphDialog> {
       .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutBack);
 
   @override
-  Widget build(BuildContext context) => _animatedDialog(
-    AlertDialog(
-      backgroundColor: Colors.grey.shade900,
-      title: const Text(
-        "SELECT NEW CARD",
-        textAlign: .center,
-        style: TextStyle(
-          color: Colors.pinkAccent,
-          fontWeight: .bold,
-          letterSpacing: 2,
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return _animatedDialog(
+      AlertDialog(
+        backgroundColor: Colors.grey.shade900,
+        title: const Text(
+          "SELECT NEW CARD",
+          textAlign: .center,
+          style: TextStyle(
+            color: Colors.pinkAccent,
+            fontWeight: .bold,
+            letterSpacing: 2,
+          ),
+        ),
+        content: SizedBox(
+          width: (screenWidth * 0.9).clamp(0.0, 800.0),
+          height: screenHeight * 0.6,
+          child: _cardsGrid(),
         ),
       ),
-      content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.9,
-        height: MediaQuery.of(context).size.height * 0.6,
-        child: _cardsGrid(),
-      ),
-    ),
-  );
+    );
+  }
 
   GridView _cardsGrid() => GridView.builder(
     physics: const BouncingScrollPhysics(),
-    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: 4,
+    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+      maxCrossAxisExtent: 110,
       childAspectRatio: 0.65,
       crossAxisSpacing: 8,
       mainAxisSpacing: 8,
@@ -95,7 +100,7 @@ class _PolymorphDialogState extends State<PolymorphDialog> {
         onTap: isUsed ? null : () => Navigator.of(context).pop(card),
         child: AnimatedOpacity(
           duration: const Duration(milliseconds: 200),
-          opacity: isUsed ? 0.25 : 1.0,
+          opacity: isUsed ? 0.3 : 1.0,
           child: FittedBox(
             fit: .contain,
             child: AbsorbPointer(child: CardFront(card: card)),

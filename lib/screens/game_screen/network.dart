@@ -135,30 +135,32 @@ extension GameScreenNetwork on GameScreenState {
           _onActivateRelic(pIndex, message);
           break;
         case .requestDeckRestock:
-          if (_manager.deck.isEmpty) {
-            final random = Random();
-            final chosenEvent =
-                deckEventPool[random.nextInt(deckEventPool.length)];
-
-            _manager.activeDeckEvent = chosenEvent.effect;
-            updateUI(() {
-              final generatedDeck = generateStandardDeck(
-                startingIdCount: _manager.lastDeckTotalIndex,
-              );
-              _manager.deck = generatedDeck.newDeck;
-              _manager.lastDeckTotalIndex = generatedDeck.lastDeckTotalIndex;
-            });
-
-            // Broadcast the sync AND the trigger to all clients
-            _net.broadcast(DeckEventSyncMessage(chosenEvent.effect));
-            _manager.addEvent(.deckEventTriggered); // Host triggers self
-          }
+          _onDeckRestock();
           break;
       }
     });
 
     _animateOpponentHands(oldOpponentSizes);
     broadcastGameState();
+  }
+
+  void _onDeckRestock() {
+    if (_manager.deck.isNotEmpty) return;
+    final random = Random();
+    final chosenEvent = deckEventPool[random.nextInt(deckEventPool.length)];
+
+    _manager.activeDeckEvent = chosenEvent.effect;
+    updateUI(() {
+      final generatedDeck = generateStandardDeck(
+        startingIdCount: _manager.lastDeckTotalIndex,
+      );
+      _manager.deck = generatedDeck.newDeck;
+      _manager.lastDeckTotalIndex = generatedDeck.lastDeckTotalIndex;
+    });
+
+    // Broadcast the sync AND the trigger to all clients
+    _net.broadcast(DeckEventSyncMessage(chosenEvent.effect));
+    _manager.addEvent(.deckEventTriggered); // Host triggers self
   }
 
   void _onClientDrawCard(int pIndex) {

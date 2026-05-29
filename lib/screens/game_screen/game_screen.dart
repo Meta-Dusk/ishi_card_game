@@ -210,14 +210,21 @@ class GameScreenState extends State<GameScreen> {
       scale: responsiveScale,
     );
 
+    final holographicTrack = HolographicTrack(
+      responsiveScale: responsiveScale,
+      size: size,
+      color: _manager.topCard.color.displayColor,
+      isReversed: !_manager.isClockwise,
+    );
+
     final playBoardElements = [
       // BACKGROUND HUD (Lowest Z-Index)
       Positioned(
-        top: (size.height / 2) - (80 * responsiveScale) - (size.width / 2),
+        top: (size.height / 2) - (112 * responsiveScale) - 220,
         left: 0,
         right: 0,
         child: Center(
-          child: _tableSurface(size: size, responsiveScale: responsiveScale)
+          child: holographicTrack
               .animate()
               .fadeIn(duration: 800.ms)
               .slideY(begin: 0.15, curve: Curves.easeOutCubic),
@@ -291,7 +298,7 @@ class GameScreenState extends State<GameScreen> {
         ),
       ),
       Positioned(
-        top: 24,
+        top: (size.height / 2) - (128 * responsiveScale) - 144,
         left: 0,
         right: 0,
         child: Center(

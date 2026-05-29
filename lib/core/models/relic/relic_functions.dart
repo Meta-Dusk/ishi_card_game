@@ -79,9 +79,8 @@ Future<IshiCard?> _onObliterate({
   required GameManager manager,
   required GameScreenState gameState,
   required List<IshiCard> targets,
+  required int playerIndex,
 }) async {
-  final playerIndex = manager.localPlayerIndex;
-
   for (IshiCard target in targets) {
     int index = manager.playerHands[playerIndex].indexOf(target);
     if (index == -1) continue;

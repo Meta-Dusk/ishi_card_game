@@ -10,22 +10,36 @@ import 'package:ishi/screens/game_screen/game_screen.dart';
 part 'relic_functions.dart';
 part 'relics.dart';
 
-typedef RelicCallback =
-    Future<IshiCard?> Function({
-      GameManager? manager,
-      GameScreenState? gameState,
-      Relic? relic,
-      List<IshiCard>? targets,
-      IshiCard? card,
-      int? playerIndex,
-    })?;
+class RelicCallbackParams {
+  RelicCallbackParams({
+    this.manager,
+    this.gameState,
+    this.relic,
+    this.targets,
+    this.card,
+    this.playerIndex,
+  });
+
+  GameManager? manager;
+  GameScreenState? gameState;
+  Relic? relic;
+  List<IshiCard>? targets;
+  IshiCard? card;
+  int? playerIndex;
+}
+
+class RelicUsageDialogParams {
+  RelicUsageDialogParams({required this.context, this.manager, this.relic});
+
+  BuildContext context;
+  GameManager? manager;
+  Relic? relic;
+}
+
+typedef RelicCallback = Future<IshiCard?> Function(RelicCallbackParams params)?;
 
 typedef RelicUsageDialog =
-    Future<IshiCard?> Function({
-      required BuildContext context,
-      GameManager? manager,
-      Relic? relic,
-    })?;
+    Future<IshiCard?> Function(RelicUsageDialogParams params)?;
 
 enum RelicEffect {
   addActionPoints,
