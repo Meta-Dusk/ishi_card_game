@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/core/data_types.dart' show isPcPlatform;
 import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import 'package:ishi/services/network_service.dart';
 import 'imports/game_components.dart';
@@ -13,6 +15,8 @@ part 'events.dart';
 part 'relics_handler.dart';
 part 'components.dart';
 part 'dialogs.dart';
+
+final bool isPc = isPcPlatform();
 
 class GameScreen extends StatefulWidget {
   final GameManager manager;
@@ -98,6 +102,8 @@ class GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setPreferredOrientations([.landscapeLeft, .landscapeRight]);
+
     _manager = widget.manager;
 
     listKeys = {};
@@ -156,6 +162,7 @@ class GameScreenState extends State<GameScreen> {
     for (ScrollController controller in scrollControllers.values) {
       controller.dispose();
     }
+    SystemChrome.setPreferredOrientations([.portraitUp]);
     super.dispose();
     AudioManager().playMusic(Audio.music.menuLoop);
   }
@@ -163,10 +170,15 @@ class GameScreenState extends State<GameScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final double responsiveScale = (size.height / 400.0).clamp(0.5, 1.25);
+    final double responsiveScale = (size.height / 400.0).clamp(0.35, 1.25);
 
     final mainGameComponents = SafeArea(
-      child: Stack(children: _mainGameComponents(size: size)),
+      child: Stack(
+        children: _mainGameComponents(
+          size: size,
+          responsiveScale: responsiveScale,
+        ),
+      ),
     );
 
     return Scaffold(
@@ -187,7 +199,10 @@ class GameScreenState extends State<GameScreen> {
     );
   }
 
-  List<Widget> _mainGameComponents({required Size size}) {
+  List<Widget> _mainGameComponents({
+    required Size size,
+    required double responsiveScale,
+  }) {
     int animationIndex = 0;
 
     Duration getAnimationDelay({int interval = 100, int delayAmount = 100}) {
@@ -196,7 +211,7 @@ class GameScreenState extends State<GameScreen> {
       return Duration(milliseconds: currentDelay);
     }
 
-    final double responsiveScale = (size.height / 400.0).clamp(0.5, 1.25);
+    final double scale = isPc ? responsiveScale : responsiveScale * 0.75;
 
     final turnIndicator = TurnIndicator(
       isMyTurn: isMyTurn,
@@ -210,29 +225,34 @@ class GameScreenState extends State<GameScreen> {
       scale: responsiveScale,
     );
 
-    final holographicTrack = HolographicTrack(
-      responsiveScale: responsiveScale,
-      size: size,
-      color: _manager.topCard.color.displayColor,
-      isReversed: !_manager.isClockwise,
+    final holographicTrack = Transform.translate(
+      offset: isPc ? const Offset(0, 0) : Offset(0, 40),
+      child: Transform.scale(
+        scale: isPc ? 1 : 0.75,
+        child: HolographicTrack(
+          radius: 320 * responsiveScale,
+          color: _manager.topCard.color.displayColor,
+          isReversed: !_manager.isClockwise,
+        ),
+      ),
     );
 
     final playBoardElements = [
       // BACKGROUND HUD (Lowest Z-Index)
-      Positioned(
-        top: (size.height / 2) - (112 * responsiveScale) - 220,
-        left: 0,
-        right: 0,
-        child: Center(
-          child: holographicTrack
-              .animate()
-              .fadeIn(duration: 800.ms)
-              .slideY(begin: 0.15, curve: Curves.easeOutCubic),
-        ),
+      Align(
+        alignment: .center,
+        child: holographicTrack
+            .animate()
+            .fadeIn(duration: 800.ms)
+            .slideY(begin: 0.15, curve: Curves.easeOutCubic),
       ),
 
       // MID-GROUND (Opponents & Play Pile)
-      Positioned.fill(
+      Positioned(
+        top: isPc ? 0 : 72,
+        bottom: 0,
+        left: 0,
+        right: 0,
         child: opponentsOverlay
             .animate()
             .fadeIn(delay: getAnimationDelay(), duration: 400.ms)
@@ -250,17 +270,19 @@ class GameScreenState extends State<GameScreen> {
 
       // FOREGROUND: Local Player Hand (Highest standard Z-Index)
       Positioned(
-        top: (size.height / 2) - (128 * responsiveScale) - 96,
-        left: 0,
-        right: 0,
+        top: isPc
+            ? (size.height / 2) - (128 * responsiveScale) - 80
+            : (size.height / 2) - 32,
+        left: isPc ? 0 : null,
+        right: isPc ? 0 : (size.width / 2) - 240,
         child: turnIndicator
             .animate()
             .fadeIn(delay: getAnimationDelay(), duration: 400.ms)
             .scale(begin: const Offset(0.9, 0.9)),
       ),
       Positioned(
-        top: 40,
-        left: 0,
+        top: isPc ? 40 : (size.height / 2) - 64,
+        left: isPc ? 0 : (size.width / 2) - 256,
         right: 0,
         child: PlayerInfo(
           manager: _manager,
@@ -281,16 +303,30 @@ class GameScreenState extends State<GameScreen> {
       Positioned(
         left: 0,
         right: 0,
-        bottom: 32,
-        child: TurnTimeline(manager: _manager, net: _net)
-            .animate()
-            .fadeIn(delay: getAnimationDelay(), duration: 400.ms)
-            .scale(begin: const Offset(0.9, 0.9)),
+        bottom: isPc ? 32 : 0,
+        child: Transform.scale(
+          scale: scale,
+          alignment: .bottomCenter,
+          child: TurnTimeline(manager: _manager, net: _net)
+              .animate()
+              .fadeIn(delay: getAnimationDelay(), duration: 400.ms)
+              .scale(begin: const Offset(0.9, 0.9)),
+        ),
+      ),
+      Positioned(
+        top: isPc
+            ? (size.height / 2) - (128 * responsiveScale) - 144
+            : (size.height / 2) - 72,
+        left: isPc ? 0 : (size.width / 2) - 56,
+        right: 0,
+        child: Center(
+          child: _roundIndicator,
+        ).animate().fadeIn(delay: getAnimationDelay(), duration: 400.ms),
       ),
 
       // CORNER BUTTONS
       Positioned(
-        top: 16,
+        top: isPc ? 16 : 0,
         left: 16,
         child: _pingToggleButton.animate().fadeIn(
           delay: getAnimationDelay(),
@@ -298,15 +334,7 @@ class GameScreenState extends State<GameScreen> {
         ),
       ),
       Positioned(
-        top: (size.height / 2) - (128 * responsiveScale) - 144,
-        left: 0,
-        right: 0,
-        child: Center(
-          child: _roundIndicator,
-        ).animate().fadeIn(delay: getAnimationDelay(), duration: 400.ms),
-      ),
-      Positioned(
-        top: 16,
+        top: isPc ? 16 : 0,
         right: 16,
         child: _settingsButton(
           context,
@@ -316,9 +344,9 @@ class GameScreenState extends State<GameScreen> {
       // CONDITIONAL OVERLAYS (Absolute Top Layer)
       if (_showPingOverlay)
         Positioned(
-          top: 64,
-          left: 16,
-          child: LivePingPanel(network: _net).animate().fadeIn(),
+          top: isPc ? 64 : 8,
+          left: isPc ? 16 : 64,
+          child: LivePingPanel(network: _net),
         ),
       if (_showDevConsole)
         Positioned(

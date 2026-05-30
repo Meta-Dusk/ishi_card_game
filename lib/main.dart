@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode;
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 import 'core/managers/profile_manager.dart';
@@ -18,10 +18,8 @@ void main() async {
     anonKey: "sb_publishable_IKQ4oiW2RC45Yn3l1KJs5w_RJo8IiL0",
   );
 
-  await SystemChrome.setPreferredOrientations([
-    .landscapeLeft,
-    .landscapeRight,
-  ]);
+  await SystemChrome.setPreferredOrientations([.portraitUp]);
+  await SystemChrome.setEnabledSystemUIMode(.immersiveSticky);
 
   if (isPcPlatform()) {
     await windowManager.ensureInitialized();

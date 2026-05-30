@@ -90,4 +90,3 @@ They must be played in a specific order, or the **Mark 77** will not become play
 
 - [ ] Red skips not skipping during a red card event.
 - [ ] Natural deck events not triggering properly after manually triggering a deck event through commands.
-- [ ] **Touchscreen Priority**: laptop issue, where interactivity only works for the touchscreen [_low priority_].
