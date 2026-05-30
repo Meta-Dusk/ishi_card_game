@@ -28,11 +28,17 @@ extension GameComponents on GameScreenState {
       alignment: .center,
       clipBehavior: .none,
       children: [
-        PlayAndPileDeck(
-          manager: _manager,
-          onDrawCard: drawCardAction,
-          onPlayCard: playCardAction,
-          playPileKey: playPileKey,
+        Transform.translate(
+          offset: isPcPlatform() ? const Offset(0, 0) : const Offset(0, 40),
+          child: Transform.scale(
+            scale: isPcPlatform() ? 1 : 0.6,
+            child: PlayAndPileDeck(
+              manager: _manager,
+              onDrawCard: drawCardAction,
+              onPlayCard: playCardAction,
+              playPileKey: playPileKey,
+            ),
+          ),
         ),
         if (_currentCombatMessages.isNotEmpty) _combatMessages,
       ],
@@ -52,8 +58,7 @@ extension GameComponents on GameScreenState {
     ),
   );
 
-  /// LOCAL PLAYER DASHBOARD (Bottom)
-  Column get _lowerPanel {
+  Widget get _cardsDisplay {
     final animatedCardList = AnimatedCardList(
       animatedListKey: listKeys[localUIIndex],
       currentHand: currentHand,
@@ -88,6 +93,21 @@ extension GameComponents on GameScreenState {
       },
     );
 
+    return RawScrollbar(
+      key: ValueKey(scrollControllers[localUIIndex]),
+      controller: scrollControllers[localUIIndex],
+      thumbColor: isPcPlatform() ? Colors.black26 : Colors.transparent,
+      radius: const .circular(8),
+      thickness: 6,
+      child: Transform.scale(
+        scale: isPcPlatform() ? 1 : 0.6,
+        child: animatedCardList,
+      ),
+    );
+  }
+
+  /// LOCAL PLAYER DASHBOARD (Bottom)
+  Widget get _lowerPanel {
     final cardViewSwapButton = ElevatedButton.icon(
       onPressed: () => updateUI(() => _isViewingRelics = !_isViewingRelics),
       label: Text(_isViewingRelics ? "VIEW CARDS" : "VIEW RELICS"),
@@ -100,15 +120,6 @@ extension GameComponents on GameScreenState {
       ),
     );
 
-    final cardsDisplay = RawScrollbar(
-      key: ValueKey(scrollControllers[localUIIndex]),
-      controller: scrollControllers[localUIIndex],
-      thumbColor: Colors.black26,
-      radius: const .circular(8),
-      thickness: 6,
-      child: animatedCardList,
-    );
-
     final playerRelics = _manager.playerRelics[_manager.localPlayerIndex];
 
     Widget? targetingBanner;
@@ -116,8 +127,9 @@ extension GameComponents on GameScreenState {
       targetingBanner = _targetingBanner.animate().fadeIn().slideY(begin: 0.5);
     }
 
-    return Column(
+    final desktopContent = Column(
       mainAxisSize: .min,
+      mainAxisAlignment: .end,
       children: [
         Row(
           mainAxisAlignment: .center,
@@ -167,12 +179,92 @@ extension GameComponents on GameScreenState {
                     key: const ValueKey('relics_view'),
                     child: _buildRelicDisplay,
                   )
-                : cardsDisplay,
+                : _cardsDisplay,
           ),
         ),
         SizedBox(height: _isViewingRelics ? 32 : 16),
       ],
     );
+
+    final mobileContent = Stack(
+      clipBehavior: .none,
+      children: [
+        Transform.translate(
+          offset: const Offset(0, 104),
+          child: Container(
+            padding: const .symmetric(horizontal: 8, vertical: 12),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 350),
+              switchInCurve: Curves.easeOutBack,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: (child, animation) => ScaleTransition(
+                scale: animation,
+                child: FadeTransition(opacity: animation, child: child),
+              ),
+              child: _isViewingRelics
+                  ? SizedBox(
+                      key: const ValueKey('relics_view'),
+                      child: _buildRelicDisplay,
+                    )
+                  : _cardsDisplay,
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 0,
+          left: 16,
+          child: Row(
+            mainAxisAlignment: .center,
+            children: [
+              CardCounter(currentHandLength: currentHand.length),
+              if (playerRelics.isNotEmpty) ...[
+                const SizedBox(width: 16),
+                cardViewSwapButton.animate().fadeIn().slideX(),
+              ],
+            ],
+          ),
+        ),
+        if (_activeTargetingRelic != null) ...[
+          const SizedBox(height: 16),
+          targetingBanner!,
+        ],
+        if (_activeTargetingRelic == null && !_isViewingRelics) ...[
+          Positioned(
+            bottom: 32,
+            right: 0,
+            child: HandControls(
+              onEndTurn: endTurnAction,
+              onFlipAllCard: flipAllCardsAction,
+              onSortHand: animatedSort,
+              onTakePenalty: takePenaltyAction,
+              onToggleAutoSort: () => updateUI(
+                () => _manager.isAutoSortEnabled = !_manager.isAutoSortEnabled,
+              ),
+              manager: _manager,
+              isMyTurn: isMyTurn,
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 128,
+            child: Row(
+              mainAxisAlignment: .center,
+              mainAxisSize: .min,
+              children: [
+                AnimatedPlayButton(
+                  selectedCard: _selectedCard,
+                  isMyTurn: isMyTurn,
+                  onPlay: () async => playCardAction(_selectedCard!),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+
+    return isPcPlatform() ? desktopContent : mobileContent;
   }
 
   Container get _targetingBanner {

@@ -92,7 +92,7 @@ class _OpponentTurnText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-    "WAITING...",
+    "WAITING",
     style: TextStyle(
       color: Colors.orangeAccent,
       fontSize: fontSize,
@@ -100,6 +100,7 @@ class _OpponentTurnText extends StatelessWidget {
       letterSpacing: 4,
       shadows: const [BoxShadow(color: Colors.black, blurRadius: 4)],
     ),
+    textAlign: .center,
   );
 }
 
@@ -121,6 +122,7 @@ class _YourTurnText extends StatelessWidget {
         letterSpacing: 4,
         shadows: const [BoxShadow(color: Colors.black, blurRadius: 4)],
       ),
+      textAlign: .center,
     ),
   );
 }

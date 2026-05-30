@@ -44,14 +44,14 @@ class TurnTimeline extends StatelessWidget {
           curve: Curves.easeOutCubic,
           child: Row(
             mainAxisSize: .min,
-            children: _buildCarousel(_getSequence()),
+            children: _buildCarousel(_getSequence),
           ),
         ),
       ),
     ),
   );
 
-  List<int> _getSequence() {
+  List<int> get _getSequence {
     final int currentPlayer = manager.currentPlayer - 1;
     final bool clockwise = manager.isClockwise;
 
