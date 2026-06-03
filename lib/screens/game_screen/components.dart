@@ -230,7 +230,7 @@ extension GameComponents on GameScreenState {
         ],
         if (_activeTargetingRelic == null && !_isViewingRelics) ...[
           Positioned(
-            bottom: 32,
+            bottom: 0,
             right: 0,
             child: HandControls(
               onEndTurn: endTurnAction,

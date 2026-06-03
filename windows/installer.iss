@@ -3,7 +3,7 @@
 
 #define MyAppName "Ishi"
 #ifndef MyAppVersion
-#define MyAppVersion "0.16.1"
+#define MyAppVersion "0.16.2"
 #endif
 #define MyAppPublisher "MetaDusk Inc."
 #define MyAppURL "https://github.com/Meta-Dusk/ishi_card_game"

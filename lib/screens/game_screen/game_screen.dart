@@ -170,7 +170,8 @@ class GameScreenState extends State<GameScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final double responsiveScale = (size.height / 400.0).clamp(0.35, 1.25);
+    final double maxScale = isPc ? 1.25 : 1.0;
+    final double responsiveScale = (size.height / 400.0).clamp(0.35, maxScale);
 
     final mainGameComponents = SafeArea(
       child: Stack(
@@ -212,6 +213,18 @@ class GameScreenState extends State<GameScreen> {
     }
 
     final double scale = isPc ? responsiveScale : responsiveScale * 0.75;
+    final int playerCount = _manager.playerCount;
+    double playerScale = isPc ? 1.0 : 1.0 - (0.075 * playerCount);
+
+    if (!isPc) {
+      if (playerCount < 5) {
+        playerScale = playerScale.clamp(0.7, 0.85);
+      } else if (playerCount > 5) {
+        playerScale = playerScale.clamp(1.0, 1.25);
+      } else {
+        playerScale = playerScale.clamp(0.8, 1.0);
+      }
+    }
 
     final turnIndicator = TurnIndicator(
       isMyTurn: isMyTurn,
@@ -222,7 +235,7 @@ class GameScreenState extends State<GameScreen> {
       manager: _manager,
       net: _net,
       listKeys: listKeys,
-      scale: responsiveScale,
+      scale: responsiveScale * playerScale,
     );
 
     final holographicTrack = Transform.translate(
@@ -274,7 +287,7 @@ class GameScreenState extends State<GameScreen> {
             ? (size.height / 2) - (128 * responsiveScale) - 80
             : (size.height / 2) - 32,
         left: isPc ? 0 : null,
-        right: isPc ? 0 : (size.width / 2) - 240,
+        right: isPc ? 0 : (size.width / 2) - 272,
         child: turnIndicator
             .animate()
             .fadeIn(delay: getAnimationDelay(), duration: 400.ms)
@@ -302,7 +315,7 @@ class GameScreenState extends State<GameScreen> {
       ),
       Positioned(
         left: 0,
-        right: 0,
+        right: isPc ? 0 : (size.width / 2) - (256 * responsiveScale),
         bottom: isPc ? 32 : 0,
         child: Transform.scale(
           scale: scale,
