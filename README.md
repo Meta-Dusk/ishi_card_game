@@ -5,14 +5,16 @@
     <img src="assets/images/github_social_preview.png" alt="Ishi Card Game Social Preview">
 </p>
 <p align="center">
-    <a href="https://github.com/Meta-Dusk/ishi_card_game/releases" alt="Ishi Card Game Releases">
+    <a href="https://github.com/Meta-Dusk/ishi_card_game/releases" alt="Ishi Card Game Releases Link">
         <img src="https://img.shields.io/github/v/release/Meta-Dusk/ishi_card_game?include_prereleases&display_name=release&style=for-the-badge&logo=github" alt="GitHub Latest Releases Badge" /></a>
-    <a href="https://github.com/Meta-Dusk/ishi_card_game/blob/stable/LICENSE" alt="Ishi Card Game License">
+    <a href="https://github.com/Meta-Dusk/ishi_card_game/blob/stable/LICENSE" alt="Ishi Card Game License Link">
         <img src="https://img.shields.io/github/license/Meta-Dusk/ishi_card_game?style=for-the-badge&logo=github&color=%234287f5" alt="GitHub License Badge" /></a>
     <a href="https://github.com/users/Meta-Dusk/projects/2" alt="GitHub Projects Link for Ishi Card Game">
         <img src="https://img.shields.io/badge/projects-roadmap-yellowgreen?style=for-the-badge&logo=github" alt="GitHub Project Badge" /></a>
-    <a href="https://github.com/Meta-Dusk/ishi_card_game/wiki" alt="GitHub Wiki for Ishi Card Game">
+    <a href="https://github.com/Meta-Dusk/ishi_card_game/wiki" alt="GitHub Wiki Link for Ishi Card Game">
         <img src="https://img.shields.io/badge/wiki-lightgrey?style=for-the-badge&logo=github&color=inactive" alt="GitHub Wiki Badge" /></a>
+    <a href="https://meta-dusk.github.io/ishi_card_game/" alt="GitHub Pages Deployment Link">
+        <img src="https://img.shields.io/badge/Deployed_Pages-Live_Dashboard-58a6ff?style=for-the-badge&logo=github" alt="GitHub Pages Deployed Live Dashboard Badge" /></a>
 </p>
 
 ***
