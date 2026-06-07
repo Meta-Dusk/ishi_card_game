@@ -15,7 +15,7 @@ void main() async {
   await AudioManager().init();
   await Supabase.initialize(
     url: "https://kqcgavmerybqzugmnzri.supabase.co",
-    anonKey: "sb_publishable_IKQ4oiW2RC45Yn3l1KJs5w_RJo8IiL0",
+    publishableKey: "sb_publishable_IKQ4oiW2RC45Yn3l1KJs5w_RJo8IiL0",
   );
 
   await SystemChrome.setPreferredOrientations([.portraitUp]);

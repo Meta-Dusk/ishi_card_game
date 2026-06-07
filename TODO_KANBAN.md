@@ -16,9 +16,6 @@ kanban-plugin: board
 
 ## In Progress (5)
 
-- [ ] #rework
-	# Audio Update
-	Swap out `audioplayers` for `flutter_soloud` and test if it's any better. @{2026-06-08}
 
 
 ## Done
