@@ -6,6 +6,7 @@ on:
             - stable
         paths:
             - "TODO_KANBAN.md"
+    workflow_dispatch:
 
 permissions:
     contents: read
