@@ -118,7 +118,7 @@ class ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var mainContent = [
+    final mainContent = [
       const Icon(Icons.error_outline, color: Colors.redAccent, size: 64),
       const SizedBox(height: 16),
       const Text(

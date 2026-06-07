@@ -400,4 +400,50 @@ extension GameScreenActions on GameScreenState {
 
     endTurnAction();
   }
+
+  void _handleCardTap(IshiCard card) {
+    if (!isMyTurn) return;
+
+    updateUI(() {
+      if (_activeTargetingRelic != null) {
+        if (_relicTargets.contains(card)) {
+          _relicTargets.remove(card);
+        } else {
+          final relicEffects = _activeTargetingRelic!.effects;
+          final int maxTargets =
+              relicEffects[RelicEffect.immediateDiscard] ?? 1;
+          if (_relicTargets.length < maxTargets) _relicTargets.add(card);
+        }
+        return;
+      }
+      _selectedCard = _selectedCard == card ? null : card;
+    });
+  }
+
+  bool? _handleRelicTap(bool isActiveRelic, Relic relic) {
+    if (!isMyTurn || !isActiveRelic) return null;
+
+    bool shouldSwitchToCards = false;
+
+    updateUI(() {
+      if (_activeTargetingRelic == relic) {
+        _activeTargetingRelic = null;
+        _relicTargets.clear();
+      } else {
+        _activeTargetingRelic = relic;
+        _relicTargets.clear();
+        shouldSwitchToCards = true;
+      }
+    });
+    if (shouldSwitchToCards) return false;
+    return null;
+  }
+
+  void _handleCancelRelicTargeting() => updateUI(() {
+    _activeTargetingRelic = null;
+    _relicTargets.clear();
+  });
+
+  void _handleAutoSortToggle() =>
+      updateUI(() => _manager.isAutoSortEnabled = !_manager.isAutoSortEnabled);
 }

@@ -1,7 +1,7 @@
 part of 'game_screen.dart';
 
 extension RelicsHandler on GameScreenState {
-  Future<void> _executeActiveRelic() async {
+  Future<bool?> _executeActiveRelic() async {
     final relic = _activeTargetingRelic!;
     final targets = List<IshiCard>.from(_relicTargets);
     final playerIndex = _manager.localPlayerIndex;
@@ -19,7 +19,7 @@ extension RelicsHandler on GameScreenState {
       chosenTemplate = await relic.onUseDialog!(
         .new(context: context, manager: _manager, relic: relic),
       );
-      if (chosenTemplate == null) return; // Game cancels the usage
+      if (chosenTemplate == null) return null; // Game cancels the usage
     }
 
     updateUI(() {
@@ -31,7 +31,6 @@ extension RelicsHandler on GameScreenState {
       }
       _activeTargetingRelic = null;
       _relicTargets.clear();
-      _isViewingRelics = false;
     });
 
     await _applyRelicEffectLocally(
@@ -56,6 +55,7 @@ extension RelicsHandler on GameScreenState {
       );
       await _evaluateSmartAutoEnd();
     }
+    return false;
   }
 
   /// Process the targets and trigger UI animations.

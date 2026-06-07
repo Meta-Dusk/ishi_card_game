@@ -1,24 +1,88 @@
 part of 'game_screen.dart';
 
 extension GameComponents on GameScreenState {
-  Widget get _buildRelicDisplay => RelicDisplay(
-    relics: _manager.playerRelics[_manager.localPlayerIndex],
-    onTapRelic: (isActiveRelic, relic) {
-      if (!isMyTurn || !isActiveRelic) return;
-      updateUI(() {
-        if (_activeTargetingRelic == relic) {
-          _activeTargetingRelic = null;
-          _relicTargets.clear();
-        } else {
-          _activeTargetingRelic = relic;
-          _relicTargets.clear();
-          _isViewingRelics = false;
-        }
-      });
-    },
+  StatelessWidget _playPileAndDeck({required double scale}) =>
+      TransformedPlayPileAndDeck(
+        scale: scale,
+        manager: _manager,
+        onDrawCard: drawCardAction,
+        onPlayCard: playCardAction,
+        playPileKey: playPileKey,
+        currentCombatMessages: _currentCombatMessages,
+        combatMessagesKey: _combatMessagesKey,
+      );
+
+  /// LOCAL PLAYER DASHBOARD (Bottom)
+  StatefulWidget get _lowerPanel => LowerPanel(
+    manager: _manager,
+    currentHand: currentHand,
+    isMyTurn: isMyTurn,
+    activeTargetingRelic: _activeTargetingRelic,
+    selectedCard: _selectedCard,
+    animatedListKey: listKeys[localUIIndex],
+    relicTargets: _relicTargets,
+    scrollController: scrollControllers[localUIIndex],
+    onEndTurn: endTurnAction,
+    onFlipAllCards: flipAllCardsAction,
+    onTakePenalty: takePenaltyAction,
+    onSortHand: animatedSort,
+    onToggleAutoSort: _handleAutoSortToggle,
+    onPlayCard: playCardAction,
+    onTapCard: _handleCardTap,
+    onTapRelic: _handleRelicTap,
+    onCancelRelicTargeting: _handleCancelRelicTargeting,
+    onConfirmRelicTargeting: _executeActiveRelic,
   );
 
-  Widget _playPileAndDeck({required double scale}) => Transform(
+  StatelessWidget get _settingsButton => SettingsButton(
+    onExitGame: _promptLeaveGame,
+    onDevConsoleToggle: () {
+      Navigator.pop(context);
+      updateUI(
+        () => _showDevConsoleNotifier.value = !_showDevConsoleNotifier.value,
+      );
+    },
+    showDevConsoleToggle: _showDevConsoleToggleNotifier.value,
+  );
+
+  StatelessWidget get _pingToggleButton => PingToggleButton(
+    showPingOverlay: _showPingOverlayNotifier.value,
+    onToggle: () => updateUI(
+      () => _showPingOverlayNotifier.value = !_showPingOverlayNotifier.value,
+    ),
+    onLongPress: () => showDialog(
+      context: context,
+      builder: (_) => DevConsoleToggleDialog(
+        showDevConsole: _showDevConsoleToggleNotifier.value,
+        onToggle: (val) =>
+            updateUI(() => _showDevConsoleToggleNotifier.value = val),
+      ),
+    ),
+  );
+}
+
+class TransformedPlayPileAndDeck extends StatelessWidget {
+  final double scale;
+  final GameManager manager;
+  final VoidCallback onDrawCard;
+  final void Function(IshiCard) onPlayCard;
+  final GlobalKey<PlayCardsPileState>? playPileKey;
+  final List<CombatMessage> currentCombatMessages;
+  final Key? combatMessagesKey;
+
+  const TransformedPlayPileAndDeck({
+    super.key,
+    required this.scale,
+    required this.manager,
+    required this.onDrawCard,
+    required this.onPlayCard,
+    required this.playPileKey,
+    required this.currentCombatMessages,
+    required this.combatMessagesKey,
+  });
+
+  @override
+  Widget build(BuildContext context) => Transform(
     alignment: FractionalOffset.center,
     transform: .identity()
       ..setEntry(3, 2, 0.002)
@@ -33,323 +97,77 @@ extension GameComponents on GameScreenState {
           child: Transform.scale(
             scale: isPc ? 1 : 0.6,
             child: PlayAndPileDeck(
-              manager: _manager,
-              onDrawCard: drawCardAction,
-              onPlayCard: playCardAction,
+              manager: manager,
+              onDrawCard: onDrawCard,
+              onPlayCard: onPlayCard,
               playPileKey: playPileKey,
             ),
           ),
         ),
-        if (_currentCombatMessages.isNotEmpty) _combatMessages,
+        if (currentCombatMessages.isNotEmpty)
+          CombatMessages(
+            key: combatMessagesKey,
+            messages: currentCombatMessages,
+          ),
       ],
     ),
   );
+}
 
-  Positioned get _combatMessages => Positioned(
+class CombatMessages extends StatelessWidget {
+  final List<CombatMessage> messages;
+
+  const CombatMessages({super.key, required this.messages});
+
+  @override
+  Widget build(BuildContext context) => Positioned(
     top: -20,
     child: Transform(
       alignment: .center,
       transform: .identity()..rotateX(0.5),
       child: FloatingCombatTextGroup(
-        key: _combatMessagesKey,
+        key: key,
         interval: const Duration(milliseconds: 500),
-        messages: _currentCombatMessages,
+        messages: messages,
       ),
     ),
   );
+}
 
-  Widget get _cardsDisplay {
-    final animatedCardList = AnimatedCardList(
-      animatedListKey: listKeys[localUIIndex],
-      currentHand: currentHand,
-      selectedCards: _activeTargetingRelic != null
-          ? _relicTargets
-          : (_selectedCard != null ? [_selectedCard!] : []),
-      onTapCard: (card) {
-        if (!isMyTurn) return;
+class SettingsButton extends StatelessWidget {
+  final VoidCallback onExitGame;
+  final VoidCallback onDevConsoleToggle;
+  final bool showDevConsoleToggle;
 
-        updateUI(() {
-          if (_activeTargetingRelic != null) {
-            if (_relicTargets.contains(card)) {
-              _relicTargets.remove(card); // Deselect target
-            } else {
-              final relicEffects = _activeTargetingRelic!.effects;
-              final int maxTargets =
-                  relicEffects[RelicEffect.immediateDiscard] ?? 1;
-              if (_relicTargets.length < maxTargets) _relicTargets.add(card);
-            }
-            return;
-          }
+  const SettingsButton({
+    super.key,
+    required this.onExitGame,
+    required this.onDevConsoleToggle,
+    required this.showDevConsoleToggle,
+  });
 
-          _selectedCard = _selectedCard == card ? null : card;
-        });
-      },
-      scrollController: scrollControllers[localUIIndex],
-      isMyTurn: isMyTurn,
-      event: _manager.activeDeckEvent,
-      isPlayable: (card) {
-        if (_activeTargetingRelic != null) return true;
-        return _manager.canPlay(card, _manager.localPlayerIndex).canPlay;
-      },
-    );
-
-    return RawScrollbar(
-      key: ValueKey(scrollControllers[localUIIndex]),
-      controller: scrollControllers[localUIIndex],
-      thumbColor: isPc ? Colors.black26 : Colors.transparent,
-      radius: const .circular(8),
-      thickness: 6,
-      child: Transform.scale(scale: isPc ? 1 : 0.6, child: animatedCardList),
-    );
-  }
-
-  /// LOCAL PLAYER DASHBOARD (Bottom)
-  Widget get _lowerPanel {
-    final cardViewSwapButton = ElevatedButton.icon(
-      onPressed: () => updateUI(() => _isViewingRelics = !_isViewingRelics),
-      label: Text(_isViewingRelics ? "VIEW CARDS" : "VIEW RELICS"),
-      icon: Icon(_isViewingRelics ? Icons.style : Icons.auto_awesome),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: _isViewingRelics
-            ? Colors.grey.shade800
-            : Colors.amber.shade700,
-        foregroundColor: Colors.white,
-      ),
-    );
-
-    final playerRelics = _manager.playerRelics[_manager.localPlayerIndex];
-
-    Widget? targetingBanner;
-    if (_activeTargetingRelic != null) {
-      targetingBanner = _targetingBanner.animate().fadeIn().slideY(begin: 0.5);
-    }
-
-    final desktopContent = Column(
-      mainAxisSize: .min,
-      mainAxisAlignment: .end,
-      children: [
-        Row(
-          mainAxisAlignment: .center,
-          children: [
-            CardCounter(currentHandLength: currentHand.length),
-            if (playerRelics.isNotEmpty) ...[
-              const SizedBox(width: 16),
-              cardViewSwapButton.animate().fadeIn().slideX(),
-            ],
-          ],
-        ),
-        if (_activeTargetingRelic != null) ...[
-          const SizedBox(height: 16),
-          targetingBanner!,
-        ],
-        if (_activeTargetingRelic == null && !_isViewingRelics) ...[
-          HandControls(
-            onEndTurn: endTurnAction,
-            onFlipAllCard: flipAllCardsAction,
-            onSortHand: animatedSort,
-            onTakePenalty: takePenaltyAction,
-            onToggleAutoSort: () => updateUI(
-              () => _manager.isAutoSortEnabled = !_manager.isAutoSortEnabled,
-            ),
-            manager: _manager,
-            isMyTurn: isMyTurn,
-          ),
-          AnimatedPlayButton(
-            selectedCard: _selectedCard,
-            isMyTurn: isMyTurn,
-            onPlay: () async => playCardAction(_selectedCard!),
-          ),
-        ],
-        Container(
-          height: 280,
-          padding: const .symmetric(horizontal: 8, vertical: 12),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 350),
-            switchInCurve: Curves.easeOutBack,
-            switchOutCurve: Curves.easeInCubic,
-            transitionBuilder: (child, animation) => ScaleTransition(
-              scale: animation,
-              child: FadeTransition(opacity: animation, child: child),
-            ),
-            child: _isViewingRelics
-                ? SizedBox(
-                    key: const ValueKey('relics_view'),
-                    child: _buildRelicDisplay,
-                  )
-                : _cardsDisplay,
-          ),
-        ),
-        SizedBox(height: _isViewingRelics ? 32 : 16),
-      ],
-    );
-
-    final mobileContent = Stack(
-      clipBehavior: .none,
-      children: [
-        Transform.translate(
-          offset: const Offset(0, 104),
-          child: Container(
-            padding: const .symmetric(horizontal: 8, vertical: 12),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 350),
-              switchInCurve: Curves.easeOutBack,
-              switchOutCurve: Curves.easeInCubic,
-              transitionBuilder: (child, animation) => ScaleTransition(
-                scale: animation,
-                child: FadeTransition(opacity: animation, child: child),
-              ),
-              child: _isViewingRelics
-                  ? SizedBox(
-                      key: const ValueKey('relics_view'),
-                      child: _buildRelicDisplay,
-                    )
-                  : _cardsDisplay,
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: 0,
-          left: 16,
-          child: Row(
-            mainAxisAlignment: .center,
-            children: [
-              CardCounter(currentHandLength: currentHand.length),
-              if (playerRelics.isNotEmpty) ...[
-                const SizedBox(width: 16),
-                cardViewSwapButton.animate().fadeIn().slideX(),
-              ],
-            ],
-          ),
-        ),
-        if (_activeTargetingRelic != null) ...[
-          const SizedBox(height: 16),
-          targetingBanner!,
-        ],
-        if (_activeTargetingRelic == null && !_isViewingRelics) ...[
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: HandControls(
-              onEndTurn: endTurnAction,
-              onFlipAllCard: flipAllCardsAction,
-              onSortHand: animatedSort,
-              onTakePenalty: takePenaltyAction,
-              onToggleAutoSort: () => updateUI(
-                () => _manager.isAutoSortEnabled = !_manager.isAutoSortEnabled,
-              ),
-              manager: _manager,
-              isMyTurn: isMyTurn,
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 128,
-            child: Row(
-              mainAxisAlignment: .center,
-              mainAxisSize: .min,
-              children: [
-                AnimatedPlayButton(
-                  selectedCard: _selectedCard,
-                  isMyTurn: isMyTurn,
-                  onPlay: () async => playCardAction(_selectedCard!),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ],
-    );
-
-    return isPc ? desktopContent : mobileContent;
-  }
-
-  Container get _targetingBanner {
-    final relicEffects = _activeTargetingRelic!.effects;
-    final int maxTargets = relicEffects[RelicEffect.immediateDiscard] ?? 1;
-
-    final usingRelicIndicator = Row(
-      mainAxisSize: .min,
-      children: [
-        Text(
-          "USING: ${_activeTargetingRelic!.name.toUpperCase()}",
-          style: const TextStyle(color: Colors.white, fontWeight: .bold),
-        ),
-        const SizedBox(width: 16),
-        IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: () => updateUI(() {
-            _activeTargetingRelic = null;
-            _relicTargets.clear();
-          }),
-        ),
-      ],
-    );
-
-    final targetsLeftIndicator = Row(
-      mainAxisSize: .min,
-      children: [
-        const Icon(Icons.track_changes, color: Colors.white),
-        const SizedBox(width: 12),
-        Text(
-          "TARGETING: ${_relicTargets.length}/$maxTargets",
-          style: const TextStyle(color: Colors.white, fontWeight: .bold),
-        ),
-        if (_relicTargets.isNotEmpty) ...[
-          const SizedBox(width: 16),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            onPressed: _executeActiveRelic,
-            child: const Text(
-              "CONFIRM",
-              style: TextStyle(color: Colors.white, fontWeight: .bold),
-            ),
-          ),
-        ],
-      ],
-    );
-
-    return Container(
-      margin: const .only(bottom: 16),
-      padding: const .symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.redAccent.withValues(alpha: 0.2),
-        border: .all(color: Colors.redAccent, width: 2),
-        borderRadius: .circular(12),
-      ),
-      child: Column(children: [usingRelicIndicator, targetsLeftIndicator]),
-    );
-  }
-
-  IconButton _settingsButton(BuildContext context) => IconButton(
+  @override
+  Widget build(BuildContext context) => IconButton(
     icon: const Icon(Icons.settings, color: Colors.white),
     tooltip: "Show Settings",
     onPressed: () => showDialog(
       context: context,
-      builder: (_) => GameSettingsDialog(
-        onExitGame: _promptLeaveGame,
-        onDevConsoleToggle: () {
-          Navigator.pop(context);
-          updateUI(() => _showDevConsole = !_showDevConsole);
-        },
-        showDevConsoleToggle: _showDevConsoleToggle,
+      builder: (context) => GameSettingsDialog(
+        onExitGame: onExitGame,
+        onDevConsoleToggle: onDevConsoleToggle,
+        showDevConsoleToggle: showDevConsoleToggle,
       ),
     ),
   );
+}
 
-  PingToggleButton get _pingToggleButton => PingToggleButton(
-    showPingOverlay: _showPingOverlay,
-    onToggle: () => updateUI(() => _showPingOverlay = !_showPingOverlay),
-    onLongPress: () => showDialog(
-      context: context,
-      builder: (_) => DevConsoleToggleDialog(
-        showDevConsole: _showDevConsoleToggle,
-        onToggle: (val) => updateUI(() => _showDevConsoleToggle = val),
-      ),
-    ),
-  );
+class RoundIndicator extends StatelessWidget {
+  final int roundCount;
 
-  Container get _roundIndicator => Container(
+  const RoundIndicator({super.key, required this.roundCount});
+
+  @override
+  Widget build(BuildContext context) => Container(
     padding: const .symmetric(horizontal: 16, vertical: 8),
     decoration: BoxDecoration(
       color: Colors.black.withValues(alpha: 0.6),
@@ -369,8 +187,8 @@ extension GameComponents on GameScreenState {
         ),
       ),
       child: Text(
-        "ROUND ${_manager.roundCount}",
-        key: ValueKey<int>(_manager.roundCount),
+        "ROUND $roundCount",
+        key: ValueKey<int>(roundCount),
         style: const TextStyle(
           color: Colors.amber,
           fontWeight: .bold,

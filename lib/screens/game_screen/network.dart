@@ -41,7 +41,9 @@ extension GameScreenNetwork on GameScreenState {
     _gameEventSubscription = _manager.events.listen(_processGameEvents);
     _netSubscription = _net.messages.listen(_processNetworkMessage);
     _pingSubscription = _net.messages.listen((message) {
-      if (message is LobbyStateMessage && _showPingOverlay) updateUI(() {});
+      if (message is LobbyStateMessage && _showPingOverlayNotifier.value) {
+        updateUI(() {});
+      }
     });
   }
 
