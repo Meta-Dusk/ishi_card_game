@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:ishi/core/data_types.dart' show isPcPlatform;
+import 'package:ishi/core/data_types.dart' show isPc;
 import 'package:ishi/screens/main_menu/menu_button.dart';
 
 class RootMenu extends StatelessWidget {
@@ -40,7 +40,7 @@ class RootMenu extends StatelessWidget {
         color: Colors.grey.shade800,
         onTap: onProfile,
       ),
-      if (isPcPlatform()) ...[
+      if (isPc) ...[
         const SizedBox(height: 8),
         MenuButton(
           title: "EXIT",

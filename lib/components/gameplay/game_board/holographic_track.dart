@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'holographic_turn_track.dart';
-import 'package:ishi/core/data_types.dart' show isPcPlatform;
+import 'package:ishi/core/data_types.dart' show isPc;
 
 class HolographicTrack extends StatelessWidget {
   final double radius;
@@ -19,7 +19,7 @@ class HolographicTrack extends StatelessWidget {
     alignment: FractionalOffset.center,
     transform: .identity()
       ..setEntry(3, 2, 0.0015)
-      ..translateByVector3(.new(0.0, isPcPlatform() ? -68.0 : -40.0, -150.0))
+      ..translateByVector3(.new(0.0, isPc ? -68.0 : -40.0, -150.0))
       ..rotateX(-0.85),
     child: Container(
       width: radius,

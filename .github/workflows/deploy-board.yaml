@@ -1,0 +1,40 @@
+name: Deploy Project Overview Board
+
+on:
+    push:
+        branches:
+            - stable
+        paths:
+            - "TODO_KANBAN.md"
+
+permissions:
+    contents: read
+    pages: write
+    id-token: write
+
+jobs:
+    deploy:
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@v5
+
+            - name: Run Kanban Parser Script
+              run: uv run parse_kanban.py
+
+            - name: Upload Page Artifact
+              uses: actions/upload-pages-artifact@v3
+              with:
+                  path: "."
+                  # We only need the index.html artifact to deploy
+                  filter: "index.html"
+
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4
