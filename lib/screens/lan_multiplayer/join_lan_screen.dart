@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:ishi/core/data_types.dart';
+import 'package:ishi/core/data_types.dart' show isPc;
 import 'package:ishi/services/socket_service.dart';
 import '../lobby/lobby_waiting_screen.dart';
 
@@ -106,9 +106,9 @@ class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
   @override
   Widget build(BuildContext context) {
     final stackedContent = [
-      if (!isPcPlatform()) _mobileScanner() else const _WindowsFallbackUI(),
+      if (!isPc) _mobileScanner() else const _WindowsFallbackUI(),
       if (_isConnecting) _loadingView(),
-      if (!isPcPlatform()) _scanHostQrLabel(),
+      if (!isPc) _scanHostQrLabel(),
       _ManulEntryButton(onShowManualEntry: _showManualEntry),
       Positioned(
         top: 40,
@@ -125,29 +125,25 @@ class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
     );
   }
 
-  Positioned _scanHostQrLabel() {
-    return const Positioned(
-      top: 60,
-      child: Text(
-        "SCAN HOST QR",
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: .bold,
-          letterSpacing: 2,
-        ),
+  Positioned _scanHostQrLabel() => const Positioned(
+    top: 60,
+    child: Text(
+      "SCAN HOST QR",
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 20,
+        fontWeight: .bold,
+        letterSpacing: 2,
       ),
-    );
-  }
+    ),
+  );
 
-  Container _loadingView() {
-    return Container(
-      color: Colors.black87,
-      child: const Center(
-        child: CircularProgressIndicator(color: Colors.orangeAccent),
-      ),
-    );
-  }
+  Container _loadingView() => Container(
+    color: Colors.black87,
+    child: const Center(
+      child: CircularProgressIndicator(color: Colors.orangeAccent),
+    ),
+  );
 
   MobileScanner _mobileScanner() => MobileScanner(
     onDetect: _onDetect,
@@ -199,28 +195,26 @@ class _ManulEntryButton extends StatelessWidget {
   final VoidCallback onShowManualEntry;
 
   @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      bottom: 40,
-      child: TextButton.icon(
-        style: TextButton.styleFrom(
-          backgroundColor: Colors.grey.shade900,
-          padding: const .symmetric(horizontal: 24, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: .circular(12)),
-        ),
-        onPressed: onShowManualEntry,
-        icon: const Icon(Icons.keyboard, color: Colors.white),
-        label: const Text(
-          "MANUAL ENTRY",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: .bold,
-            letterSpacing: 1,
-          ),
+  Widget build(BuildContext context) => Positioned(
+    bottom: 40,
+    child: TextButton.icon(
+      style: TextButton.styleFrom(
+        backgroundColor: Colors.grey.shade900,
+        padding: const .symmetric(horizontal: 24, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: .circular(12)),
+      ),
+      onPressed: onShowManualEntry,
+      icon: const Icon(Icons.keyboard, color: Colors.white),
+      label: const Text(
+        "MANUAL ENTRY",
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: .bold,
+          letterSpacing: 1,
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _ManualEntryDialog extends StatelessWidget {

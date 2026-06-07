@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:ishi/core/data_types.dart' show isPcPlatform;
+import 'package:ishi/core/data_types.dart' show isPc;
 
 class SequentialSplashAnimator extends StatefulWidget {
   final List<Widget> splashes;
@@ -90,7 +90,7 @@ class _DismissText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-    "${isPcPlatform() ? "Click" : "Tap"} anywhere to skip.",
+    "${isPc ? "Click" : "Tap"} anywhere to skip.",
     style: const TextStyle(
       color: Colors.blueGrey,
       fontStyle: .italic,

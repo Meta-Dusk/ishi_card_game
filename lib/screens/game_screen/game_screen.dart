@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:ishi/core/data_types.dart' show isPcPlatform;
+import 'package:ishi/core/data_types.dart' show isPc;
 import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import 'package:ishi/services/network_service.dart';
 import 'imports/game_components.dart';
@@ -15,8 +15,6 @@ part 'events.dart';
 part 'relics_handler.dart';
 part 'components.dart';
 part 'dialogs.dart';
-
-final bool isPc = isPcPlatform();
 
 class GameScreen extends StatefulWidget {
   final GameManager manager;

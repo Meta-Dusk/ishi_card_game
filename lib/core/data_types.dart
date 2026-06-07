@@ -7,3 +7,5 @@ bool isPcPlatform() {
   if (kIsWeb) return false;
   return Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 }
+
+final isPc = isPcPlatform();

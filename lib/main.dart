@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 import 'core/managers/profile_manager.dart';
-import 'core/data_types.dart' show isPcPlatform;
+import 'core/data_types.dart' show isPc;
 import 'core/managers/audio_manager.dart';
 import 'screens/main_menu/main_menu_screen.dart';
 
@@ -21,7 +21,7 @@ void main() async {
   await SystemChrome.setPreferredOrientations([.portraitUp]);
   await SystemChrome.setEnabledSystemUIMode(.immersiveSticky);
 
-  if (isPcPlatform()) {
+  if (isPc) {
     await windowManager.ensureInitialized();
     final windowOptions = WindowOptions(center: true, fullScreen: kReleaseMode);
     windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -37,7 +37,7 @@ class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
+  Widget build(BuildContext _) => MaterialApp(
     debugShowCheckedModeBanner: false,
     home: MainMenuScreen(),
     builder: (_, child) => ExcludeSemantics(child: child),

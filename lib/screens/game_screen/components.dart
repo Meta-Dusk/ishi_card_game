@@ -29,9 +29,9 @@ extension GameComponents on GameScreenState {
       clipBehavior: .none,
       children: [
         Transform.translate(
-          offset: isPcPlatform() ? const Offset(0, 0) : const Offset(0, 40),
+          offset: isPc ? const Offset(0, 0) : const Offset(0, 40),
           child: Transform.scale(
-            scale: isPcPlatform() ? 1 : 0.6,
+            scale: isPc ? 1 : 0.6,
             child: PlayAndPileDeck(
               manager: _manager,
               onDrawCard: drawCardAction,
@@ -96,13 +96,10 @@ extension GameComponents on GameScreenState {
     return RawScrollbar(
       key: ValueKey(scrollControllers[localUIIndex]),
       controller: scrollControllers[localUIIndex],
-      thumbColor: isPcPlatform() ? Colors.black26 : Colors.transparent,
+      thumbColor: isPc ? Colors.black26 : Colors.transparent,
       radius: const .circular(8),
       thickness: 6,
-      child: Transform.scale(
-        scale: isPcPlatform() ? 1 : 0.6,
-        child: animatedCardList,
-      ),
+      child: Transform.scale(scale: isPc ? 1 : 0.6, child: animatedCardList),
     );
   }
 
@@ -264,7 +261,7 @@ extension GameComponents on GameScreenState {
       ],
     );
 
-    return isPcPlatform() ? desktopContent : mobileContent;
+    return isPc ? desktopContent : mobileContent;
   }
 
   Container get _targetingBanner {
