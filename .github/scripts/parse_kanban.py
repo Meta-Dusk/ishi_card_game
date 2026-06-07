@@ -127,7 +127,7 @@ def generate_html(columns: list[Column]) -> None:
         <style>
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0e1117; color: #c9d1d9; margin: 0; padding: 20px; }
             h1 { text-align: center; color: #f0f6fc; margin-bottom: 30px; }
-            .board { display: flex; gap: 20px; overflow-x: auto; align-items: flex-start; padding-bottom: 20px; }
+            .board { display: flex; justify-content: center; gap: 20px; overflow-x: auto; align-items: flex-start; padding-bottom: 20px; }
             .column { background: #161b22; border: 1px solid #30363d; border-radius: 8px; width: 320px; flex-shrink: 0; padding: 15px; }
             
             .column-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; padding-bottom: 10px; margin-bottom: 15px; }

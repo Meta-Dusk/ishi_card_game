@@ -1,5 +1,7 @@
 # TODO
 
+The content below serves as all the remaining ideas or features yet to be implemented in the actual game. Refer to the deployment in the **GitHub** pages for the _dashboard_ (a simplified view of the roadmap, showing only the latest changes).
+
 ## Important
 
 - Add a new view for "debuffs" in-game.
