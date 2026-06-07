@@ -52,3 +52,6 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm/
+
+# Test webpages
+index.html

@@ -105,10 +105,43 @@ class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scanHostQrLabel = const Positioned(
+      top: 60,
+      child: Text(
+        "SCAN HOST QR",
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: .bold,
+          letterSpacing: 2,
+        ),
+      ),
+    );
+
+    final loadingView = Container(
+      color: Colors.black87,
+      child: const Center(
+        child: CircularProgressIndicator(color: Colors.orangeAccent),
+      ),
+    );
+
+    final mobileScanner = MobileScanner(
+      onDetect: _onDetect,
+      overlayBuilder: (_, constraints) => Container(
+        decoration: BoxDecoration(
+          border: .all(color: Colors.orangeAccent, width: 4),
+          borderRadius: .circular(12),
+        ),
+        width: 250,
+        height: 250,
+        constraints: constraints,
+      ),
+    );
+
     final stackedContent = [
-      if (!isPc) _mobileScanner() else const _WindowsFallbackUI(),
-      if (_isConnecting) _loadingView(),
-      if (!isPc) _scanHostQrLabel(),
+      if (!isPc) mobileScanner else const _WindowsFallbackUI(),
+      if (_isConnecting) loadingView,
+      if (!isPc) scanHostQrLabel,
       _ManulEntryButton(onShowManualEntry: _showManualEntry),
       Positioned(
         top: 40,
@@ -124,39 +157,6 @@ class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
       body: Stack(alignment: .center, children: stackedContent),
     );
   }
-
-  Positioned _scanHostQrLabel() => const Positioned(
-    top: 60,
-    child: Text(
-      "SCAN HOST QR",
-      style: TextStyle(
-        color: Colors.white,
-        fontSize: 20,
-        fontWeight: .bold,
-        letterSpacing: 2,
-      ),
-    ),
-  );
-
-  Container _loadingView() => Container(
-    color: Colors.black87,
-    child: const Center(
-      child: CircularProgressIndicator(color: Colors.orangeAccent),
-    ),
-  );
-
-  MobileScanner _mobileScanner() => MobileScanner(
-    onDetect: _onDetect,
-    overlayBuilder: (_, constraints) => Container(
-      decoration: BoxDecoration(
-        border: .all(color: Colors.orangeAccent, width: 4),
-        borderRadius: .circular(12),
-      ),
-      width: 250,
-      height: 250,
-      constraints: constraints,
-    ),
-  );
 }
 
 class _WindowsFallbackUI extends StatelessWidget {

@@ -25,6 +25,8 @@ export '../../../components/gameplay/game_board/holographic_track.dart';
 
 export '../../../components/gameplay/player_info/player_info.dart';
 
+export '../../../components/gameplay/displays/lower_panel.dart';
+
 export '../../../components/animated_card_list/animated_card_list.dart';
 
 export '../../../components/cards/remove_transition.dart';

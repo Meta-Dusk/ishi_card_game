@@ -41,7 +41,6 @@ class GameScreenState extends State<GameScreen> {
   late StreamSubscription? _netSubscription;
   late StreamSubscription? _gameEventSubscription;
 
-  bool _showPingOverlay = false;
   late StreamSubscription? _pingSubscription;
   final playPileKey = GlobalKey<PlayCardsPileState>();
 
@@ -52,10 +51,11 @@ class GameScreenState extends State<GameScreen> {
   AnimatedListState? get getCurrentState =>
       listKeys[localUIIndex]?.currentState;
 
-  bool _showDevConsole = false;
-  bool _showDevConsoleToggle = false;
-  bool _isViewingRelics = false;
   bool _showSplash = true;
+
+  final _showPingOverlayNotifier = ValueNotifier<bool>(false);
+  final _showDevConsoleNotifier = ValueNotifier<bool>(false);
+  final _showDevConsoleToggleNotifier = ValueNotifier<bool>(false);
 
   // Gameplay
   int get localUIIndex => _manager.localPlayerIndex + 1;
@@ -331,7 +331,7 @@ class GameScreenState extends State<GameScreen> {
         left: isPc ? 0 : (size.width / 2) - 56,
         right: 0,
         child: Center(
-          child: _roundIndicator,
+          child: RoundIndicator(roundCount: _manager.roundCount),
         ).animate().fadeIn(delay: getAnimationDelay(), duration: 400.ms),
       ),
 
@@ -347,27 +347,39 @@ class GameScreenState extends State<GameScreen> {
       Positioned(
         top: isPc ? 16 : 0,
         right: 16,
-        child: _settingsButton(
-          context,
-        ).animate().fadeIn(delay: getAnimationDelay(), duration: 400.ms),
+        child: _settingsButton.animate().fadeIn(
+          delay: getAnimationDelay(),
+          duration: 400.ms,
+        ),
       ),
 
       // CONDITIONAL OVERLAYS (Absolute Top Layer)
-      if (_showPingOverlay)
-        Positioned(
-          top: isPc ? 64 : 8,
-          left: isPc ? 16 : 64,
-          child: LivePingPanel(network: _net),
-        ),
-      if (_showDevConsole)
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: DevConsoleOverlay(
-            onClose: () => setState(() => _showDevConsole = false),
-          ).animate().fadeIn(),
-        ),
+      ValueListenableBuilder<bool>(
+        valueListenable: _showPingOverlayNotifier,
+        builder: (_, showOverlay, _) {
+          if (!showOverlay) return const SizedBox.shrink();
+          return Positioned(
+            top: isPc ? 64 : 8,
+            left: isPc ? 16 : 64,
+            child: LivePingPanel(network: _net),
+          );
+        },
+      ),
+      ValueListenableBuilder<bool>(
+        valueListenable: _showDevConsoleNotifier,
+        builder: (_, showOverlay, _) {
+          if (!showOverlay) return const SizedBox.shrink();
+          return Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: DevConsoleOverlay(
+              onClose: () =>
+                  setState(() => _showDevConsoleNotifier.value = false),
+            ).animate().fadeIn(),
+          );
+        },
+      ),
     ];
     return playBoardElements;
   }
