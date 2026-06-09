@@ -1,5 +1,6 @@
 import 'package:ishi/core/data_types.dart';
 import 'package:ishi/core/models/deck_event.dart';
+import 'game_state_payload.dart';
 
 part 'network_keys.dart';
 part 'network_types.dart';
@@ -122,18 +123,19 @@ class SetProfileMessage extends NetMessage {
 
 // --- GAMEPLAY MESSAGES ---
 class GameStateMessage extends NetMessage {
-  final StringDynamicMap payload;
+  final GameStatePayload payload;
 
   const GameStateMessage(this.payload);
 
   @override
   StringDynamicMap toJson() => {
     _NetKey.type: NetType.gameStateUpdate.name,
-    _NetKey.payload: payload,
+    _NetKey.payload: payload.toJson(),
   };
 
-  factory GameStateMessage.fromJson(StringDynamicMap json) =>
-      GameStateMessage(json[_NetKey.payload] as StringDynamicMap);
+  factory GameStateMessage.fromJson(StringDynamicMap json) => GameStateMessage(
+    GameStatePayload.fromJson(json[_NetKey.payload] as StringDynamicMap),
+  );
 }
 
 class PlayIntentMessage extends NetMessage {

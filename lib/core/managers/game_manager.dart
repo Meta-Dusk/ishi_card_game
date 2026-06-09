@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart' show debugPrint, VoidCallback;
-import 'package:ishi/core/data_types.dart';
 import 'package:ishi/core/models/relic/relic.dart';
 import 'package:ishi/core/models/ishi_card.dart';
 import 'package:ishi/core/models/deck_event.dart';
+import 'package:ishi/core/network/game_state_payload.dart';
 
 part 'events_manager.dart';
 
@@ -17,27 +17,6 @@ class CanPlayData {
 }
 
 enum DeckSortType { byColor, byType, byValue, unsorted }
-
-class _BoardKeys {
-  static const String myPlayerIndex = 'myPlayerIndex';
-  static const String currentPlayer = 'currentPlayer';
-  static const String direction = 'direction';
-  static const String topCard = 'topCard';
-  static const String deckSize = 'deckSize';
-  static const String myHand = 'myHand';
-  static const String opponentHandSizes = 'opponentHandSizes';
-  static const String pendingDrawCount = 'pendingDrawCount';
-  static const String declaredColor = 'declaredColor';
-  static const String actionPoints = 'actionPoints';
-  static const String cardDraws = 'cardDraws';
-  static const String hasPlayedCard = 'hasPlayedCard';
-  static const String hasDrawnCard = 'hasDrawnCard';
-  static const String playerRelics = 'playerRelics';
-  static const String winnerIndex = 'winnerIndex';
-  static const String turnDeadline = 'turnDeadline';
-  static const String roundCount = 'roundCount';
-  static const String activeDeckEvent = 'activeDeckEvent';
-}
 
 enum GameManagerEvent { gameOver, deckEventTriggered }
 
@@ -138,148 +117,99 @@ class GameManager {
 
   void dispose() => _eventController.close();
 
-  /// HOST ONLY: Generates a strictly personalized JSON package for a specific player.
-  StringDynamicMap generateGameStateJson(int targetPlayerIndex) {
-    // Calculate how many cards everyone else has
-    List<int> handSizes = [];
-    for (int i = 0; i < playerHands.length; i++) {
-      handSizes.add(playerHands[i].length);
-    }
+  /// HOST ONLY: Generates a strictly personalized JSON package
+  /// for a specific player.
+  GameStatePayload generateGameState(int targetPlayerIndex) => GameStatePayload(
+    myPlayerIndex: targetPlayerIndex,
+    currentPlayer: currentPlayer,
+    direction: isClockwise,
+    topCard: discardPile.isNotEmpty ? discardPile.last : null,
+    deckSize: deck.length,
+    myHand: playerHands[targetPlayerIndex],
+    opponentHandSizes: playerHands.map((hand) => hand.length).toList(),
+    pendingDrawCount: pendingDrawCount,
+    declaredColorIndex: declaredColor?.index,
+    actionPoints: actionPoints,
+    cardDraws: cardDraws,
+    hasPlayedCard: hasPlayedCard,
+    hasDrawnCard: hasDrawnCard,
+    playerRelics: playerRelics,
+    winnerIndex: winnerIndex,
+    turnDeadline: turnDeadlineEpoch,
+    roundCount: roundCount,
+    activeDeckEventIndex: activeDeckEvent.index,
+  );
 
-    // Safely grab the top card
-    StringDynamicMap? topCardJson;
-    if (discardPile.isNotEmpty) topCardJson = discardPile.last.toJson();
+  /// CLIENT ONLY: Takes the typed state payload from
+  /// the Host and forces the local UI to match it.
+  List<IshiCard> applyGameState(GameStatePayload state) {
+    localPlayerIndex = state.myPlayerIndex;
+    currentPlayer = state.currentPlayer;
+    isClockwise = state.direction;
+    pendingDrawCount = state.pendingDrawCount;
 
-    // Serialize ONLY the target player's hand!
-    List<StringDynamicMap> myHandJson = playerHands[targetPlayerIndex]
-        .map((card) => card.toJson())
-        .toList();
-
-    List<List<StringDynamicMap>> serializedRelics = playerRelics.map((
-      playerList,
-    ) {
-      return playerList.map((relic) => relic.toJson()).toList();
-    }).toList();
-
-    return {
-      _BoardKeys.myPlayerIndex: targetPlayerIndex,
-      _BoardKeys.currentPlayer: currentPlayer,
-      _BoardKeys.direction: isClockwise,
-      _BoardKeys.topCard: topCardJson,
-      _BoardKeys.deckSize: deck.length,
-      _BoardKeys.myHand: myHandJson,
-      _BoardKeys.opponentHandSizes: handSizes,
-      _BoardKeys.pendingDrawCount: pendingDrawCount,
-      _BoardKeys.declaredColor: declaredColor?.index,
-      _BoardKeys.actionPoints: actionPoints,
-      _BoardKeys.cardDraws: cardDraws,
-      _BoardKeys.hasPlayedCard: hasPlayedCard,
-      _BoardKeys.hasDrawnCard: hasDrawnCard,
-      _BoardKeys.playerRelics: serializedRelics,
-      _BoardKeys.winnerIndex: winnerIndex,
-      _BoardKeys.turnDeadline: turnDeadlineEpoch,
-      _BoardKeys.roundCount: roundCount,
-      _BoardKeys.activeDeckEvent: activeDeckEvent.index,
-    };
-  }
-
-  /// CLIENT ONLY: Takes the JSON from the Host and forces the local UI to match it.
-  List<IshiCard> applyGameStateJson(StringDynamicMap json) {
-    localPlayerIndex = json[_BoardKeys.myPlayerIndex] as int;
-    currentPlayer = json[_BoardKeys.currentPlayer] as int;
-    isClockwise = json[_BoardKeys.direction] as bool;
-    pendingDrawCount = json[_BoardKeys.pendingDrawCount] as int;
-
-    if (json[_BoardKeys.declaredColor] != null) {
-      declaredColor = CardColor.values[json[_BoardKeys.declaredColor] as int];
-    } else {
-      declaredColor = null;
-    }
+    declaredColor = state.declaredColorIndex != null
+        ? CardColor.values[state.declaredColorIndex!]
+        : null;
 
     if (opponentHandSizes.isEmpty) {
-      opponentHandSizes = List<int>.from(json[_BoardKeys.opponentHandSizes]);
+      opponentHandSizes = state.opponentHandSizes;
       playerHands = List.generate(opponentHandSizes.length, (_) => []);
       playerRelics = List.generate(opponentHandSizes.length, (_) => []);
     } else {
-      opponentHandSizes = List<int>.from(json[_BoardKeys.opponentHandSizes]);
+      opponentHandSizes = state.opponentHandSizes;
     }
 
-    actionPoints = List<int>.from(
-      json[_BoardKeys.actionPoints] ?? List.filled(opponentHandSizes.length, 0),
-    );
-    cardDraws = List<int>.from(
-      json[_BoardKeys.cardDraws] ?? List.filled(opponentHandSizes.length, 0),
-    );
+    actionPoints = state.actionPoints;
+    cardDraws = state.cardDraws;
+    playerRelics = state.playerRelics;
 
-    if (json[_BoardKeys.topCard] != null) {
-      discardPile = [IshiCard.fromJson(json[_BoardKeys.topCard])];
+    if (state.topCard != null) {
+      discardPile = [state.topCard!];
     }
 
     List<IshiCard> newlyDealtCards = [];
 
-    if (json[_BoardKeys.myHand] != null) {
-      final List<dynamic> handData = json[_BoardKeys.myHand];
-      List<IshiCard> incomingHand = handData
-          .map((c) => IshiCard.fromJson(c as StringDynamicMap))
-          .toList();
+    // Process hand using the cleanly typed state.myHand
+    List<IshiCard> incomingHand = state.myHand;
+    List<IshiCard> preservedLocalHand = [];
 
-      // Preserve LOCAL sorted order for existing cards
-      List<IshiCard> preservedLocalHand = [];
-      for (IshiCard localCard in playerHands[localPlayerIndex]) {
-        if (incomingHand.any((c) => c.id == localCard.id)) {
-          preservedLocalHand.add(localCard);
-        }
-      }
-
-      // Find the brand new cards the Host gave us
-      for (IshiCard incomingCard in incomingHand) {
-        if (!preservedLocalHand.any((c) => c.id == incomingCard.id)) {
-          newlyDealtCards.add(
-            incomingCard,
-          ); // Intercept! Do not add to hand yet.
-        }
-      }
-
-      // Update the local hand with ONLY the preserved cards (maintaining their sort)
-      playerHands[localPlayerIndex] = preservedLocalHand;
-    }
-
-    if (json[_BoardKeys.playerRelics] != null) {
-      List<dynamic> incomingRelics = json[_BoardKeys.playerRelics];
-      for (int i = 0; i < incomingRelics.length; i++) {
-        List<dynamic> relicData = incomingRelics[i];
-
-        playerRelics[i] = relicData
-            .map((r) => Relic.fromJson(r as StringDynamicMap))
-            .toList();
+    for (IshiCard localCard in playerHands[localPlayerIndex]) {
+      if (incomingHand.any((c) => c.id == localCard.id)) {
+        preservedLocalHand.add(localCard);
       }
     }
 
-    int incomingDeckSize = json[_BoardKeys.deckSize] as int? ?? 0;
-    if (deck.length != incomingDeckSize) {
+    for (IshiCard incomingCard in incomingHand) {
+      if (!preservedLocalHand.any((c) => c.id == incomingCard.id)) {
+        newlyDealtCards.add(incomingCard);
+      }
+    }
+
+    playerHands[localPlayerIndex] = preservedLocalHand;
+
+    // Deck dummy sync
+    if (deck.length != state.deckSize) {
       deck.clear();
       deck.addAll(
         List.generate(
-          incomingDeckSize,
+          state.deckSize,
           (i) => IshiCard(id: 'dummy_$i', color: .wild, type: .number),
         ),
       );
     }
 
-    hasPlayedCard = json[_BoardKeys.hasPlayedCard] as bool? ?? false;
-    hasDrawnCard = json[_BoardKeys.hasDrawnCard] as bool? ?? false;
-    turnDeadlineEpoch = json[_BoardKeys.turnDeadline] as int? ?? 0;
-    roundCount = json[_BoardKeys.roundCount] as int? ?? 1;
-    activeDeckEvent =
-        DeckEventEffect.values[json[_BoardKeys.activeDeckEvent] as int? ??
-            DeckEventEffect.none.index];
+    hasPlayedCard = state.hasPlayedCard;
+    hasDrawnCard = state.hasDrawnCard;
+    turnDeadlineEpoch = state.turnDeadline;
+    roundCount = state.roundCount;
+    activeDeckEvent = DeckEventEffect.values[state.activeDeckEventIndex];
 
-    int? incomingWinner = json[_BoardKeys.winnerIndex] as int?;
-    if (winnerIndex == null && incomingWinner != null) {
-      winnerIndex = incomingWinner;
+    if (winnerIndex == null && state.winnerIndex != null) {
+      winnerIndex = state.winnerIndex;
       addEvent(.gameOver);
     } else {
-      winnerIndex = incomingWinner;
+      winnerIndex = state.winnerIndex;
     }
 
     return newlyDealtCards;
