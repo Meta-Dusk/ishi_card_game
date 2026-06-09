@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/core/managers/game_manager.dart';
 import 'package:ishi/services/network_service.dart';
 
 class LeaveGameDialog extends StatelessWidget {
-  const LeaveGameDialog({super.key, required this.network});
-
   final NetworkService network;
+  final GameManager manager;
+  final VoidCallback? onLeaveGame;
+
+  const LeaveGameDialog({
+    super.key,
+    required this.network,
+    required this.manager,
+    this.onLeaveGame,
+  });
 
   Widget _animatedDialog(AlertDialog dialog) => dialog
       .animate()
@@ -37,6 +45,8 @@ class LeaveGameDialog extends StatelessWidget {
       onPressed: () async {
         Navigator.pop(context);
         await network.disconnect();
+        manager.dispose();
+        if (onLeaveGame != null) onLeaveGame!();
         if (!context.mounted) return;
         // Back to Main Menu
         Navigator.of(context).popUntil((route) => route.isFirst);

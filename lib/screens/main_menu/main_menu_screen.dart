@@ -36,6 +36,8 @@ class MainMenuScreenState extends State<MainMenuScreen> {
   String _appVersion = '';
   bool showLocalMultiplayer = kDebugMode;
   bool _showSplash = true;
+  bool isInGame = false;
+  VoidCallback? onExitInGame;
 
   @override
   void initState() {
@@ -64,6 +66,10 @@ class MainMenuScreenState extends State<MainMenuScreen> {
   /// Android Hardware Back Button Handler
   Future<void> _onPopInvoked(bool didPop) async {
     if (didPop) return;
+    if (isInGame) {
+      if (onExitInGame != null) onExitInGame!();
+      return;
+    }
     switch (_currentMenu) {
       case .playMode:
       case .profile:

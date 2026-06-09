@@ -146,31 +146,23 @@ class GameManager {
     localPlayerIndex = state.myPlayerIndex;
     currentPlayer = state.currentPlayer;
     isClockwise = state.direction;
-    pendingDrawCount = state.pendingDrawCount;
-
-    declaredColor = state.declaredColorIndex != null
-        ? CardColor.values[state.declaredColorIndex!]
-        : null;
-
-    if (opponentHandSizes.isEmpty) {
-      opponentHandSizes = state.opponentHandSizes;
-      playerHands = List.generate(opponentHandSizes.length, (_) => []);
-      playerRelics = List.generate(opponentHandSizes.length, (_) => []);
-    } else {
-      opponentHandSizes = state.opponentHandSizes;
-    }
-
-    actionPoints = state.actionPoints;
-    cardDraws = state.cardDraws;
-    playerRelics = state.playerRelics;
 
     if (state.topCard != null) {
       discardPile = [state.topCard!];
     }
 
-    List<IshiCard> newlyDealtCards = [];
+    // Deck dummy sync
+    if (deck.length != state.deckSize) {
+      deck.clear();
+      deck.addAll(
+        List.generate(
+          state.deckSize,
+          (i) => IshiCard(id: 'dummy_$i', color: .wild, type: .number),
+        ),
+      );
+    }
 
-    // Process hand using the cleanly typed state.myHand
+    List<IshiCard> newlyDealtCards = [];
     List<IshiCard> incomingHand = state.myHand;
     List<IshiCard> preservedLocalHand = [];
 
@@ -188,22 +180,25 @@ class GameManager {
 
     playerHands[localPlayerIndex] = preservedLocalHand;
 
-    // Deck dummy sync
-    if (deck.length != state.deckSize) {
-      deck.clear();
-      deck.addAll(
-        List.generate(
-          state.deckSize,
-          (i) => IshiCard(id: 'dummy_$i', color: .wild, type: .number),
-        ),
-      );
+    if (opponentHandSizes.isEmpty) {
+      opponentHandSizes = state.opponentHandSizes;
+      playerHands = List.generate(opponentHandSizes.length, (_) => []);
+      playerRelics = List.generate(opponentHandSizes.length, (_) => []);
+    } else {
+      opponentHandSizes = state.opponentHandSizes;
     }
 
+    pendingDrawCount = state.pendingDrawCount;
+
+    declaredColor = state.declaredColorIndex != null
+        ? CardColor.values[state.declaredColorIndex!]
+        : null;
+
+    actionPoints = state.actionPoints;
+    cardDraws = state.cardDraws;
     hasPlayedCard = state.hasPlayedCard;
     hasDrawnCard = state.hasDrawnCard;
-    turnDeadlineEpoch = state.turnDeadline;
-    roundCount = state.roundCount;
-    activeDeckEvent = DeckEventEffect.values[state.activeDeckEventIndex];
+    playerRelics = state.playerRelics;
 
     if (winnerIndex == null && state.winnerIndex != null) {
       winnerIndex = state.winnerIndex;
@@ -211,6 +206,10 @@ class GameManager {
     } else {
       winnerIndex = state.winnerIndex;
     }
+
+    turnDeadlineEpoch = state.turnDeadline;
+    roundCount = state.roundCount;
+    activeDeckEvent = DeckEventEffect.values[state.activeDeckEventIndex];
 
     return newlyDealtCards;
   }
@@ -264,9 +263,7 @@ class GameManager {
     // If they can still draw a card, they have a valid move
     if (playerCD > 0 && deck.isNotEmpty) return true;
 
-    if (playerAP <= 0 && playerCD <= 0) {
-      return false;
-    }
+    if (playerAP <= 0 && playerCD <= 0) return false;
 
     // Otherwise, they are completely out of options
     return false;
@@ -487,12 +484,8 @@ class GameManager {
         break;
       case .skip:
         if (pendingDrawCount > 0) {
-          //? DEFENSIVE SKIP: The player successfully deflected!
-          // We DO NOT increment _playersToSkip, because we want the VERY NEXT player
-          // to face the pendingDrawCount bomb. The stack size stays exactly the same.
           debugPrint("Player has deflected!");
         } else {
-          //? OFFENSIVE SKIP: Normal play, the next player loses their turn.
           _playersToSkip++;
           debugPrint("Player has skipped the next player!");
         }

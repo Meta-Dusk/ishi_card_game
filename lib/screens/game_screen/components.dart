@@ -35,7 +35,7 @@ extension GameComponents on GameScreenState {
   );
 
   StatelessWidget get _settingsButton => SettingsButton(
-    onExitGame: _promptLeaveGame,
+    onExitGame: promptLeaveGame,
     onDevConsoleToggle: () {
       Navigator.pop(context);
       updateUI(

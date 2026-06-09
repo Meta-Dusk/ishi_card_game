@@ -144,6 +144,9 @@ class GameScreenState extends State<GameScreen> {
       if (_net.isHost) broadcastGameState();
     };
 
+    widget.menu.isInGame = true;
+    widget.menu.onExitInGame = promptLeaveGame;
+
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => AudioManager().playMusic(Audio.music.gameLoop),
     );
@@ -402,8 +405,14 @@ class GameScreenState extends State<GameScreen> {
     return animatedSplash;
   }
 
-  void _promptLeaveGame() => showDialog(
+  void promptLeaveGame() => showDialog(
     context: context,
-    builder: (_) => LeaveGameDialog(network: _net),
+    builder: (_) => LeaveGameDialog(
+      network: _net,
+      manager: _manager,
+      onLeaveGame: () {
+        widget.menu.updateUI(() => widget.menu.isInGame = false);
+      },
+    ),
   );
 }

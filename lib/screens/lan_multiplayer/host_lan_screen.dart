@@ -39,10 +39,7 @@ class _HostLANLobbyScreenState extends State<HostLANLobbyScreen> {
   Future<void> _initializeHost() async {
     // Find the Local IP Address
     String? localIp;
-    final interfaces = await NetworkInterface.list(
-      type: .IPv4,
-      includeLinkLocal: false,
-    );
+    final interfaces = await NetworkInterface.list(type: .IPv4);
 
     for (NetworkInterface interface in interfaces) {
       for (InternetAddress addr in interface.addresses) {

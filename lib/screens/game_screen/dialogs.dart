@@ -21,6 +21,7 @@ extension GameDialogs on GameScreenState {
         onExit: () async {
           // Disconnect from WebRTC/LAN and pop back to the Root Menu
           await _net.disconnect();
+          _manager.dispose();
           if (!context.mounted) return;
           Navigator.of(context).popUntil((route) => route.isFirst);
         },
