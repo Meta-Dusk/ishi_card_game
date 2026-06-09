@@ -112,10 +112,8 @@ class GameScreenState extends State<GameScreen> {
     }
 
     if (_net.isHost && _manager.playerHands.isNotEmpty) {
-      _initialHandBuffer = List.from(
-        _manager.playerHands[_manager.localPlayerIndex],
-      );
-      _manager.playerHands[_manager.localPlayerIndex].clear();
+      _initialHandBuffer = List.from(currentHand);
+      currentHand.clear();
     }
 
     initializeNetworkSync();

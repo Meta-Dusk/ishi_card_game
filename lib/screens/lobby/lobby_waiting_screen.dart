@@ -124,7 +124,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
           startingHandSize: _startingHandSize,
         );
         // Pass the unpacked payload directly to the engine
-        localManager.applyGameStateJson(payload);
+        localManager.applyGameState(payload);
 
         if (!mounted) return;
         Navigator.pushReplacement(
@@ -163,7 +163,7 @@ class _LobbyWaitingScreenState extends State<LobbyWaitingScreen> {
 
     // Host deals the cards. (This JSON acts as the Start signal for clients!)
     for (int i = 1; i < getConnectedPlayerCount; i++) {
-      final personalizedState = masterManager.generateGameStateJson(i);
+      final personalizedState = masterManager.generateGameState(i);
       _net.sendToClient(i - 1, GameStateMessage(personalizedState));
     }
 

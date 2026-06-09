@@ -6,16 +6,22 @@ kanban-plugin: board
 
 ## Pending (10)
 
-- [ ] #bug #mobile 
-	# Mobile Bug
-	Draw card pile not interactable somehow.
-- [ ] #rework #mobile #feature
-	# Mobile UI
-	Make the buttons a lot more intuitive and maybe just add a button for drawing cards, for accessibility.
+- [ ] #bug #rework
+	# Cards Display
+	Try fix the minor visual hiccup seen in the player's POV of their hand when cards are removed.
 
 
 ## In Progress (5)
 
+- [ ] #documentation #rework
+	# Game Manager
+	Update the game manager's architecture, by splitting its logic specifically for the host, and client respectively (split into two files). @{2026-06-09}
+- [ ] #bug #mobile 
+	# Mobile Bug
+	Draw card pile not interactable somehow. @{2026-06-08}
+- [ ] #rework #mobile #feature
+	# Mobile UI
+	Make the buttons a lot more intuitive and maybe just add a button for drawing cards, for accessibility. @{2026-06-08}
 
 
 ## Done
@@ -23,7 +29,10 @@ kanban-plugin: board
 - [ ] #optimization #rework 
 	# Optimizations
 	Extract large `Widget` methods into their own class.
-	@{2026-06-07}
+	@{2026-06-08}
+- [ ] #rework #optimization #documentation 
+	# Networking
+	Update the networking code (coding style, type safety, data structures, legibility). @{2026-06-09}
 
 
 ***

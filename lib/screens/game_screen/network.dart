@@ -1,7 +1,7 @@
 part of 'game_screen.dart';
 
 extension GameScreenNetwork on GameScreenState {
-  /// Safe helper to get any player's hand size whether we are Host or Client
+  /// Works for either Host or Client.
   int _getHandSize(int index) {
     if (_net.isHost) return _manager.playerHands[index].length;
     if (_manager.opponentHandSizes.length > index) {
@@ -24,7 +24,7 @@ extension GameScreenNetwork on GameScreenState {
       );
 
       // Apply Master State
-      newlyDealtCards = _manager.applyGameStateJson(message.payload);
+      newlyDealtCards = _manager.applyGameState(message.payload);
 
       _animateOpponentHands(oldOpponentSizes);
     });
@@ -75,7 +75,7 @@ extension GameScreenNetwork on GameScreenState {
         // Send the specific client their missing cards!
         _net.sendToClient(
           playerIndex - 1,
-          GameStateMessage(_manager.generateGameStateJson(playerIndex)),
+          GameStateMessage(_manager.generateGameState(playerIndex)),
         );
         break;
 
@@ -104,10 +104,7 @@ extension GameScreenNetwork on GameScreenState {
   void broadcastGameState() {
     if (!_net.isHost) return;
     for (int i = 1; i < _manager.playerCount; i++) {
-      _net.sendToClient(
-        i - 1,
-        GameStateMessage(_manager.generateGameStateJson(i)),
-      );
+      _net.sendToClient(i - 1, GameStateMessage(_manager.generateGameState(i)));
     }
   }
 
