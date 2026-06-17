@@ -86,14 +86,9 @@ extension GameScreenNetwork on GameScreenState {
         break;
 
       case SystemNotificationMessage(:final text):
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(text, style: const TextStyle(fontWeight: .bold)),
-            backgroundColor: Colors.blueGrey.shade800,
-            duration: const Duration(seconds: 3),
-            behavior: .floating,
-          ),
-        );
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.removeCurrentSnackBar();
+        messenger.showSnackBar(SnackBars.simple(text));
         break;
 
       default:

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -335,6 +336,14 @@ class GameScreenState extends State<GameScreen> {
           child: RoundIndicator(roundCount: _manager.roundCount),
         ).animate().fadeIn(delay: getAnimationDelay(), duration: 400.ms),
       ),
+      if (isMyTurn)
+        Positioned(
+          top: (size.height / 2) - (112 * responsiveScale),
+          left: (size.width / 2) - (124 * responsiveScale),
+          child: DrawCardButton(
+            onDrawCard: drawCardAction,
+          ).animate().fadeIn(delay: getAnimationDelay(), duration: 400.ms),
+        ),
 
       // CORNER BUTTONS
       Positioned(

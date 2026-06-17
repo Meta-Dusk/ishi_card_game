@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ishi/components/dialogs/menus/audio_settings_dialog.dart';
+import 'package:ishi/components/dialogs/toasts.dart';
 import 'package:ishi/core/audio.dart';
 import 'package:ishi/core/managers/audio_manager.dart';
 import 'package:ishi/core/managers/profile_manager.dart';
@@ -20,15 +21,9 @@ class SettingsMenu extends StatelessWidget {
     if (confirm != true) return;
     await ProfileManager().resetToDefaults();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          "Preferences reset to default.",
-          style: TextStyle(fontWeight: .bold),
-        ),
-        backgroundColor: Colors.green,
-      ),
-    );
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.removeCurrentSnackBar();
+    messenger.showSnackBar(SnackBars.simple("Preferences reset to default."));
   }
 
   @override

@@ -4,6 +4,8 @@ kanban-plugin: board
 
 ---
 
+<!-- markdownlint-disable -->
+
 ## Pending (10)
 
 - [ ] #bug #rework

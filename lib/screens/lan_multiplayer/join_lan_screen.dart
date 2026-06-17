@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/components/dialogs/toasts.dart';
 import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:ishi/core/data_types.dart' show isPc;
@@ -36,16 +37,24 @@ class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
     await _connect(scannedCode);
 
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Connecting to $scannedCode...')));
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.removeCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBars.simple(
+        'Connecting to $scannedCode...',
+        persist: true,
+        showCloseIcon: false,
+      ),
+    );
   }
 
   Future<void> _connect(String url) async {
     final success = await SocketService().connectToHost(url);
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.removeCurrentSnackBar();
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Connected to Lobby!'),
           backgroundColor: Colors.green,
@@ -61,12 +70,9 @@ class _JoinLANGameScreenState extends State<JoinLANGameScreen> {
     } else {
       setState(() => _isConnecting = false);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Connection Failed.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.removeCurrentSnackBar();
+      messenger.showSnackBar(SnackBars.error('Connection Failed.'));
     }
   }
 

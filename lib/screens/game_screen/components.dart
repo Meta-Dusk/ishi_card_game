@@ -199,3 +199,21 @@ class RoundIndicator extends StatelessWidget {
     ),
   );
 }
+
+class DrawCardButton extends StatelessWidget {
+  final VoidCallback onDrawCard;
+
+  const DrawCardButton({super.key, required this.onDrawCard});
+
+  @override
+  Widget build(BuildContext context) => ElevatedButton.icon(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.blueGrey,
+      foregroundColor: Colors.white,
+      padding: const .symmetric(horizontal: 24, vertical: 12),
+    ),
+    onPressed: onDrawCard,
+    icon: const Icon(Icons.style),
+    label: const Text("Draw Card"),
+  );
+}

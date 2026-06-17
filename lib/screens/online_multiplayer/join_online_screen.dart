@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ishi/components/dialogs/toasts.dart';
 import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import '../lobby/lobby_waiting_screen.dart';
 import 'package:ishi/services/webrtc_service.dart';
@@ -24,11 +25,10 @@ class _JoinOnlineScreenState extends State<JoinOnlineScreen> {
         ? _codeController.text.trim().toUpperCase()
         : input.trim().toUpperCase();
     if (code.length != 5) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Room code must be exactly 5 letters."),
-          backgroundColor: Colors.red,
-        ),
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.removeCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBars.error("Room code must be exactly 5 letters."),
       );
       return;
     }
@@ -38,14 +38,11 @@ class _JoinOnlineScreenState extends State<JoinOnlineScreen> {
     final success = await WebRTCService().joinRoom(code);
 
     if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.removeCurrentSnackBar();
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Connected to Lobby!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      messenger.showSnackBar(SnackBars.simple("Connected to Lobby!"));
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -55,11 +52,8 @@ class _JoinOnlineScreenState extends State<JoinOnlineScreen> {
       );
     } else {
       setState(() => _isConnecting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Room not found or connection failed."),
-          backgroundColor: Colors.red,
-        ),
+      messenger.showSnackBar(
+        SnackBars.error("Room not found or connection failed."),
       );
     }
   }
