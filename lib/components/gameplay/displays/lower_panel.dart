@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:ishi/components/gameplay/displays/targeting_banner.dart';
 import 'package:ishi/core/managers/game/game_manager.dart';
 import 'package:ishi/core/models/ishi_card.dart';
 import 'package:ishi/core/models/relic/relic.dart';
@@ -10,6 +9,7 @@ import '../animated_play_button.dart';
 import '../card_counter.dart';
 import '../hand_controls.dart';
 import '../relic_display.dart';
+import 'targeting_banner.dart';
 
 class LowerPanel extends StatefulWidget {
   final GameManager manager;

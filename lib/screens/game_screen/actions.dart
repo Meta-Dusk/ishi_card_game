@@ -5,9 +5,9 @@ extension GameScreenActions on GameScreenState {
     if (!isMyTurn) return;
 
     if (_manager.cardDraws[_manager.localPlayerIndex] <= 0) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("No card draws left!")));
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.removeCurrentSnackBar();
+      messenger.showSnackBar(SnackBars.error("No card draws left!"));
       return;
     }
 
@@ -194,13 +194,8 @@ extension GameScreenActions on GameScreenState {
       final messenger = ScaffoldMessenger.of(context);
       messenger.removeCurrentSnackBar();
       messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            canPlayCheck.reason ?? "You cannot play this card right now!",
-          ),
-          backgroundColor: Colors.redAccent,
-          duration: const Duration(seconds: 2),
-          behavior: .floating,
+        SnackBars.error(
+          canPlayCheck.reason ?? "You cannot play this card right now!",
         ),
       );
 

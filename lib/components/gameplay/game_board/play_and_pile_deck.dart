@@ -232,18 +232,22 @@ class _AvailableCardsPile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => GestureDetector(
     onTap: onDrawCard,
-    child: Stack(alignment: .center, children: _stackedContent),
-  );
-
-  List<StatelessWidget> get _stackedContent => [
-    const CardBack(),
-    Container(
-      padding: const .all(8),
-      decoration: const BoxDecoration(color: Colors.black54, shape: .circle),
-      child: Text(
-        "$deckLength",
-        style: const TextStyle(color: Colors.white, fontWeight: .bold),
-      ),
+    child: Stack(
+      alignment: .center,
+      children: [
+        const CardBack(),
+        Container(
+          padding: const .all(8),
+          decoration: const BoxDecoration(
+            color: Colors.black54,
+            shape: .circle,
+          ),
+          child: Text(
+            "$deckLength",
+            style: const TextStyle(color: Colors.white, fontWeight: .bold),
+          ),
+        ),
+      ],
     ),
-  ];
+  );
 }

@@ -11,14 +11,9 @@ Future<IshiCard?> _onPolymorphDialog({
       "Insufficient Action Points! Polymorph costs $useCost AP.";
 
   if (manager.actionPoints[manager.localPlayerIndex] < useCost) {
-    ScaffoldMessenger.of(context).removeCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(errorMessage),
-        backgroundColor: Colors.redAccent,
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.removeCurrentSnackBar();
+    messenger.showSnackBar(SnackBars.error(errorMessage));
     debugPrint(errorMessage);
     return null;
   }
