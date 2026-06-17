@@ -1,6 +1,6 @@
-part of 'host_game_manager.dart';
+part of 'game_manager.dart';
 
-extension EventsManager on HostGameManager {
+extension GameEvents on GameManager {
   /// Helper to completely scramble a card (Butterfly Effect).
   IshiCard _randomizeNewCard(IshiCard originalCard) {
     final colors = CardColor.getNormalColors;
@@ -141,5 +141,41 @@ extension EventsManager on HostGameManager {
       pendingDrawCount += 4;
       if (onWildBuffTrigger != null) onWildBuffTrigger!();
     }
+  }
+
+  /// THE CARD RULES ENGINE\
+  /// Also includes some rules reminiscent of Uno.
+  void _applyCardEffect(IshiCard playedCard) {
+    switch (playedCard.type) {
+      case .reverse:
+        if (playerCount == 2) {
+          _playersToSkip++;
+        } else {
+          isClockwise = !isClockwise;
+          debugPrint(
+            "Turn Direction reversed: "
+            "${isClockwise ? "clockwise" : "counter-clockwise"}",
+          );
+        }
+        break;
+      case .skip:
+        if (pendingDrawCount > 0) {
+          debugPrint("Player has deflected!");
+        } else {
+          _playersToSkip++;
+          debugPrint("Player has skipped the next player!");
+        }
+        break;
+      case .draw2:
+        pendingDrawCount += 2;
+        break;
+      case .draw4:
+        pendingDrawCount += 4;
+        break;
+      default:
+        break;
+    }
+
+    _applyActiveDeckEventEffects(playedCard);
   }
 }

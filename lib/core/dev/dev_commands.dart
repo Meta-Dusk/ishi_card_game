@@ -1,5 +1,5 @@
 import 'package:ishi/core/dev/dev_console.dart';
-import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/core/managers/game/game_manager.dart';
 import 'package:ishi/core/models/deck_event.dart';
 import 'package:ishi/services/network_service.dart';
 import 'package:ishi/screens/main_menu/main_menu_screen.dart';

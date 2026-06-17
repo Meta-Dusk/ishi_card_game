@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/core/managers/game/game_manager.dart';
 import 'package:ishi/core/managers/profile_manager.dart';
 import 'package:ishi/services/network_service.dart';
 import 'animated_card_fan.dart';

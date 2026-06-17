@@ -13,9 +13,6 @@ kanban-plugin: board
 
 ## In Progress (5)
 
-- [ ] #documentation #rework
-	# Game Manager
-	Update the game manager's architecture, by splitting its logic specifically for the host, and client respectively (split into two files). @{2026-06-09}
 - [ ] #bug #mobile 
 	# Mobile Bug
 	Draw card pile not interactable somehow. @{2026-06-08}
@@ -33,6 +30,9 @@ kanban-plugin: board
 - [ ] #rework #optimization #documentation 
 	# Networking
 	Update the networking code (coding style, type safety, data structures, legibility). @{2026-06-09}
+- [ ] #documentation #rework
+	# Game Manager
+	Refactor the `GameManager` for readability. @{2026-06-17}
 
 
 ***

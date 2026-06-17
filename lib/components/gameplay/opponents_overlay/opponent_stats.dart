@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/core/managers/game/game_manager.dart';
 
 class OpponentStats extends StatelessWidget {
   const OpponentStats({
