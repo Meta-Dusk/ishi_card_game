@@ -2,7 +2,7 @@ export '../../../core/audio.dart';
 export '../../../core/managers/audio_manager.dart';
 export '../../../core/dev/dev_console.dart';
 export '../../../core/network/network_messages.dart';
-export '../../../core/managers/game_manager.dart';
+export '../../../core/managers/game/game_manager.dart';
 export '../../../core/models/relic/relic.dart';
 export '../../../core/models/ishi_card.dart';
 export '../../../core/models/deck_event.dart';

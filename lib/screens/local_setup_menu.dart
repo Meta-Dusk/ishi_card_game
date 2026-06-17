@@ -6,7 +6,7 @@ import 'main_menu/buttons.dart';
 import 'main_menu/menu_button.dart';
 import 'main_menu/section_header.dart';
 import 'main_menu/setting_panel.dart';
-import '../core/managers/game_manager.dart';
+import '../core/managers/game/game_manager.dart';
 import '../services/offline_network_service.dart';
 
 class LocalSetupMenu extends StatelessWidget {

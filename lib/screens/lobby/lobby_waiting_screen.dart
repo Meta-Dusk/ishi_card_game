@@ -9,7 +9,7 @@ import 'package:ishi/screens/lobby/settings/lobby_settings.dart';
 import 'package:ishi/screens/main_menu/main_menu_screen.dart';
 import 'package:ishi/services/webrtc_service.dart';
 import 'package:ishi/services/network_service.dart';
-import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/core/managers/game/game_manager.dart';
 import 'package:ishi/core/network/network_messages.dart';
 import '../game_screen/game_screen.dart';
 import 'verbose_player_list.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/core/managers/game/game_manager.dart';
 import 'package:ishi/services/network_service.dart';
 import 'player_stats.dart';
 

@@ -25,17 +25,14 @@ class _HostOnlineScreenState extends State<HostOnlineScreen> {
   }
 
   Future<void> _initializeHost() async {
-    // Tell WebRTC to create the Supabase room
     final code = await WebRTCService().createRoom();
 
     if (!mounted) return;
 
     if (code != null) {
-      // Room created successfully! Jump straight to the lobby.
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          // Pass the WebRTC engine into the network contract!
           builder: (_) =>
               LobbyWaitingScreen(network: WebRTCService(), menu: widget.menu),
         ),

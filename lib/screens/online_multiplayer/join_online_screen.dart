@@ -35,7 +35,6 @@ class _JoinOnlineScreenState extends State<JoinOnlineScreen> {
 
     setState(() => _isConnecting = true);
 
-    // Attempt the WebRTC handshake
     final success = await WebRTCService().joinRoom(code);
 
     if (!mounted) return;

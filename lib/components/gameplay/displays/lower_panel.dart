@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:ishi/components/gameplay/displays/targeting_banner.dart';
-import 'package:ishi/core/managers/game_manager.dart';
+import 'package:ishi/core/managers/game/game_manager.dart';
 import 'package:ishi/core/models/ishi_card.dart';
 import 'package:ishi/core/models/relic/relic.dart';
 import 'package:ishi/core/data_types.dart' show isPc;

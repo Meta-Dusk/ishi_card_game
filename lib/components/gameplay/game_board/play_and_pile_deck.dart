@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ishi/components/cards/card_aura/card_aura.dart';
-import '../../../core/managers/game_manager.dart';
+import '../../../core/managers/game/game_manager.dart';
 import '../../../core/models/ishi_card.dart';
 import '../../cards/card_display.dart';
 
